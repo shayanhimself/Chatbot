@@ -20,8 +20,10 @@ curl -fsSL https://dl.google.com/android/cli/latest/darwin_arm64/install.sh | ba
 
 android update          # update the CLI itself
 android info            # environment info (SDK location etc.)
-android init            # initialize environment (e.g. skills) for the CLI
+android init            # initialize environment for the CLI
 ```
+
+**`android init` installs skills *globally*** (`~/.claude/skills`, `~/.copilot/skills`), not into the repo. For committed, project-local skills use `android skills add … --project=.` (see §2) — that's what this project wants.
 
 ### SDK management
 
@@ -133,29 +135,46 @@ Copied into `.claude/skills/` (committed, so they're reproducible, reviewable, o
 | `adaptive` | UI across phones/tablets/foldables/desktop — window size classes, multi-pane via Nav3 Scenes, adaptive components |
 | `testing-setup` | Installing test libraries, building unit/UI/screenshot/e2e harnesses |
 | `edge-to-edge` | Edge-to-edge migration; UI obscured by system bars; IME insets |
+| `styles` | Jetpack Compose Styles API — component themes, making custom components styleable, migrating layout properties to unified styles |
+| `android-intent-security` | Auditing Intent handling / manifest component config to prevent Intent Redirection and unauthorized access |
 | `android-cli` | Teaches the agent the `android` CLI itself (section 1 is distilled from it) |
 
 They auto-activate — Claude Code matches the task against each skill's `description`. Manual trigger: just name the topic, or invoke via `/` skill menu.
 
-Full catalog (browse before adding more): `android skills list`, `android skills find <keyword>`, or [developer.android.com/tools/agents/android-skills/browse](https://developer.android.com/tools/agents/android-skills/browse). Available but not vendored: `agp-9-upgrade`, `migrate-xml-views-to-jetpack-compose`, `styles`, `r8-analyzer`, `perfetto-*`, `android-intent-security`, camera/wear/xr/play skills.
+Full catalog (browse before adding more): `android skills list`, `android skills find <keyword>`, or [developer.android.com/tools/agents/android-skills/browse](https://developer.android.com/tools/agents/android-skills/browse). Available but not vendored: `agp-9-upgrade`, `migrate-xml-views-to-jetpack-compose`, `r8-analyzer`, `perfetto-*`, camera/wear/xr/play skills.
 
 ### Adding a skill
 
+`add` is an alias for `install`. Full usage: `android skills install [--all] [--agent=<list>] [--project=<path>] <skill>`. The skill name is a **positional arg** (not `--skill=`).
+
 ```bash
-android skills add --skill=<name> --project=.
+android skills add <name> --project=. --agent=claude-code
 ```
 
-Installs into detected agent directories (Claude Code → `.claude/skills/`). Then commit. (Equivalent: copy the folder from a clone of github.com/android/skills — that's how the current five were installed.)
+- `<name>` — positional, e.g. `navigation-3`. Or `--all` for every skill.
+- `--project=.` — install into this repo (`.claude/skills/`), not globally. Omit it and the skill lands in your global agent dirs.
+- `--agent=` — comma-separated agent list; **the Claude Code agent is `claude-code`** (not `claude`). Omit to install for *all* detected agents (adds `~/.copilot/skills` etc.). Valid values include `claude-code`, `github-copilot`, `codex`, `cursor`, `gemini`, `windsurf`, `universal`, … (`android skills install <x>` with a bad `--agent` prints the full list).
+
+Then commit. (Equivalent: copy the folder from a clone of github.com/android/skills — that's how the current seven were installed.)
+
+Vendor all seven, Claude Code only:
+
+```bash
+for s in android-cli navigation-3 adaptive testing-setup edge-to-edge styles android-intent-security; do
+  android skills add "$s" --project=. --agent=claude-code
+done
+git add .claude/skills && git commit
+```
 
 ### Updating skills — the important part
 
 No `android skills update` command exists. Procedure:
 
 ```bash
-android update                                    # refresh CLI (and its skill catalog)
-android skills add --skill=navigation-3 --project=.   # re-add = overwrite with latest
+android update                                              # refresh CLI (and its skill catalog)
+android skills add navigation-3 --project=. --agent=claude-code   # re-add = overwrite with latest
 # repeat per vendored skill
-git diff .claude/skills/                          # REVIEW before committing
+git diff .claude/skills/                                    # REVIEW before committing
 git add .claude/skills && git commit
 ```
 

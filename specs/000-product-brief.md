@@ -41,5 +41,6 @@ An Android chatbot app. The user chats with Claude about anything, using their o
 - 006-agent-tools.md — tool definitions (`set_reminder`, `remember`, …) and the tool-execution protocol between engine and app
 - 007-reminders.md — scheduling (AlarmManager → receiver → WorkManager), fire-time message composition, reboot persistence, offline fallback
 - 008-memory.md — memory write/injection policy, token budgeting, user controls
+- 009-design-system.md — `:core:ui`: M3 theme, core components, previews + screenshot tests, and a companion `design-system` project skill. Prerequisite for all screen work.
 
 Each feature spec ships journey XML files (agent-evaluated E2E acceptance tests via `android` CLI) for its acceptance criteria.

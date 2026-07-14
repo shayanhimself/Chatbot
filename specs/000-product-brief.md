@@ -37,7 +37,7 @@ An Android chatbot app. The user chats with Claude about anything, using their o
 - 002-chat-engine.md — `ChatEngine` abstraction, Claude implementation, SSE streaming, tool-use loop
 - 003-conversation-storage.md — Room schema: conversations, messages, reminders, memories
 - 004-navigation-shell.md — Nav 3 back stack, conversation list/detail (adaptive two-pane on tablets/foldables), notification deep links
-- 005-settings-and-byok.md — settings screen, key entry/validation/secure storage, model picker, memory management UI, permission flows
+- 005-settings-and-byok.md — first-launch onboarding (key entry/validation), key secure storage, settings screen (key management, memory management UI), permission flows (model picker lives in the conversation screen, not settings)
 - 006-agent-tools.md — tool definitions (`set_reminder`, `remember`, …) and the tool-execution protocol between engine and app
 - 007-reminders.md — scheduling (AlarmManager → receiver → WorkManager), fire-time message composition, reboot persistence, offline fallback
 - 008-memory.md — memory write/injection policy, token budgeting, user controls

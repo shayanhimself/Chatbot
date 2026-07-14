@@ -25,20 +25,13 @@ This spec is the canonical record of the project's current technology choices. A
 | Navigation | **Jetpack Navigation 3** — `androidx.navigation3:navigation3-runtime` + `navigation3-ui` 1.1.x | Stable since Nov 2025. Owned back stack (typed keys in `SnapshotStateList`), `entryProvider` DSL, `NavDisplay`. Scenes give native adaptive two-pane (conversation list + chat on tablets/foldables) via `androidx.compose.material3.adaptive:adaptive-navigation3`. **Navigation 2 / navigation-compose is prohibited.** Reference: `navigation-3` project skill, github.com/android/nav3-recipes |
 | Insets | Edge-to-edge from day one | Android 16 requirement; `edge-to-edge` project skill |
 
-## Project structure (KMP shared core, native Android UI)
+## Project structure (KMP shared core, feature-modularized Android app)
 
-The app is structured as a KMP project from day one — Android-only targets initially, iOS addable later without restructuring.
-
-| Module | Targets | Contents |
+| Decision | Choice | Rationale |
 |---|---|---|
-| `:shared` | `androidTarget()` now; `iosArm64`/`iosSimulatorArm64` when iOS ships | **commonMain:** `ChatEngine` interface, Claude Ktor client (REST + SSE + tool use), agentic tool-use loop + tool definitions, reminder/memory domain models and logic (kotlinx-datetime, kotlinx.serialization), conversation/prompt logic, Room database (KMP-stable) if feature specs place storage here. **androidMain:** Ktor OkHttp engine, Keystore/Tink crypto. **iosMain (future):** Foundation Models engine, Ktor Darwin engine |
-| `:app` | Android | Compose UI, Nav 3, ViewModels, Hilt wiring, edge-to-edge, tool executors implementing shared interfaces (AlarmManager scheduling, notifications), BroadcastReceivers, WorkManager workers |
-
-Rules:
-
-- **commonMain stays pure** — no `android.*` imports ever; platform access via `expect/actual` thin shims or interfaces injected from the app
-- **Hilt never crosses into `:shared`** — shared code uses constructor injection; Hilt modules in `:app` construct and provide shared classes
-- Shared module uses `org.jetbrains.kotlin.multiplatform` + AGP's KMP library plugin (`com.android.kotlin.multiplatform.library`)
+| Multiplatform | KMP from day one; `:shared` is the **only** KMP module (`androidTarget()` now, iOS targets later), holding all data + domain code. Uses `org.jetbrains.kotlin.multiplatform` + AGP's KMP library plugin (`com.android.kotlin.multiplatform.library`) | iOS addable without restructuring; one KMP module subsumes Google's `:core:*` data-side modules as packages |
+| Platform split inside `:shared` | commonMain pure Kotlin; androidMain: Ktor OkHttp engine, Keystore/Tink crypto; iosMain (future): Foundation Models engine, Ktor Darwin engine | Ktor needs a platform engine; crypto is platform API |
+| Android modularization | Feature-modularized — module map, dependency rules, and layer conventions owned by the **`architecture` project skill** | Google modularization guidance: enforced boundaries, parallel builds |
 
 ## Architecture & DI
 

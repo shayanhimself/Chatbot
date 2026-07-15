@@ -4,6 +4,10 @@ Native Android chatbot, powered by Claude through the user's own Anthropic API k
 
 Product: `specs/000-product-brief.md`. Canonical stack: `specs/001-tech-stack.md`. Specifics below defer to those.
 
+## Git
+
+**Never commit or push.** The user reviews all changes and commits manually. This overrides any skill/workflow step that says to commit (e.g. superpowers). Leave changes in the working tree and report what's ready.
+
 ## Tooling
 
 We use **`android` CLI** for project creation, SDK/emulator management, running and inspecting the app, doc lookup, and journey tests. Prefer it over ad-hoc gradle/adb. It's the default for API/version/migration questions too — treat it as fresher than model training.

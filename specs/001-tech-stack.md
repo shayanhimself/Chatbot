@@ -49,7 +49,7 @@ This spec is the canonical record of the project's current technology choices. A
 | Chat history | Room 2.8.x | Structured/relational local data |
 | Settings | DataStore Preferences 1.1.x | Small key-value data |
 | Claude API key at rest | Android Keystore (hardware-backed master key) → Tink AEAD → ciphertext in DataStore | **EncryptedSharedPreferences is deprecated (do not use).** Plaintext key only in memory, never logged |
-| Reminders & memories | Room tables (schema owned by spec 003) | Local-only, no server; reminders re-registered from Room after reboot |
+| Reminders & memories | Room tables | Local-only, no server; reminders re-registered from Room after reboot |
 
 ## Background work, scheduling & notifications
 
@@ -68,7 +68,7 @@ This spec is the canonical record of the project's current technology choices. A
 | Decision | Choice | Rationale |
 |---|---|---|
 | Engine (sole, BYOK) | **Ktor client + kotlinx.serialization** against `POST https://api.anthropic.com/v1/messages` with hand-rolled SSE streaming (`message_start` → `content_block_delta`/`text_delta` → `message_stop`) | KMP-insurance: official Anthropic Java SDK is JVM-only; Ktor layer ports to iOS as-is. Small surface — one endpoint, SSE parse. Headers: `x-api-key`, `anthropic-version: 2023-06-01`, `content-type: application/json`. Default model `claude-sonnet-5`; picker for `claude-haiku-4-5` / `claude-opus-4-8`. User's own key only — never a project-owned key in the app |
-| Tool use | Native Anthropic tool use: `tools` param, `tool_use` / `tool_result` content blocks. SSE parser must additionally handle `input_json_delta` deltas and `stop_reason: "tool_use"`. Agentic loop (model emits tool call → app executes locally → resume turn with result) lives in `:shared` commonMain; executors injected via interfaces | Reminders and memory are created by the model mid-conversation (spec 006) |
+| Tool use | Native Anthropic tool use: `tools` param, `tool_use` / `tool_result` content blocks. SSE parser must additionally handle `input_json_delta` deltas and `stop_reason: "tool_use"`. Agentic loop (model emits tool call → app executes locally → resume turn with result) lives in `:shared` commonMain; executors injected via interfaces | Reminders and memory are created by the model mid-conversation |
 | Engine abstraction | Common `ChatEngine` interface | Retained despite single engine: test fakes, and a future iOS on-device engine (Foundation Models) slots in without touching callers |
 
 ## Testing

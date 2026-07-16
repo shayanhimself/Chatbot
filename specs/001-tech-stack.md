@@ -11,9 +11,9 @@ This spec is the canonical record of the project's current technology choices. A
 | Build performance | Configuration cache ON (`org.gradle.configuration-cache=true`); Isolated Projects OFF | Config cache is Gradle 9's preferred mode; Isolated Projects still experimental |
 | Annotation processing | KSP2, version pinned in lockstep with Kotlin (`<kotlin>-<ksp>` scheme) | Only actively developed processor; required by Room/Hilt with Kotlin 2+. See Kotlin row for current 2.4 blocker |
 | Compose compiler | `org.jetbrains.kotlin.plugin.compose`, version = Kotlin version | Ships with Kotlin since 2.0. Strong skipping is default; do NOT set `StrongSkipping`/`IntrinsicRemember` flags (error in 2.4) — omit `composeCompiler {}` block |
-| JDK | 17 toolchain via `kotlin { jvmToolchain(17) }` + foojay resolver plugin in settings | AGP 9 default bytecode target is 17; JDK 17 min to run Gradle; foojay auto-provisions JDK. JDK 21 needed only to *run* Robolectric against SDK 36 |
-| compileSdk | 36 | Current stable (Android 16). Expect bump to 37 when Compose 1.12 lands — tracked in Open items |
-| targetSdk | 36 | Play Store mandate for all submissions from 2026-08-31 |
+| JDK | 17 toolchain via `kotlin { jvmToolchain(17) }` + foojay resolver plugin in settings. Gradle daemon JVM pinned by criteria in `gradle/gradle-daemon-jvm.properties` (`toolchainVersion=17`) | AGP 9 default bytecode target is 17; JDK 17 min to run Gradle; foojay auto-provisions JDK. Daemon criteria select the daemon JVM independently of the launcher JVM, so `./gradlew` needs no per-machine `JAVA_HOME` setup and no `org.gradle.java.home` pinned to a local path. JDK 21 needed only to *run* Robolectric against SDK 36 |
+| compileSdk | 37 | Forced by `androidx.core:core-ktx` 1.19.0 and the `androidx.lifecycle` 2.11.0 artifacts: both hard-require compileSdk ≥ 37 via AGP's AAR-metadata check, which fails the build and is not suppressible |
+| targetSdk | 37 | Matches compileSdk. Clears the Play Store mandate (min 36) for all submissions from 2026-08-31 |
 | minSdk | 31 | `SCHEDULE_EXACT_ALARM` exists since API 31 → single exact-alarm permission model, no legacy path; sensible modern floor. Lower only if reach data demands it |
 
 ## UI
@@ -76,7 +76,7 @@ This spec is the canonical record of the project's current technology choices. A
 | Decision | Choice | Rationale |
 |---|---|---|
 | Unit tests | JUnit4 | Android default; JUnit5 still third-party-plugin territory |
-| Android framework in JVM tests | Robolectric 4.16+ | SDK 36 support (needs JDK 21 to run) |
+| Android framework in JVM tests | **Robolectric 4.16.1**; emulated SDK pinned to 36 via `robolectric.properties` | Needs JDK 21. Not 37: 4.16.1 tops out at SDK 36 (37 only in 4.17-beta-1). Emulated SDK is independent of compileSdk; the `sdk=36` pin is load-bearing — Robolectric otherwise defaults to targetSdk 37, which 4.16.1 can't run. Revisit at 4.17 stable |
 | UI tests | **Compose testing APIs** (v2), `createComposeRule` + semantics matchers — both local (Robolectric) and instrumented | The tool for Compose UIs; v2 default since Apr 2026; note `StandardTestDispatcher` is now the default. |
 | Screenshot tests | Compose Preview Screenshot Testing (`@PreviewTest`) | Official tool; still preview-channel — fall back to Roborazzi if it blocks us |
 | Acceptance / E2E | Journey XML files evaluated by agent via `android` CLI against emulator | Spec-level acceptance: each feature spec ships journeys for its acceptance criteria. Complements, never replaces, coded tests |
@@ -89,11 +89,11 @@ This spec is the canonical record of the project's current technology choices. A
 | Dev CLI | **`android` CLI** (official Google Android CLI) | Project creation (`android create`), emulator management, running apps, device interaction/screenshots, docs lookup (`android docs`), journey evaluation, skills management. Install: `curl -fsSL https://dl.google.com/android/cli/latest/darwin_arm64/install.sh \| bash` |
 | Agent skills | **Official Android skills** (github.com/android/skills) vendored in `.claude/skills/`: `navigation-3`, `adaptive`, `testing-setup`, `edge-to-edge`, `android-cli` | AI-optimized instructions from Google (open Agent Skills standard). Update: `android update` + re-run `android skills add --project=.` per skill, then review `git diff .claude/skills/` before commit — never merge upstream skill changes unreviewed |
 | Workflow | Superpowers plugin (project scope) | Spec→plan→TDD pipeline — `docs/superpowers-guide.md` |
+| Code formatting | **Spotless** 8.8.0 (`com.diffplug.spotless`) running **ktfmt** Google style, `maxWidth = 100`. Configured in root `build.gradle.kts` across `allprojects`; run via `./scripts/format.sh` (`--check` verifies without rewriting) | `spotlessCheck` auto-wires into `check`, so formatting is enforced at the same gate as tests. ktfmt is deliberately unpinned — Spotless resolves its own tested default (upstream version reporting is inconsistent). Config stays inline in the root build file until M1's convention plugins, then moves there with the other cross-cutting config |
 
 ## Open items
 
 1. Pin exact kotlinx.serialization / kotlinx.coroutines / kotlinx-datetime / androidx.work versions from GitHub releases at scaffold time
-2. compileSdk 36 → 37 bump expected with Compose 1.12; revisit on release
-3. M3 Expressive adoption — re-evaluate when components hit stable
-4. Verify Nav 3 latest patch (1.1.4 at research time) against release notes when pinning
-5. Kotlin 2.3.x → 2.4.x bump: blocked on KSP shipping Kotlin-2.4 support (google/ksp#2964/#2965) — check releases before scaffold and at each update
+2. M3 Expressive adoption — re-evaluate when components hit stable
+3. Verify Nav 3 latest patch (1.1.4 at research time) against release notes when pinning
+4. Kotlin 2.3.x → 2.4.x bump: blocked on KSP shipping Kotlin-2.4 support (google/ksp#2964/#2965) — check releases before scaffold and at each update

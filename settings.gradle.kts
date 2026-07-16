@@ -20,4 +20,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "chatbot"
 
-include(":app", ":core:ui")
+include(
+    ":app",
+    ":core:ui",
+    ":shared",
+)

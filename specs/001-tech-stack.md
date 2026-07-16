@@ -89,7 +89,7 @@ This spec is the canonical record of the project's current technology choices. A
 | Dev CLI | **`android` CLI** (official Google Android CLI) | Project creation (`android create`), emulator management, running apps, device interaction/screenshots, docs lookup (`android docs`), journey evaluation, skills management. Install: `curl -fsSL https://dl.google.com/android/cli/latest/darwin_arm64/install.sh \| bash` |
 | Agent skills | **Official Android skills** (github.com/android/skills) vendored in `.claude/skills/`: `navigation-3`, `adaptive`, `testing-setup`, `edge-to-edge`, `android-cli` | AI-optimized instructions from Google (open Agent Skills standard). Update: `android update` + re-run `android skills add --project=.` per skill, then review `git diff .claude/skills/` before commit — never merge upstream skill changes unreviewed |
 | Workflow | Superpowers plugin (project scope) | Spec→plan→TDD pipeline — `docs/superpowers-guide.md` |
-| Code formatting | **Spotless** 8.8.0 (`com.diffplug.spotless`) running **ktfmt** Google style, `maxWidth = 100`. Configured in root `build.gradle.kts` across `allprojects`; run via `./scripts/format.sh` (`--check` verifies without rewriting) | `spotlessCheck` auto-wires into `check`, so formatting is enforced at the same gate as tests. ktfmt is deliberately unpinned — Spotless resolves its own tested default (upstream version reporting is inconsistent). Config stays inline in the root build file until M1's convention plugins, then moves there with the other cross-cutting config |
+| Code formatting | **Spotless** 8.8.0, **ktlint** 1.8.0 | Formatting is enforced at the same gate as tests. Style lives in root `.editorconfig` so the IDE and the build agree. |
 
 ## Open items
 

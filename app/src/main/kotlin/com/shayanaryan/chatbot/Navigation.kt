@@ -12,19 +12,19 @@ import com.shayanaryan.chatbot.ui.main.MainScreen
 
 @Composable
 fun MainNavigation() {
-  val backStack = rememberNavBackStack(Main)
+    val backStack = rememberNavBackStack(Main)
 
-  NavDisplay(
-    backStack = backStack,
-    onBack = { backStack.removeLastOrNull() },
-    entryProvider =
-      entryProvider {
-        entry<Main> {
-          MainScreen(
-            onItemClick = { navKey -> backStack.add(navKey) },
-            modifier = Modifier.safeDrawingPadding().padding(16.dp),
-          )
-        }
-      },
-  )
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        entryProvider =
+            entryProvider {
+                entry<Main> {
+                    MainScreen(
+                        onItemClick = { navKey -> backStack.add(navKey) },
+                        modifier = Modifier.safeDrawingPadding().padding(16.dp),
+                    )
+                }
+            },
+    )
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Format all Kotlin and Gradle Kotlin DSL sources with ktfmt (via Spotless).
+# Format all Kotlin and Gradle Kotlin DSL sources with ktlint (via Spotless).
 # Pass --check to verify formatting without rewriting files.
 set -euo pipefail
 

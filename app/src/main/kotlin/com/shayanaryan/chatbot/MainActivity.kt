@@ -11,16 +11,19 @@ import androidx.compose.ui.Modifier
 import com.shayanaryan.chatbot.theme.ChatbotTheme
 
 class MainActivity : ComponentActivity() {
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-    enableEdgeToEdge()
-    setContent {
-      ChatbotTheme {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-          MainNavigation()
+        enableEdgeToEdge()
+        setContent {
+            ChatbotTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background,
+                ) {
+                    MainNavigation()
+                }
+            }
         }
-      }
     }
-  }
 }

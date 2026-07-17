@@ -1,3 +1,7 @@
+// dependencyResolutionManagement has been @Incubating since Gradle 6.8 and is the only
+// supported way to centralize repositories. The warning is not actionable.
+@file:Suppress("UnstableApiUsage")
+
 pluginManagement {
     repositories {
         google()
@@ -24,4 +28,8 @@ include(
     ":app",
     ":core:ui",
     ":shared",
+    ":feature:conversation",
+    ":feature:onboarding",
+    ":feature:settings",
+    ":feature:reminders",
 )

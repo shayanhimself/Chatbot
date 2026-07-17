@@ -1,7 +1,6 @@
 package com.shayanaryan.chatbot.ui.main
 
-import androidx.activity.ComponentActivity
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import org.junit.Before
 import org.junit.Rule
@@ -9,7 +8,7 @@ import org.junit.Test
 
 /** UI tests for [com.shayanaryan.chatbot.ui.main.MainScreen]. */
 class MainScreenTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Before
     fun setup() {

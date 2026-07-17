@@ -77,7 +77,7 @@ This spec is the canonical record of the project's current technology choices. A
 |---|---|---|
 | Unit tests | JUnit4 | Android default; JUnit5 still third-party-plugin territory |
 | Android framework in JVM tests | **Robolectric 4.16.1**; emulated SDK pinned to 36 via `robolectric.properties` | Needs JDK 21. Not 37: 4.16.1 tops out at SDK 36 (37 only in 4.17-beta-1). Emulated SDK is independent of compileSdk; the `sdk=36` pin is load-bearing — Robolectric otherwise defaults to targetSdk 37, which 4.16.1 can't run. Revisit at 4.17 stable |
-| UI tests | **Compose testing APIs** (v2), `createComposeRule` + semantics matchers — both local (Robolectric) and instrumented | The tool for Compose UIs; v2 default since Apr 2026; note `StandardTestDispatcher` is now the default. |
+| UI tests | **Compose testing APIs** (v2), `createComposeRule` + semantics matchers — both local (Robolectric) and instrumented | The tool for Compose UIs. Import the rule from `androidx.compose.ui.test.junit4.v2` — the same name in the parent `junit4` package is the deprecated v1 rule. v2 runs a `StandardTestDispatcher`, so composition-launched coroutines queue instead of running eagerly. |
 | Screenshot tests | Compose Preview Screenshot Testing (`@PreviewTest`) | Official tool; still preview-channel — fall back to Roborazzi if it blocks us |
 | Acceptance / E2E | Journey XML files evaluated by agent via `android` CLI against emulator | Spec-level acceptance: each feature spec ships journeys for its acceptance criteria. Complements, never replaces, coded tests |
 | Method | TDD (red → green → refactor) mandatory | Superpowers `test-driven-development` skill enforces |

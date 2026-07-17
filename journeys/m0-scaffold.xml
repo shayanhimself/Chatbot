@@ -1,0 +1,14 @@
+<journey name="M0 scaffold — app launches">
+   <description>
+      Walking-skeleton acceptance: the freshly installed app launches to the
+      conversation placeholder without crashing.
+   </description>
+   <actions>
+     <action>
+       Open the "Bro" app
+     </action>
+     <action>
+       Verify the app is in the foreground and displays the text "Conversation"
+     </action>
+   </actions>
+</journey>

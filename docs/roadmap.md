@@ -10,7 +10,7 @@ Build order and milestone gates for the app described in `specs/000-product-brie
 
 No feature spec; this section is the definition.
 
-- Pin open library versions (kotlinx.serialization / coroutines / datetime, androidx.work, Nav 3 patch — tech-stack Open items 1 & 4). Check KSP-on-Kotlin-2.4 status (Open item 5); scaffold on Kotlin 2.3.x.
+- Pin all library versions in `gradle/libs.versions.toml`.
 - Create project via `android` CLI: Gradle 9.6.1+, AGP 9.3.x, version catalog, configuration cache ON.
 - Create all modules thin: `:app`, `:shared` (KMP, `androidTarget()` only), `:core:ui`, feature module stubs. Dependency rules per `architecture` skill.
 - Wire Hilt. Set up test harness (JUnit4, Robolectric 4.16+, Compose testing v2) via `testing-setup` skill.
@@ -71,15 +71,13 @@ Spec = what/why (`specs/`); plan = how (`docs/superpowers/plans/`). The settings
 
 ## Standing risks
 
-- **Kotlin 2.4 / KSP blocker** (tech-stack Open item 5): re-check google/ksp#2964 / #2965 at every milestone boundary; bump from 2.3.x when KSP ships 2.4 support.
-- **compileSdk 37 bump** expected with Compose 1.12 (Open item 2): revisit at milestone boundaries.
 - **M3 device-matrix risk:** exact alarms, Doze, and reboot behavior vary by OEM — test journeys on a physical device, not just the emulator.
 
 ## Status
 
 | Milestone | State |
 |---|---|
-| M0 scaffold | not started |
+| M0 scaffold | done |
 | M1 chat MVP (002–006) | not started |
 | M2 tool loop + memory (007–009) | not started |
 | M3 reminders (010) | not started |

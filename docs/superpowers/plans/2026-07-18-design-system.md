@@ -11,6 +11,8 @@
 ## Global Constraints
 
 - **Never commit or push** (CLAUDE.md — overrides the superpowers commit steps). Each task ends with tests green and changes left in the working tree; report what's ready.
+- Tick each step's checkbox (`- [ ]` → `- [x]`) in this plan file as you finish and verify it.
+- Execute the plan on the current git branch — no worktree, no new branch.
 - Module: `:core:ui`, package `com.shayanaryan.chatbot.core.ui`. The Bro Design System (theme, icons, catalog, previews) nests under `com.shayanaryan.chatbot.core.ui.designsystem.*`; the `…core.ui` top level stays empty for future non-DS core:ui code. Android library, **not** KMP. Depends only on Compose BOM, Material 3, icon/screenshot tooling — never on `:shared` or feature modules.
 - Dark is the default scheme; light is a full opt-in scheme. **No dynamic color** (no `dynamicColor` parameter), no gradients, flat tonal fills; shadow reserved for FAB/menus/dialogs/heads-up notification.
 - Naming boundary: components keep M3 names (`Button`, `Icon`, `Card`, …). Wrapper files inside `:core:ui` alias the original (`import androidx.compose.material3.Button as M3Button`). Feature modules must import components only from `:core:ui`.
@@ -80,7 +82,7 @@ Also modified: `core/ui/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle.
 - Consumes: nothing (first task).
 - Produces: `internal object ColorPrimitives` (every `val` is a `Color`, named `Orange50`, `Navy10`, `Sand98`, `ScrimDark`, …); `internal val DarkColorScheme: ColorScheme`; `internal val LightColorScheme: ColorScheme`. Later tasks reference primitives via `ColorPrimitives.X` and schemes via these two vals.
 
-- [ ] **Step 1: Wire the test harness into `core/ui/build.gradle.kts`**
+- [x] **Step 1: Wire the test harness into `core/ui/build.gradle.kts`**
 
 Mirror the `:feature:conversation` harness exactly (same testOptions, same Java-21 launcher block):
 
@@ -139,7 +141,7 @@ Create `core/ui/src/test/resources/robolectric.properties` (the `sdk=36` pin is 
 sdk=36
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 `ColorSchemeTest.kt` — plain JUnit (Compose `Color` is JVM-safe, no Robolectric runner needed). Spot-check each ramp plus the full surface stack and alpha scrims; both schemes must fully specify roles:
 
@@ -204,12 +206,12 @@ class ColorSchemeTest {
 }
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.theme.ColorSchemeTest"`
 Expected: FAIL — unresolved references `DarkColorScheme` / `LightColorScheme` (template `Color.kt` only defines `Purple80` etc.). A compilation failure of the test source set is the red state here.
 
-- [ ] **Step 4: Replace `theme/Color.kt` with primitives + schemes**
+- [x] **Step 4: Replace `theme/Color.kt` with primitives + schemes**
 
 Full file — every primitive from the spec table, named once; roles reference primitives only:
 
@@ -368,12 +370,12 @@ private val LightScheme = LightColorScheme
 
 i.e. edit `Theme.kt` to drop the `Purple*`-based `darkColorScheme`/`lightColorScheme` blocks and the `dynamicColor` branches, selecting `if (darkTheme) DarkColorScheme else LightColorScheme` directly. (Task 4 rewrites the file fully anyway; this keeps every intermediate state compiling.)
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.theme.ColorSchemeTest"`
 Expected: PASS (4 tests). Also run `./gradlew :core:ui:assembleDebug :app:assembleDebug` — whole tree must still compile.
 
-- [ ] **Step 6: Format and wrap up (no commit)**
+- [x] **Step 6: Format and wrap up (no commit)**
 
 Run: `./gradlew :core:ui:spotlessApply :core:ui:spotlessCheck`
 Expected: BUILD SUCCESSFUL. Leave changes in the working tree.

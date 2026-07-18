@@ -393,7 +393,7 @@ Expected: BUILD SUCCESSFUL. Leave changes in the working tree.
 - Consumes: nothing from Task 1.
 - Produces: `internal val ChatbotTypography: Typography` (all 15 M3 roles); `@Immutable class ExtendedTypography(val mono: TextStyle)`; `internal val DefaultExtendedTypography: ExtendedTypography`; `internal val LocalExtendedTypography: ProvidableCompositionLocal<ExtendedTypography>`. Task 4 installs both; components read `MaterialTheme.typography` and `ChatbotTheme.typography.mono`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.theme
@@ -448,12 +448,12 @@ class TypographyTest {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.theme.TypographyTest"`
 Expected: FAIL — unresolved reference `ChatbotTypography` (template file defines `Typography` val with defaults only).
 
-- [ ] **Step 3: Replace `Type.kt`, add `ExtendedTypography.kt`**
+- [x] **Step 3: Replace `Type.kt`, add `ExtendedTypography.kt`**
 
 `Type.kt` — Roboto is Compose's `FontFamily.Default` on Android, so no font asset. Tracking note (verified against upstream `tokens/typography.css`, 2026-07-18): sizes/line-heights match upstream exactly; for letter-spacing we keep the M3-exact values where the CSS port is lossy — `displayLarge` (-0.25).sp (upstream omits tracking) and `labelMedium`/`labelSmall` 0.5.sp (upstream reuses body-small's `0.03333em`, a web artifact ≈0.4px). Full file:
 
@@ -515,12 +515,12 @@ internal val DefaultExtendedTypography =
 internal val LocalExtendedTypography = staticCompositionLocalOf { DefaultExtendedTypography }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.theme.TypographyTest"`
 Expected: PASS (4 tests).
 
-- [ ] **Step 5: Format and wrap up (no commit)**
+- [x] **Step 5: Format and wrap up (no commit)**
 
 Run: `./gradlew :core:ui:spotlessApply :core:ui:spotlessCheck :core:ui:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL, all module tests green. Leave in tree.

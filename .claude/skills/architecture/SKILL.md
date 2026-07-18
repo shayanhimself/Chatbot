@@ -100,6 +100,10 @@ Dependency rules (hard):
 | Screen state | `ScreenUiState` | `ConversationUiState` |
 | Flow accessor | `getXFlow()` | `getRemindersFlow()` |
 
+**Product name vs. identifiers.** "Bro" is the **display name only** — launcher label,
+wordmark, and user-facing copy. Code identifiers — Gradle projects, packages, modules,
+classes, files, functions — use the neutral project name (`Chatbot`) or plain domain terms, and never "Bro".
+
 ## Building a feature end to end
 
 Order matters: data layer first, UI last. TDD at every step.

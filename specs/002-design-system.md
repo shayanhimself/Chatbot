@@ -38,7 +38,7 @@ The source organizes color in two tiers, and the Android layer mirrors it: a **p
 | Orange | `orange-90` #ffdcc2 · `orange-57` #ffa257 · `orange-50` #ff9239 · `orange-40` #ed6900 · `orange-30` #b84e00 · `orange-20` #7a3300 · `orange-12` #431c00 · `orange-10` #401a00 |
 | Yellow | `yellow-90` #ffe494 · `yellow-35` #8a6600 · `yellow-20` #4a3600 · `yellow-15` #2a1e00 |
 | Warm neutral | `warm-95` #ffdcc2 · `warm-85` #e4c0a4 · `warm-50` #7a5733 · `warm-30` #5a4029 · `warm-22` #422a15 · `warm-18` #2a1800 |
-| Navy | `navy-06` #12161f · `navy-10` #1a2130 · `navy-14` #212a3b · `navy-17` #263043 · `navy-22` #2e394d · `navy-26` #354158 · `navy-40` #55617a · `navy-80` #c3cbd9 · `navy-95` #e7effe |
+| Navy | `navy-06` #12161f · `navy-10` #1a2130 · `navy-14` #212a3b · `navy-17` #263043 · `navy-22` #2e394d · `navy-26` #354158 · `navy-40` #55617a · `navy-60` #8791a6 · `navy-80` #c3cbd9 · `navy-95` #e7effe |
 | Sand (light) | `sand-100` #ffffff · `sand-98` #fbf9f7 · `sand-96` #f5f2ee · `sand-94` #efece7 · `sand-92` #e9e5df · `sand-90` #e3dfd8 · `sand-70` #d5c8ba · `sand-52` #837567 · `sand-32` #4f4539 · `sand-20` #313029 · `sand-11` #1c1b19 |
 | Green | `green-50` #4ecb7b · `green-44` #1f7a44 · `green-88` #b7f0c8 · `green-20` #0f4d2a · `green-08` #00210f |
 | Red | `red-70` #ffb3b3 · `red-50` #ff6b6b · `red-44` #ba1a1a · `red-90` #ffdad6 · `red-20` #5c1a1a · `red-12` #430e0e · `red-05` #410002 |

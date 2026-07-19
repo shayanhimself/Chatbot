@@ -24,8 +24,8 @@ fun ChatbotTheme(
 }
 
 /** Accessors for tokens which M3 has no slot for. Standard tokens come from [MaterialTheme]. */
-object ChatbotTheme {
-    val extendedColors: ExtendedColors
+object ChatbotExtendedTheme {
+    val colors: ExtendedColors
         @Composable @ReadOnlyComposable
         get() = LocalExtendedColors.current
 }

@@ -21,7 +21,7 @@ class ChatbotThemeTest {
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
                 primary = MaterialTheme.colorScheme.primary
-                success = ChatbotTheme.extendedColors.success
+                success = ChatbotExtendedTheme.colors.success
             }
         }
         assertEquals(ColorPrimitives.Orange50, primary)
@@ -35,7 +35,7 @@ class ChatbotThemeTest {
         composeRule.setContent {
             ChatbotTheme(darkTheme = false) {
                 primary = MaterialTheme.colorScheme.primary
-                success = ChatbotTheme.extendedColors.success
+                success = ChatbotExtendedTheme.colors.success
             }
         }
         assertEquals(ColorPrimitives.Orange40, primary)

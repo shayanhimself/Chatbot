@@ -27,7 +27,7 @@ The exact value tables in this spec (primitive hexes, role values, type metrics)
 
 Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — semantic/extended colors, motion, the mono text style, named component shapes — live in `:core:ui`, split by whether their value depends on runtime state.
 
-A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. Today `ExtendedColors` is the only one: it is installed by `ChatbotTheme` and read via the `ChatbotTheme` accessor object (`ChatbotTheme.extendedColors`). Everything else is constant and read directly — `Spacing.md`, `Elevation.level2`, `ChatbotShapes.bubbleUser`, `Motion.durationMediumMillis`, `MonoTextStyle` — with no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
+A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. `ExtendedColors` is the only one: the `ChatbotTheme` composable installs it, and it is read through the `ChatbotExtendedTheme.colors` accessor. Everything else is constant and read directly — `Spacing.md`, `Elevation.level2`, `ChatbotShapes.bubbleUser`, `Motion.durationMediumMillis`, `MonoTextStyle` — with no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
 
 ### Color
 
@@ -83,7 +83,7 @@ The source organizes color in two tiers, and the Android layer mirrors it: a **p
 
 Both schemes fully specify every role — the light scope darkens `tertiary`, `error`, and the semantic hues for legibility on light surfaces rather than reusing the dark tones.
 
-**Extended colors** (`ChatbotTheme.extendedColors`, no M3 slot):
+**Extended colors** (`ChatbotExtendedTheme.colors`, no M3 slot):
 
 | Token | Dark | Light |
 |---|---|---|

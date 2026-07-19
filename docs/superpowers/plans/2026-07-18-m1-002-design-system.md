@@ -4,7 +4,7 @@
 
 **Goal:** Build `:core:ui` — the Bro Material 3 design system: dark-first theme, full token layer, Material Symbols icon system, and the stateless component catalog (core / forms / feedback / chat), all screenshot-tested, plus the companion `design-system` project skill.
 
-**Architecture:** Two-tier color (internal primitives → two full `ColorScheme`s); standard tokens through `MaterialTheme`; the scheme-varying extras M3 lacks (extended colors, motion, named shapes, mono style) through CompositionLocals read via a `ChatbotTheme` accessor object, while the constant `Spacing` and `Elevation` ramps are plain objects read directly. Components are stateless wrappers over `androidx.compose.material3` (aliased `M3*` inside `:core:ui` only). Spec: `specs/002-design-system.md`. Component prop contracts were pulled from the upstream **Bro Design System** Claude Design project (projectId `c5a6030b-52d3-4ecc-ab51-4460eebdc7df`, via `pull-design` skill) on 2026-07-18 and are baked into the signatures below.
+**Architecture:** Two-tier color (internal primitives → two full `ColorScheme`s); standard tokens through `MaterialTheme`; `ExtendedColors` — the one token set that varies by scheme — through a CompositionLocal read via the `ChatbotExtendedTheme` accessor, while the constant `Spacing`, `Elevation`, `ChatbotShapes`, `Motion` and `MonoTextStyle` sets are plain objects read directly. Components are stateless wrappers over `androidx.compose.material3` (aliased `M3*` inside `:core:ui` only). Spec: `specs/002-design-system.md`. Component prop contracts were pulled from the upstream **Bro Design System** Claude Design project (projectId `c5a6030b-52d3-4ecc-ab51-4460eebdc7df`, via `pull-design` skill) on 2026-07-18 and are baked into the signatures below.
 
 **Tech Stack:** Kotlin 2.4.10, Compose BOM 2026.06.01, Material 3 (stable APIs only), Robolectric 4.16.1 (SDK 36, JDK 21 launcher), Compose test rule **v2**, Compose Preview Screenshot Testing plugin `0.0.1-alpha15` (latest on Google Maven as of 2026-07-18; Roborazzi is the documented fallback if it blocks).
 
@@ -40,7 +40,7 @@ main/kotlin/.../core/ui/designsystem/
   theme/Spacing.kt            4dp-grid Spacing (constants)
   theme/Elevation.kt          Elevation levels 1–5 (constants)
   theme/Motion.kt             easings, durations, press scales, state-layer opacities (constants)
-  theme/Theme.kt              ChatbotTheme composable + ChatbotTheme accessor object (replaces template)
+  theme/Theme.kt              ChatbotTheme composable + ChatbotExtendedTheme accessor (replaces template)
   icon/Icon.kt                Icon composable over the variable font
   icon/Glyphs.kt              model-glyph + brand-glyph constants
   component/Button.kt         Button + ButtonVariant
@@ -523,7 +523,7 @@ Expected: BUILD SUCCESSFUL, all module tests green. Leave in tree.
 
 **Interfaces:**
 - Consumes: `ColorPrimitives` (Task 1).
-- Produces (Task 4 installs the Locals; components read via `ChatbotTheme`):
+- Produces (Task 4 installs the one Local; components read constants directly and extended colors via `ChatbotExtendedTheme`):
   - `object Spacing` — `none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l: Dp` = 0/4/8/12/16/20/24/32/40/48/64, plus `gutter: Dp = md`. Constant across devices and themes, so plain constants with no CompositionLocal — readable outside composition. No `minTouchTarget` token: use `Modifier.minimumInteractiveComponentSize()`, which expands the touch area without changing visual layout.
   - `internal val ChatbotM3Shapes: Shapes` (xs 4 / sm 8 / md 12 / lg 16 / xl 28); `object ChatbotShapes` — `button/chip: Shape` (pill), `card`/`input`/`dialog: Shape` resolving to `ChatbotM3Shapes.medium`/`.extraSmall`/`.extraLarge` rather than restating 12/4/28, `bubbleUser/bubbleAssistant: Shape` (20 with 4dp squared tail: bottom-end for user, bottom-start for assistant). Constant, so no CompositionLocal.
   - `object Elevation` — `level1..level5: Dp` = 1/3/6/8/12. Same ramp in both schemes (depth in dark comes from the tonal `surfaceContainer*` roles, not different shadow values), so plain constants with no CompositionLocal.
@@ -804,7 +804,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 
 ---
 
-### Task 4: `ChatbotTheme` entry + accessor object
+### Task 4: `ChatbotTheme` entry + `ChatbotExtendedTheme` accessor
 
 **Files:**
 - Create (replace): `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/theme/Theme.kt`
@@ -817,12 +817,12 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 ```kotlin
 @Composable fun ChatbotTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit)
 
-object ChatbotTheme {
-    val extendedColors: ExtendedColors @Composable get
+object ChatbotExtendedTheme {
+    val colors: ExtendedColors @Composable get
 }
 ```
 
-(A function and an object may share the name — same pattern as M3's `MaterialTheme`.) No `dynamicColor` parameter exists. Edge-to-edge is applied at app level, not here. `MainActivity` already calls `ChatbotTheme { … }`, so no `:app` change is needed.
+The accessor object is named apart from the `ChatbotTheme` composable so the two never read ambiguously at a call site. No `dynamicColor` parameter exists. Edge-to-edge is applied at app level, not here. `MainActivity` already calls `ChatbotTheme { … }`, so no `:app` change is needed.
 
 - [x] **Step 1: Write the failing test** (Robolectric + Compose rule v2)
 
@@ -850,7 +850,7 @@ class ChatbotThemeTest {
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
                 primary = MaterialTheme.colorScheme.primary
-                success = ChatbotTheme.extendedColors.success
+                success = ChatbotExtendedTheme.colors.success
             }
         }
         assertEquals(ColorPrimitives.Orange50, primary)
@@ -864,7 +864,7 @@ class ChatbotThemeTest {
         composeRule.setContent {
             ChatbotTheme(darkTheme = false) {
                 primary = MaterialTheme.colorScheme.primary
-                success = ChatbotTheme.extendedColors.success
+                success = ChatbotExtendedTheme.colors.success
             }
         }
         assertEquals(ColorPrimitives.Orange40, primary)
@@ -876,7 +876,7 @@ class ChatbotThemeTest {
 - [x] **Step 2: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotThemeTest"`
-Expected: FAIL — `ChatbotTheme.extendedColors` unresolved (accessor object doesn't exist yet).
+Expected: FAIL — `ChatbotExtendedTheme.colors` unresolved (accessor object doesn't exist yet).
 
 - [x] **Step 3: Replace `Theme.kt`**
 
@@ -911,8 +911,8 @@ fun ChatbotTheme(
  * Standard tokens come from [MaterialTheme]; constant token sets ([Spacing], [Elevation],
  * [ChatbotShapes], [Motion], [MonoTextStyle]) are read directly.
  */
-object ChatbotTheme {
-    val extendedColors: ExtendedColors
+object ChatbotExtendedTheme {
+    val colors: ExtendedColors
         @Composable @ReadOnlyComposable get() = LocalExtendedColors.current
 }
 ```
@@ -993,6 +993,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotExtendedTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 
 @Composable
@@ -1011,7 +1012,7 @@ private fun ThemeSwatch() {
             Box(
                 Modifier
                     .size(Spacing.x4l)
-                    .background(ChatbotTheme.extendedColors.success, ChatbotShapes.card),
+                    .background(ChatbotExtendedTheme.colors.success, ChatbotShapes.card),
             )
         }
     }
@@ -1624,7 +1625,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/CardBadgeTest.kt`
 
 **Interfaces:**
-- Consumes: `Icon`, `Glyphs` (Task 6); `ChatbotShapes.card`, `ChatbotTheme.extendedColors` (Tasks 3–4).
+- Consumes: `Icon`, `Glyphs` (Task 6); `ChatbotShapes.card`, `ChatbotExtendedTheme.colors` (Tasks 3–4).
 - Produces:
 
 ```kotlin
@@ -1762,7 +1763,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotExtendedTheme
 
 enum class BadgeTone { Primary, Error, Success, Neutral }
 
@@ -1772,7 +1773,7 @@ fun Badge(
     tone: BadgeTone = BadgeTone.Primary,
     text: String? = null,
 ) {
-    val extended = ChatbotTheme.extendedColors
+    val extended = ChatbotExtendedTheme.colors
     val scheme = MaterialTheme.colorScheme
     val (container, onContainer) =
         when (tone) {
@@ -3225,7 +3226,7 @@ Bro DS, 2026-07-18).
   opacities, caretBlinkMillis), `MonoTextStyle` (14sp monospace, in `Type.kt`).
   For touch targets use `Modifier.minimumInteractiveComponentSize()`, not a
   spacing value.
-- Scheme-dependent, so via `ChatbotTheme`: `.extendedColors` (success/onSuccess/
+- Scheme-dependent, so via `ChatbotExtendedTheme.colors` (success/onSuccess/
   successContainer, warning, primaryHover/primaryPressed). It is the only one.
 - Never hardcode a hex, dp, or sp that a token covers. Components read roles,
   never primitives (`ColorPrimitives` is internal to `:core:ui`).

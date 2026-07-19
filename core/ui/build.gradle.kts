@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.screenshot)
 }
 
 android {
@@ -15,6 +16,8 @@ android {
     buildFeatures {
         compose = true
     }
+    // Gates screenshotTest source-set creation
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
@@ -43,4 +46,7 @@ dependencies {
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // Provides the @PreviewTest annotation; screenshot plugin does not add it to the classpath itself.
+    screenshotTestImplementation(libs.screenshot.validation.api)
 }

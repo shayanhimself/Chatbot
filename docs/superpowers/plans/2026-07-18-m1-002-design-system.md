@@ -937,7 +937,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Consumes: `ChatbotTheme` (Task 4).
 - Produces: the `screenshotTest` source set + `updateDebugScreenshotTest` / `validateDebugScreenshotTest` tasks. Every later task adds `@PreviewTest` previews under `core/ui/src/screenshotTest/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/preview/` and re-runs record + validate. Convention: one preview file per component family; every preview wraps content in `ChatbotTheme(darkTheme = …)` with a `Surface`; names end `…DarkPreview` / `…LightPreview`.
 
-- [ ] **Step 1: Wire the plugin**
+- [x] **Step 1: Wire the plugin**
 
 `gradle/libs.versions.toml` — add to `[versions]`:
 
@@ -951,11 +951,17 @@ and to `[plugins]`:
 screenshot = { id = "com.android.compose.screenshot", version.ref = "screenshot" }
 ```
 
+and to `[libraries]` (alpha15 does not auto-add the `@PreviewTest` annotation to the `screenshotTest` classpath — it must be an explicit dependency):
+
+```toml
+screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }
+```
+
 `gradle.properties` — append (required by the preview screenshot tool while it's experimental):
 
 ```properties
 # Compose Preview Screenshot Testing (spec 002)
-android.experimental.enable.screenshot.test=true
+android.experimental.enableScreenshotTest=true
 ```
 
 `core/ui/build.gradle.kts` — add to `plugins {}`:
@@ -964,14 +970,19 @@ android.experimental.enable.screenshot.test=true
     alias(libs.plugins.screenshot)
 ```
 
-and to `dependencies {}`:
+to the `android {}` block. AGP 9.3 has **two separate gates**: the plugin's `apply` step reads `android.experimental.enableScreenshotTest` from `gradle.properties`, while the library's `screenshotTest` source-set creation reads the module-level `experimentalProperties` map (which is *not* populated from the global project property). Both are required — dropping either fails configuration:
 
 ```kotlin
-    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
-    screenshotTestImplementation(libs.androidx.compose.ui.tooling.preview)
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 ```
 
-- [ ] **Step 2: Write the first preview (red = validate fails with no reference images)**
+and to `dependencies {}` — only the annotation artifact. `ui-tooling` (`debugImplementation`) and `ui-tooling-preview` (`implementation`) are already on the `screenshotTest` classpath (it extends the debug variant's configs), so re-declaring them as `screenshotTestImplementation` is redundant and the IDE flags it:
+
+```kotlin
+    screenshotTestImplementation(libs.screenshot.validation.api)
+```
+
+- [x] **Step 2: Write the first preview (red = validate fails with no reference images)**
 
 `ThemePreviews.kt` — a token swatch proving theme + both schemes render:
 
@@ -991,7 +1002,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotExtendedTheme
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.MonoTextStyle
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 
 @Composable
 private fun ThemeSwatch() {
@@ -1030,19 +1044,19 @@ private fun ThemeSwatchLightPreview() {
 }
 ```
 
-- [ ] **Step 3: Record reference images**
+- [x] **Step 3: Record reference images**
 
 Run: `./gradlew :core:ui:updateDebugScreenshotTest`
 Expected: BUILD SUCCESSFUL; reference PNGs generated under `core/ui/src/debug/screenshotTest/reference/` (path is tool-managed — accept wherever alpha15 writes them; they are checked-in goldens).
 
-- [ ] **Step 4: Validate**
+- [x] **Step 4: Validate**
 
 Run: `./gradlew :core:ui:validateDebugScreenshotTest`
 Expected: BUILD SUCCESSFUL, 2 screenshots verified (HTML report under `core/ui/build/reports/screenshotTest/`).
 
 **Fallback trigger (from spec/tech-stack):** if alpha15 fails against AGP 9.3/Kotlin 2.4 after one honest debugging pass, stop, remove the plugin wiring, and swap to Roborazzi — raise this at the task review checkpoint before proceeding; do not burn time forcing the preview tool.
 
-- [ ] **Step 5: Format and wrap up (no commit)**
+- [x] **Step 5: Format and wrap up (no commit)**
 
 Run: `./gradlew :core:ui:spotlessApply :core:ui:spotlessCheck :core:ui:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL. Leave in tree (including the recorded goldens).

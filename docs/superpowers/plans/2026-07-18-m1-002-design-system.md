@@ -149,60 +149,59 @@ sdk=36
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.theme
 
-import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ColorSchemeTest {
     @Test
     fun darkSchemePrimaryRolesResolveToOrangePrimitives() {
-        assertEquals(Color(0xFFFF9239), DarkColorScheme.primary) // orange-50
-        assertEquals(Color(0xFF431C00), DarkColorScheme.onPrimary) // orange-12
-        assertEquals(Color(0xFF7A3300), DarkColorScheme.primaryContainer) // orange-20
-        assertEquals(Color(0xFFFFDCC2), DarkColorScheme.onPrimaryContainer) // orange-90
+        assertEquals(ColorPrimitives.Orange50, DarkColorScheme.primary)
+        assertEquals(ColorPrimitives.Orange12, DarkColorScheme.onPrimary)
+        assertEquals(ColorPrimitives.Orange20, DarkColorScheme.primaryContainer)
+        assertEquals(ColorPrimitives.Orange90, DarkColorScheme.onPrimaryContainer)
     }
 
     @Test
     fun darkSchemeSurfaceStackIsNavy() {
-        assertEquals(Color(0xFF1A2130), DarkColorScheme.background) // navy-10
-        assertEquals(Color(0xFF1A2130), DarkColorScheme.surface)
-        assertEquals(Color(0xFF12161F), DarkColorScheme.surfaceContainerLowest) // navy-06
-        assertEquals(Color(0xFF212A3B), DarkColorScheme.surfaceContainerLow) // navy-14
-        assertEquals(Color(0xFF263043), DarkColorScheme.surfaceContainer) // navy-17
-        assertEquals(Color(0xFF2E394D), DarkColorScheme.surfaceContainerHigh) // navy-22
-        assertEquals(Color(0xFF354158), DarkColorScheme.surfaceContainerHighest) // navy-26
-        assertEquals(Color(0xFFE7EFFE), DarkColorScheme.onSurface) // navy-95
-        assertEquals(Color(0xFFC3CBD9), DarkColorScheme.onSurfaceVariant) // navy-80
-        assertEquals(Color(0xFF55617A), DarkColorScheme.outline) // navy-40
-        assertEquals(Color(0xFF2E394D), DarkColorScheme.outlineVariant) // navy-22
+        assertEquals(ColorPrimitives.Navy10, DarkColorScheme.background)
+        assertEquals(ColorPrimitives.Navy10, DarkColorScheme.surface)
+        assertEquals(ColorPrimitives.Navy06, DarkColorScheme.surfaceContainerLowest)
+        assertEquals(ColorPrimitives.Navy14, DarkColorScheme.surfaceContainerLow)
+        assertEquals(ColorPrimitives.Navy17, DarkColorScheme.surfaceContainer)
+        assertEquals(ColorPrimitives.Navy22, DarkColorScheme.surfaceContainerHigh)
+        assertEquals(ColorPrimitives.Navy26, DarkColorScheme.surfaceContainerHighest)
+        assertEquals(ColorPrimitives.Navy95, DarkColorScheme.onSurface)
+        assertEquals(ColorPrimitives.Navy80, DarkColorScheme.onSurfaceVariant)
+        assertEquals(ColorPrimitives.Navy40, DarkColorScheme.outline)
+        assertEquals(ColorPrimitives.Navy22, DarkColorScheme.outlineVariant)
     }
 
     @Test
     fun darkSchemeErrorInverseAndScrim() {
-        assertEquals(Color(0xFFFF6B6B), DarkColorScheme.error) // red-50
-        assertEquals(Color(0xFF430E0E), DarkColorScheme.onError) // red-12
-        assertEquals(Color(0xFF5C1A1A), DarkColorScheme.errorContainer) // red-20
-        assertEquals(Color(0xFFFFB3B3), DarkColorScheme.onErrorContainer) // red-70
-        assertEquals(Color(0xB806090E), DarkColorScheme.scrim) // rgba(6,9,14,0.72)
-        assertEquals(Color(0xFFE7EFFE), DarkColorScheme.inverseSurface) // navy-95
-        assertEquals(Color(0xFF212A3B), DarkColorScheme.inverseOnSurface) // navy-14
-        assertEquals(Color(0xFFE4C0A4), DarkColorScheme.secondary) // warm-85
-        assertEquals(Color(0xFFFFE494), DarkColorScheme.tertiary) // yellow-90
+        assertEquals(ColorPrimitives.Red50, DarkColorScheme.error)
+        assertEquals(ColorPrimitives.Red12, DarkColorScheme.onError)
+        assertEquals(ColorPrimitives.Red20, DarkColorScheme.errorContainer)
+        assertEquals(ColorPrimitives.Red70, DarkColorScheme.onErrorContainer)
+        assertEquals(ColorPrimitives.ScrimDark, DarkColorScheme.scrim)
+        assertEquals(ColorPrimitives.Navy95, DarkColorScheme.inverseSurface)
+        assertEquals(ColorPrimitives.Navy14, DarkColorScheme.inverseOnSurface)
+        assertEquals(ColorPrimitives.Warm85, DarkColorScheme.secondary)
+        assertEquals(ColorPrimitives.Yellow90, DarkColorScheme.tertiary)
     }
 
     @Test
     fun lightSchemeDarkensHuesForLegibility() {
-        assertEquals(Color(0xFFED6900), LightColorScheme.primary) // orange-40
-        assertEquals(Color(0xFFFFFFFF), LightColorScheme.onPrimary) // white
-        assertEquals(Color(0xFFFFDCC2), LightColorScheme.primaryContainer) // orange-90
-        assertEquals(Color(0xFF401A00), LightColorScheme.onPrimaryContainer) // orange-10
-        assertEquals(Color(0xFF8A6600), LightColorScheme.tertiary) // yellow-35
-        assertEquals(Color(0xFFBA1A1A), LightColorScheme.error) // red-44
-        assertEquals(Color(0xFFFBF9F7), LightColorScheme.background) // sand-98
-        assertEquals(Color(0xFF1C1B19), LightColorScheme.onSurface) // sand-11
-        assertEquals(Color(0xFF837567), LightColorScheme.outline) // sand-52
-        assertEquals(Color(0x661C1B19), LightColorScheme.scrim) // rgba(28,27,25,0.40)
-        assertEquals(Color(0xFF313029), LightColorScheme.inverseSurface) // sand-20
+        assertEquals(ColorPrimitives.Orange40, LightColorScheme.primary)
+        assertEquals(ColorPrimitives.White, LightColorScheme.onPrimary)
+        assertEquals(ColorPrimitives.Orange90, LightColorScheme.primaryContainer)
+        assertEquals(ColorPrimitives.Orange10, LightColorScheme.onPrimaryContainer)
+        assertEquals(ColorPrimitives.Yellow35, LightColorScheme.tertiary)
+        assertEquals(ColorPrimitives.Red44, LightColorScheme.error)
+        assertEquals(ColorPrimitives.Sand98, LightColorScheme.background)
+        assertEquals(ColorPrimitives.Sand11, LightColorScheme.onSurface)
+        assertEquals(ColorPrimitives.Sand52, LightColorScheme.outline)
+        assertEquals(ColorPrimitives.ScrimLight, LightColorScheme.scrim)
+        assertEquals(ColorPrimitives.Sand20, LightColorScheme.inverseSurface)
     }
 }
 ```
@@ -554,7 +553,6 @@ package com.shayanaryan.chatbot.core.ui.designsystem.theme
 
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -617,18 +615,18 @@ class DesignTokensTest {
 
     @Test
     fun extendedColorsResolvePerScheme() {
-        assertEquals(Color(0xFF4ECB7B), DarkExtendedColors.success) // green-50
-        assertEquals(Color(0xFF00210F), DarkExtendedColors.onSuccess) // green-08
-        assertEquals(Color(0xFF0F4D2A), DarkExtendedColors.successContainer) // green-20
-        assertEquals(Color(0xFFFFCE54), DarkExtendedColors.warning) // amber-50
-        assertEquals(Color(0xFFFFA257), DarkExtendedColors.primaryHover) // orange-57
-        assertEquals(Color(0xFFED6900), DarkExtendedColors.primaryPressed) // orange-40
-        assertEquals(Color(0xFF1F7A44), LightExtendedColors.success) // green-44
-        assertEquals(Color(0xFFFFFFFF), LightExtendedColors.onSuccess) // white
-        assertEquals(Color(0xFFB7F0C8), LightExtendedColors.successContainer) // green-88
-        assertEquals(Color(0xFF8A5A00), LightExtendedColors.warning) // amber-35
-        assertEquals(Color(0xFFB84E00), LightExtendedColors.primaryHover) // orange-30
-        assertEquals(Color(0xFF7A3300), LightExtendedColors.primaryPressed) // orange-20
+        assertEquals(ColorPrimitives.Green50, DarkExtendedColors.success)
+        assertEquals(ColorPrimitives.Green08, DarkExtendedColors.onSuccess)
+        assertEquals(ColorPrimitives.Green20, DarkExtendedColors.successContainer)
+        assertEquals(ColorPrimitives.Amber50, DarkExtendedColors.warning)
+        assertEquals(ColorPrimitives.Orange57, DarkExtendedColors.primaryHover)
+        assertEquals(ColorPrimitives.Orange40, DarkExtendedColors.primaryPressed)
+        assertEquals(ColorPrimitives.Green44, LightExtendedColors.success)
+        assertEquals(ColorPrimitives.White, LightExtendedColors.onSuccess)
+        assertEquals(ColorPrimitives.Green88, LightExtendedColors.successContainer)
+        assertEquals(ColorPrimitives.Amber35, LightExtendedColors.warning)
+        assertEquals(ColorPrimitives.Orange30, LightExtendedColors.primaryHover)
+        assertEquals(ColorPrimitives.Orange20, LightExtendedColors.primaryPressed)
     }
 }
 ```
@@ -844,7 +842,7 @@ object ChatbotTheme {
 
 (A function and an object may share the name — same pattern as M3's `MaterialTheme`.) No `dynamicColor` parameter exists. Edge-to-edge is applied at app level, not here. `MainActivity` already calls `ChatbotTheme { … }`, so no `:app` change is needed.
 
-- [ ] **Step 1: Write the failing test** (Robolectric + Compose rule v2)
+- [x] **Step 1: Write the failing test** (Robolectric + Compose rule v2)
 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.theme
@@ -879,8 +877,8 @@ class ChatbotThemeTest {
                 monoSize = ChatbotTheme.typography.mono.fontSize
             }
         }
-        assertEquals(Color(0xFFFF9239), primary) // orange-50
-        assertEquals(Color(0xFF4ECB7B), success) // green-50
+        assertEquals(ColorPrimitives.Orange50, primary)
+        assertEquals(ColorPrimitives.Green50, success)
         assertEquals(16.dp, gutter)
         assertEquals(14.sp, monoSize)
     }
@@ -895,18 +893,18 @@ class ChatbotThemeTest {
                 success = ChatbotTheme.extendedColors.success
             }
         }
-        assertEquals(Color(0xFFED6900), primary) // orange-40
-        assertEquals(Color(0xFF1F7A44), success) // green-44
+        assertEquals(ColorPrimitives.Orange40, primary)
+        assertEquals(ColorPrimitives.Green44, success)
     }
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotThemeTest"`
 Expected: FAIL — `ChatbotTheme.extendedColors` unresolved (accessor object doesn't exist yet).
 
-- [ ] **Step 3: Replace `Theme.kt`**
+- [x] **Step 3: Replace `Theme.kt`**
 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.theme
@@ -958,17 +956,16 @@ object ChatbotTheme {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotThemeTest"`
 Expected: PASS (2 tests). Then `./gradlew :app:assembleDebug` — MainActivity call site still compiles (it never passed `dynamicColor`).
 
-- [ ] **Step 5: Format and wrap up (no commit)**
+- [x] **Step 5: Format and wrap up (no commit)**
 
 Run: `./gradlew :core:ui:spotlessApply :core:ui:spotlessCheck :core:ui:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL. Leave in tree.
 
----
 
 ### Task 5: Screenshot-test infrastructure + first previews
 

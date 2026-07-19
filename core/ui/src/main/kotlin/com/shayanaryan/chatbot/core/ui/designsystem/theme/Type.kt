@@ -129,3 +129,12 @@ internal val ChatbotTypography =
                 letterSpacing = 0.5.sp,
             ),
     )
+
+/** The one style outside the M3 scale — API keys, model ids, code. */
+val MonoTextStyle =
+    TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+    )

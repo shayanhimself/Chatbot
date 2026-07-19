@@ -15,7 +15,6 @@ fun ChatbotTheme(
     val extendedColors = if (darkTheme) DarkExtendedColors else LightExtendedColors
     CompositionLocalProvider(
         LocalExtendedColors provides extendedColors,
-        LocalExtendedTypography provides DefaultExtendedTypography,
         LocalMotion provides Motion(),
     ) {
         MaterialTheme(
@@ -27,16 +26,11 @@ fun ChatbotTheme(
     }
 }
 
-/**
- * Accessors for tokens which M3 has no slot for.Standard tokens come from [MaterialTheme];
- */
+/** Accessors for tokens which M3 has no slot for. Standard tokens come from [MaterialTheme]. */
 object ChatbotTheme {
     val extendedColors: ExtendedColors
         @Composable @ReadOnlyComposable
         get() = LocalExtendedColors.current
-    val typography: ExtendedTypography
-        @Composable @ReadOnlyComposable
-        get() = LocalExtendedTypography.current
     val motion: Motion
         @Composable @ReadOnlyComposable
         get() = LocalMotion.current

@@ -36,7 +36,6 @@ main/kotlin/.../core/ui/designsystem/
   theme/Color.kt              primitives (internal) + Dark/LightColorScheme   (replaces AGP-template file)
   theme/Type.kt               15-role Roboto Typography                       (replaces AGP-template file)
   theme/ExtendedColors.kt     ExtendedColors + dark/light instances + Local
-  theme/ExtendedTypography.kt mono style holder + Local
   theme/Shape.kt              M3 Shapes + ChatbotShapes (button/chip/card/input/dialog/bubbles), constants
   theme/Spacing.kt            4dp-grid Spacing + Local
   theme/Elevation.kt          Elevation levels 1–5 (constants)
@@ -386,12 +385,11 @@ Expected: BUILD SUCCESSFUL. Leave changes in the working tree.
 
 **Files:**
 - Create (replace): `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/theme/Type.kt`
-- Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/theme/ExtendedTypography.kt`
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/theme/TypographyTest.kt`
 
 **Interfaces:**
 - Consumes: nothing from Task 1.
-- Produces: `internal val ChatbotTypography: Typography` (all 15 M3 roles); `@Immutable class ExtendedTypography(val mono: TextStyle)`; `internal val DefaultExtendedTypography: ExtendedTypography`; `internal val LocalExtendedTypography: ProvidableCompositionLocal<ExtendedTypography>`. Task 4 installs both; components read `MaterialTheme.typography` and `ChatbotTheme.typography.mono`.
+- Produces: `internal val ChatbotTypography: Typography` (all 15 M3 roles) and `val MonoTextStyle: TextStyle`, both in `Type.kt`. Task 4 installs the M3 scale; components read `MaterialTheme.typography` and `MonoTextStyle`.
 
 - [x] **Step 1: Write the failing test**
 
@@ -440,10 +438,9 @@ class TypographyTest {
 
     @Test
     fun monoStyleIsMonospaceFourteenSp() {
-        val mono = DefaultExtendedTypography.mono
-        assertEquals(FontFamily.Monospace, mono.fontFamily)
-        assertEquals(14.sp, mono.fontSize)
-        assertEquals(20.sp, mono.lineHeight)
+        assertEquals(FontFamily.Monospace, MonoTextStyle.fontFamily)
+        assertEquals(14.sp, MonoTextStyle.fontSize)
+        assertEquals(20.sp, MonoTextStyle.lineHeight)
     }
 }
 ```
@@ -453,7 +450,7 @@ class TypographyTest {
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.theme.TypographyTest"`
 Expected: FAIL — unresolved reference `ChatbotTypography` (template file defines `Typography` val with defaults only).
 
-- [x] **Step 3: Replace `Type.kt`, add `ExtendedTypography.kt`**
+- [x] **Step 3: Replace `Type.kt` (M3 scale + `MonoTextStyle`)**
 
 `Type.kt` — Roboto is Compose's `FontFamily.Default` on Android, so no font asset. Tracking note (verified against upstream `tokens/typography.css`, 2026-07-18): sizes/line-heights match upstream exactly; for letter-spacing we keep the M3-exact values where the CSS port is lossy — `displayLarge` (-0.25).sp (upstream omits tracking) and `labelMedium`/`labelSmall` 0.5.sp (upstream reuses body-small's `0.03333em`, a web artifact ≈0.4px). Full file:
 
@@ -489,30 +486,17 @@ internal val ChatbotTypography =
 
 If the old file declared `val Typography`, delete that declaration entirely (Task 4 rewires `Theme.kt`; until then keep the `Theme.kt` reference compiling by pointing it at `ChatbotTypography`).
 
-`ExtendedTypography.kt` — decision recorded: `FontFamily.Monospace` (resolves to the device monospace, Roboto-Mono-class); bundling an actual Roboto Mono asset is deferred until fidelity demands it:
+`MonoTextStyle` lives at the bottom of `Type.kt` — one constant style, so no holder class and no Local. Decision recorded: `FontFamily.Monospace` (resolves to the device monospace, Roboto-Mono-class); bundling an actual Roboto Mono asset is deferred until fidelity demands it:
 
 ```kotlin
-package com.shayanaryan.chatbot.core.ui.designsystem.theme
-
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-
-/** Text styles outside the M3 scale. `mono` is for API keys, model ids, and code. */
-@Immutable
-class ExtendedTypography(
-    val mono: TextStyle,
-)
-
-internal val DefaultExtendedTypography =
-    ExtendedTypography(
-        mono = TextStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
+/** The one style outside the M3 scale — API keys, model ids, code. */
+val MonoTextStyle =
+    TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
     )
-
-internal val LocalExtendedTypography = staticCompositionLocalOf { DefaultExtendedTypography }
 ```
 
 - [x] **Step 4: Run test to verify it passes**
@@ -836,7 +820,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/theme/ChatbotThemeTest.kt`
 
 **Interfaces:**
-- Consumes: `DarkColorScheme`/`LightColorScheme` (Task 1), `ChatbotTypography`, `LocalExtendedTypography`, `DefaultExtendedTypography` (Task 2), all Task 3 holders + Locals.
+- Consumes: `DarkColorScheme`/`LightColorScheme` (Task 1), `ChatbotTypography` (Task 2), all Task 3 holders + Locals.
 - Produces (the public theme API every later task and feature module uses):
 
 ```kotlin
@@ -844,7 +828,6 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 
 object ChatbotTheme {
     val extendedColors: ExtendedColors @Composable get
-    val typography: ExtendedTypography @Composable get
     val motion: Motion @Composable get
 }
 ```
@@ -859,8 +842,6 @@ package com.shayanaryan.chatbot.core.ui.designsystem.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -883,7 +864,7 @@ class ChatbotThemeTest {
                 primary = MaterialTheme.colorScheme.primary
                 success = ChatbotTheme.extendedColors.success
                 duration = ChatbotTheme.motion.durationMediumMillis
-                monoSize = ChatbotTheme.typography.mono.fontSize
+                monoSize = MonoTextStyle.fontSize
             }
         }
         assertEquals(ColorPrimitives.Orange50, primary)
@@ -933,7 +914,6 @@ fun ChatbotTheme(
     val extendedColors = if (darkTheme) DarkExtendedColors else LightExtendedColors
     CompositionLocalProvider(
         LocalExtendedColors provides extendedColors,
-        LocalExtendedTypography provides DefaultExtendedTypography,
         LocalMotion provides Motion(),
     ) {
         MaterialTheme(
@@ -945,15 +925,10 @@ fun ChatbotTheme(
     }
 }
 
-/**
- * Accessors for tokens M3 has no slot for. Standard tokens come from [MaterialTheme];
- * the 4dp spacing scale is constant and read directly from [Spacing].
- */
+/** Accessors for tokens which M3 has no slot for. Standard tokens come from [MaterialTheme]. */
 object ChatbotTheme {
     val extendedColors: ExtendedColors
         @Composable @ReadOnlyComposable get() = LocalExtendedColors.current
-    val typography: ExtendedTypography
-        @Composable @ReadOnlyComposable get() = LocalExtendedTypography.current
     val motion: Motion
         @Composable @ReadOnlyComposable get() = LocalMotion.current
 }
@@ -1044,7 +1019,7 @@ private fun ThemeSwatch() {
             Text("Display", style = MaterialTheme.typography.displaySmall)
             Text("Title", style = MaterialTheme.typography.titleMedium)
             Text("Body", style = MaterialTheme.typography.bodyMedium)
-            Text("api-key-0000", style = ChatbotTheme.typography.mono)
+            Text("api-key-0000", style = MonoTextStyle)
             Box(
                 Modifier
                     .size(Spacing.x4l)
@@ -1962,7 +1937,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/FormsTest.kt`
 
 **Interfaces:**
-- Consumes: `Icon` (Task 6), `ChatbotShapes.input` / `.chip`, `ChatbotTheme.typography.mono`.
+- Consumes: `Icon` (Task 6), `ChatbotShapes.input` / `.chip`, `MonoTextStyle`.
 - Produces:
 
 ```kotlin
@@ -2115,7 +2090,7 @@ fun TextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 ) {
-    val textStyle = if (mono) ChatbotTheme.typography.mono else LocalTextStyle.current
+    val textStyle = if (mono) MonoTextStyle else LocalTextStyle.current
     val labelComposable: (@Composable () -> Unit)? = label?.let { { Text(it) } }
     val placeholderComposable: (@Composable () -> Unit)? = placeholder?.let { { Text(it) } }
     val supportingComposable: (@Composable () -> Unit)? = supportingText?.let { { Text(it) } }
@@ -3267,10 +3242,10 @@ Bro DS, 2026-07-18).
   (level1–5), `ChatbotShapes` (button, chip, card, input, dialog, bubbleUser,
   bubbleAssistant). For touch targets use
   `Modifier.minimumInteractiveComponentSize()`, not a spacing value.
+- Also constant: `MonoTextStyle` (14sp monospace) at the bottom of `Type.kt`.
 - Everything else via `ChatbotTheme`: `.extendedColors` (success/onSuccess/
-  successContainer, warning, primaryHover/primaryPressed), `.typography.mono`,
-  `.motion` (easings, durations, press scales, state-layer opacities,
-  caretBlinkMillis).
+  successContainer, warning, primaryHover/primaryPressed), `.motion` (easings,
+  durations, press scales, state-layer opacities, caretBlinkMillis).
 - Never hardcode a hex, dp, or sp that a token covers. Components read roles,
   never primitives (`ColorPrimitives` is internal to `:core:ui`).
 
@@ -3296,7 +3271,7 @@ Bro DS, 2026-07-18).
   `Glyphs` constants. Model glyphs: Sonnet → `balance`, Haiku → `bolt`,
   Opus → `auto_awesome`. Emoji are never UI icons; no PNG/SVG icon assets.
 - **Mono rule:** API keys, model ids, and code render in
-  `ChatbotTheme.typography.mono` (`TextField(mono = true)` for inputs).
+  `MonoTextStyle` (`TextField(mono = true)` for inputs).
 - **Brand:** the wordmark is `BrandMark` (forum tile + lowercase "bro").
   Do not invent a Bro logo. "Bro" never appears in code identifiers.
 - **Surfaces:** flat tonal fills; no gradients; no glass/backdrop blur; shadow
@@ -3322,7 +3297,7 @@ Bro DS, 2026-07-18).
 Edit `specs/002-design-system.md` per its own §"Source of truth & where values live": now that `:core:ui` exists, the temporary value tables move to code. Remove:
 
 - the **Primitives** table and the **Roles** table (§Color) — replace both with one line: primitives and role mappings live in `theme/Color.kt`; extended colors in `theme/ExtendedColors.kt`.
-- the typography metrics table (keep the two-sentence description of the 15-role Roboto scale + weights + the mono paragraph, pointing to `theme/Type.kt` / `theme/ExtendedTypography.kt`).
+- the typography metrics table (keep the two-sentence description of the 15-role Roboto scale + weights + the mono paragraph, pointing to `theme/Type.kt`).
 - the exact shape/spacing/motion/state-layer numbers (keep the *structure* prose — what families exist, bubble-tail rule, 4dp grid, flat-fill constraints — pointing to `theme/Shape.kt`, `theme/Spacing.kt`, `theme/Motion.kt`, `theme/Elevation.kt`).
 
 Keep untouched: decisions/rationale, two-tier structure, role-name concept, module rules, icon system, naming rules, component families, screenshot strategy. Also update the paragraph in §"Source of truth & where values live" that declares the tables "temporary in-repo reference" — the migration it describes has now happened, so state where values live instead. Run the `prose-review` skill over the edited spec.

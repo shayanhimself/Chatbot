@@ -42,9 +42,8 @@ class TypographyTest {
 
     @Test
     fun monoStyleIsMonospaceFourteenSp() {
-        val mono = DefaultExtendedTypography.mono
-        assertEquals(FontFamily.Monospace, mono.fontFamily)
-        assertEquals(14.sp, mono.fontSize)
-        assertEquals(20.sp, mono.lineHeight)
+        assertEquals(FontFamily.Monospace, MonoTextStyle.fontFamily)
+        assertEquals(14.sp, MonoTextStyle.fontSize)
+        assertEquals(20.sp, MonoTextStyle.lineHeight)
     }
 }

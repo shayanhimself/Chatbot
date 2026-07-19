@@ -43,7 +43,7 @@ main/kotlin/.../core/ui/designsystem/
   theme/Motion.kt             easings, durations, press scales, state-layer opacities (constants)
   theme/Theme.kt              ChatbotTheme composable + ChatbotExtendedTheme accessor (replaces template)
   icon/Icon.kt                Icon composable over the variable font
-  icon/Glyphs.kt              model-glyph + brand-glyph constants
+  icon/Glyphs.kt              brand + UI-chrome glyph constants
   component/Button.kt         Button + ButtonVariant
   component/IconButton.kt     IconButton + IconButtonVariant
   component/Card.kt           Card + CardVariant
@@ -1064,9 +1064,6 @@ Expected: BUILD SUCCESSFUL. Leave in tree (including the recorded goldens).
 
 ```kotlin
 object Glyphs {
-    const val ModelSonnet = "balance"
-    const val ModelHaiku = "bolt"
-    const val ModelOpus = "auto_awesome"
     const val Brand = "forum"
     const val Close = "close"
     const val Error = "error"
@@ -1124,19 +1121,19 @@ class IconTest {
     @Test
     fun iconExposesContentDescriptionNotLigatureText() {
         composeRule.setContent {
-            ChatbotTheme { Icon(glyph = Glyphs.ModelHaiku, contentDescription = "Haiku") }
+            ChatbotTheme { Icon(glyph = Glyphs.Close, contentDescription = "Close") }
         }
-        composeRule.onNodeWithContentDescription("Haiku").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Close").assertIsDisplayed()
         // Ligature text must not leak into semantics — TalkBack would read the raw glyph name.
-        composeRule.onNodeWithText(Glyphs.ModelHaiku).assertDoesNotExist()
+        composeRule.onNodeWithText(Glyphs.Close).assertDoesNotExist()
     }
 
     @Test
-    fun modelGlyphConstantsMatchSpec() {
-        assertEquals("balance", Glyphs.ModelSonnet)
-        assertEquals("bolt", Glyphs.ModelHaiku)
-        assertEquals("auto_awesome", Glyphs.ModelOpus)
+    fun glyphConstantsMatchSpec() {
         assertEquals("forum", Glyphs.Brand)
+        assertEquals("close", Glyphs.Close)
+        assertEquals("error", Glyphs.Error)
+        assertEquals("arrow_forward", Glyphs.ArrowForward)
     }
 }
 ```
@@ -1162,11 +1159,6 @@ package com.shayanaryan.chatbot.core.ui.designsystem.icon
  * as screens need them.
  */
 object Glyphs {
-    // Model identity — see spec 002.
-    const val ModelSonnet = "balance"
-    const val ModelHaiku = "bolt"
-    const val ModelOpus = "auto_awesome"
-
     // Brand.
     const val Brand = "forum"
 
@@ -1276,9 +1268,9 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 private fun IconRow() {
     Surface {
         Row(Modifier.padding(Spacing.md)) {
-            Icon(Glyphs.ModelSonnet, contentDescription = null)
-            Icon(Glyphs.ModelHaiku, contentDescription = null, filled = true)
-            Icon(Glyphs.ModelOpus, contentDescription = null, weight = 600)
+            Icon(Glyphs.Close, contentDescription = null)
+            Icon(Glyphs.Error, contentDescription = null, filled = true)
+            Icon(Glyphs.ArrowForward, contentDescription = null, weight = 600)
             Icon(Glyphs.Brand, contentDescription = null, size = 40.dp, filled = true)
         }
     }
@@ -1300,7 +1292,7 @@ private fun IconRowLightPreview() {
 ```
 
 Run: `./gradlew :core:ui:updateDebugScreenshotTest :core:ui:validateDebugScreenshotTest`
-Expected: BUILD SUCCESSFUL. **Inspect the new goldens by eye**: glyphs must render as symbols, not ligature text — if you see the literal word "bolt", the variable font didn't load and the task is not done.
+Expected: BUILD SUCCESSFUL. **Inspect the new goldens by eye**: glyphs must render as symbols, not ligature text — if you see the literal word "close", the variable font didn't load and the task is not done.
 
 - [ ] **Step 7: Format and wrap up (no commit)**
 
@@ -1415,10 +1407,10 @@ class ButtonTest {
         var clicked = false
         composeRule.setContent {
             ChatbotTheme {
-                IconButton(glyph = Glyphs.ModelHaiku, contentDescription = "Pick Haiku", onClick = { clicked = true })
+                IconButton(glyph = Glyphs.Close, contentDescription = "Close", onClick = { clicked = true })
             }
         }
-        composeRule.onNodeWithContentDescription("Pick Haiku").assertIsDisplayed().performClick()
+        composeRule.onNodeWithContentDescription("Close").assertIsDisplayed().performClick()
         assertTrue(clicked)
     }
 }
@@ -1538,7 +1530,7 @@ fun Button(
 <resources>
     <string name="core_ui_loading">Loading</string>
     <string name="core_ui_retry">Retry</string>
-    <!-- %1$s is the chip's own label, e.g. "Dismiss Sonnet". -->
+    <!-- %1$s is the chip's own label, e.g. "Dismiss Filter". -->
     <string name="core_ui_dismiss">Dismiss %1$s</string>
     <!-- Brand wordmark: a name, never translated or capitalized. -->
     <string name="core_ui_brand_wordmark" translatable="false">bro</string>
@@ -1651,7 +1643,7 @@ private fun ButtonGallery() {
     Surface {
         Column(Modifier.padding(Spacing.md)) {
             ButtonVariant.entries.forEach { variant ->
-                Button(text = variant.name, onClick = {}, variant = variant, leadingGlyph = Glyphs.ModelHaiku)
+                Button(text = variant.name, onClick = {}, variant = variant, leadingGlyph = Glyphs.Close)
             }
             Button(text = "Continue", onClick = {}, trailingGlyph = Glyphs.ArrowForward)
             Button(text = "Disabled", onClick = {}, enabled = false)
@@ -1659,9 +1651,9 @@ private fun ButtonGallery() {
             Button(text = "Validating…", onClick = {}, loading = true)
             Row {
                 IconButtonVariant.entries.forEach { variant ->
-                    IconButton(glyph = Glyphs.ModelSonnet, contentDescription = variant.name, onClick = {}, variant = variant)
+                    IconButton(glyph = Glyphs.Close, contentDescription = variant.name, onClick = {}, variant = variant)
                 }
-                IconButton(glyph = Glyphs.ModelSonnet, contentDescription = "Selected", onClick = {}, selected = true)
+                IconButton(glyph = Glyphs.Close, contentDescription = "Selected", onClick = {}, selected = true)
             }
         }
     }
@@ -2720,9 +2712,9 @@ Bro DS, 2026-07-18).
 There is no `EmptyState` and there are no chat components here. Empty states and
 chat surfaces (`MessageBubble`, `ConversationListItem`, `ModelPicker`) are built
 in the feature module that owns them, from these tokens and components. Bubble
-shapes (`ChatbotShapes.bubbleUser`/`bubbleAssistant`), the caret duration
-(`Motion.caretBlinkMillis`) and the model glyphs (`Glyphs`) stay here — they are
-vocabulary, not compositions.
+shapes (`ChatbotShapes.bubbleUser`/`bubbleAssistant`) and the caret duration
+(`Motion.caretBlinkMillis`) stay here — they are vocabulary, not compositions.
+Models carry no glyph: a model is identified by name only, never an icon.
 
 ## Rules
 
@@ -2731,8 +2723,8 @@ vocabulary, not compositions.
   see both names (aliased `M3*`).
 - **Icons:** `Icon(glyph = …)` always takes a `Glyphs` constant, never a bare
   ligature string — a typo'd ligature renders nothing and compiles fine. Add new
-  glyphs to `Glyphs` as screens need them. Model glyphs: Sonnet → `balance`,
-  Haiku → `bolt`, Opus → `auto_awesome`. Emoji are never UI icons; no PNG/SVG
+  glyphs to `Glyphs` as screens need them. Models carry no glyph — a model is
+  identified by name only, never an icon. Emoji are never UI icons; no PNG/SVG
   icon assets.
 - **Mono rule:** API keys, model ids, and code render in
   `MonoTextStyle` (`TextField(mono = true)` for inputs).
@@ -2791,7 +2783,7 @@ Report the working tree ready for user review: new `:core:ui` sources + goldens,
 
 ## Self-Review (done at plan-writing time)
 
-- **Spec coverage:** module/deps → T1; two-tier color + both schemes + scrims → T1; extended colors + state layers → T3; typography 15 roles + mono → T2; shapes (incl. bubble tails) → T3; spacing/gutter/touch target → T3; elevation + motion (easings, durations, press scales, caret 1s) → T3, exercised in T7; theme entry, no dynamic color → T4; icon font bundled in-APK + axes + ligatures → T6; model glyphs + brand mark + no-logo rule → T6/T8; naming boundary + M3 aliasing → global + T7 code; component catalog: core → T7/T8, forms → T9, feedback → T10; stateless rule → signatures throughout; screenshot testing dark+light per component → T5 + each task; Roborazzi fallback → T5; companion skill → T11; value migration out of spec → T11.
-- **Scope boundary:** chat components (`MessageBubble`, `ConversationListItem`, `ModelPicker`) and `EmptyState` are deliberately *not* in `:core:ui` — see spec 002 §Component catalog. The chat trio has a single consumer (`:feature:conversation`) and domain-shaped props, so it is built there under spec 005. Empty states differ structurally per screen and have no validated shared shape yet. The tokens they consume (bubble shapes, caret duration, model glyphs) are still built here, in T3/T6.
+- **Spec coverage:** module/deps → T1; two-tier color + both schemes + scrims → T1; extended colors + state layers → T3; typography 15 roles + mono → T2; shapes (incl. bubble tails) → T3; spacing/gutter/touch target → T3; elevation + motion (easings, durations, press scales, caret 1s) → T3, exercised in T7; theme entry, no dynamic color → T4; icon font bundled in-APK + axes + ligatures → T6; brand mark + no-logo rule (models carry no glyph) → T6/T8; naming boundary + M3 aliasing → global + T7 code; component catalog: core → T7/T8, forms → T9, feedback → T10; stateless rule → signatures throughout; screenshot testing dark+light per component → T5 + each task; Roborazzi fallback → T5; companion skill → T11; value migration out of spec → T11.
+- **Scope boundary:** chat components (`MessageBubble`, `ConversationListItem`, `ModelPicker`) and `EmptyState` are deliberately *not* in `:core:ui` — see spec 002 §Component catalog. The chat trio has a single consumer (`:feature:conversation`) and domain-shaped props, so it is built there under spec 005. Empty states differ structurally per screen and have no validated shared shape yet. The tokens they consume (bubble shapes, caret duration) are still built here, in T3/T6; models carry no glyph, so there is none to build.
 - **Known judgment calls (flag at review, don't silently change):** mono uses `FontFamily.Monospace` instead of a bundled Roboto Mono (T2); label/display letter-spacing kept M3-exact where the upstream CSS port is lossy (T2, see tracking note); web `size`/`fullWidth` props dropped (T7); Dialog uses confirm/dismiss params instead of an actions list (T10).
-- **Type consistency:** verified — `Glyphs.ModelSonnet/ModelHaiku/ModelOpus/Brand`, `Spacing.md/xs/…`, `ChatbotShapes.bubbleUser/bubbleAssistant`, `Motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant` are used with these exact names in every later task.
+- **Type consistency:** verified — `Glyphs.Brand/Close/Error/ArrowForward`, `Spacing.md/xs/…`, `ChatbotShapes.bubbleUser/bubbleAssistant`, `Motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant` are used with these exact names in every later task.

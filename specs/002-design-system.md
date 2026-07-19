@@ -12,7 +12,7 @@ One home per fact:
 
 - **Claude Design ("Bro Design System")** — upstream SSOT for the visual design. Everything below mirrors it and can drift; re-sync with the `pull-design` skill.
 - **`:core:ui` Kotlin token files** — the in-project home for exact values (hex, sp, primitive names), once built: one typed definition, consumed by the code.
-- **`design-system` skill** — owns *usage* (token accessors, when-to-use, model-glyph map, naming boundary rule, flat-fills / no-gradient constraints) and the manual **sync procedure** (`pull-design` → diff → update code + usage → stamp date). It points to the token files for current values; it does not duplicate them.
+- **`design-system` skill** — owns *usage* (token accessors, when-to-use, naming boundary rule, flat-fills / no-gradient constraints) and the manual **sync procedure** (`pull-design` → diff → update code + usage → stamp date). It points to the token files for current values; it does not duplicate them.
 - **This spec** — owns the durable *what/why*: decisions and rationale, the two-tier color structure, role names, component families, screenshot strategy, naming rule. It does not own volatile values.
 
 The exact value tables in this spec (primitive hexes, role values, type metrics) are a **temporary in-repo reference for the M1 implementation plan**. When `:core:ui` is built, those values migrate into the Kotlin token files and the `design-system` skill's usage guidance and are **removed from this spec** — structure and rationale stay here, values live in code. Downstream copies carry a `last synced from Bro DS, <date>` provenance line so staleness is visible.
@@ -138,7 +138,7 @@ Selects the dark or light `ColorScheme`, installs `MaterialTheme(colorScheme, ty
 
 `Icon` wraps **Material Symbols Rounded**, shipped as a **variable-font asset in `:core:ui`** (the source loads it from the Google Fonts CDN; the app bundles it in-APK so chrome renders offline). Glyphs are referenced by ligature name; variable axes `FILL` (0 at rest → 1 when selected/active), `wght` (default 400), `GRAD`, and optical size are settable per use. No PNG/SVG icon assets; emoji are never UI icons. The entire icon set is that one bundled font file — no per-icon drawables; subsetting the font to only used glyphs is a deferred APK-size optimization.
 
-Every ligature the app renders is a constant on `Glyphs` — model identity (Sonnet → `balance`, Haiku → `bolt`, Opus → `auto_awesome`), the brand mark, and UI chrome — so no call site spells one out. Feature modules extend it as their screens need glyphs.
+Every ligature the app renders is a constant on `Glyphs` — the brand mark and UI chrome — so no call site spells one out. Feature modules extend it as their screens need glyphs. Models carry no glyph: a model is identified by name only, never an icon.
 
 **Brand mark.** The wordmark renders lowercase **bro** in Roboto Medium beside a `forum`-glyph tile in the accent color. No standalone logo asset exists and none is to be invented.
 
@@ -159,7 +159,7 @@ All components are stateless and presentational — state in via parameters, eve
 - **Chat surfaces** — `MessageBubble`, `ConversationListItem`, `ModelPicker`. Single consumer (`:feature:conversation`), and their props are domain-shaped (message role, tool chips, model identity), which `:core:ui` cannot see. Hosting them here would mean duplicating those concepts as DS-local enums and mapping to them at every call site. They are built in the feature module under spec 005.
 - **Empty states** — structurally different per screen, not merely different in copy: the conversation screen wants a hero block, a list screen wants icon + line + optional CTA. A shared component would freeze a guessed layout before any screen exists to validate it. Features build their own; hoist only once two screens demonstrably share a structure.
 
-The design system remains the source of truth for their *appearance* regardless: bubble shapes (`ChatbotShapes.bubbleUser`/`bubbleAssistant`), the streaming-caret duration, and the model glyphs are tokens defined here and consumed there. Appearance SSOT is the token vocabulary, not every composition built from it.
+The design system remains the source of truth for their *appearance* regardless: bubble shapes (`ChatbotShapes.bubbleUser`/`bubbleAssistant`) and the streaming-caret duration are tokens defined here and consumed there. Appearance SSOT is the token vocabulary, not every composition built from it.
 
 **Naming.** Components keep the familiar Material 3 names (`Button`, `Icon`, `Card`, …) even though they collide with the `androidx.compose.material3` composables. This is safe under one boundary rule: **feature modules import components only from `:core:ui`, never `androidx.compose.material3` directly** — so each feature file has exactly one `Button` (ours) in scope. Only the wrapper files inside `:core:ui` see both names, and they alias the M3 original (e.g. `import androidx.compose.material3.Button as M3Button`). The rule is enforced by convention (and, where practical, lint) and recorded in the `architecture` / `design-system` skills.
 
@@ -169,4 +169,4 @@ Compose Preview Screenshot Testing (`com.android.compose.screenshot` plugin, `@P
 
 ## Companion skill
 
-A project skill at `.claude/skills/design-system/SKILL.md` documents, for later feature work: token accessors and names, the component list with when-to-use guidance, the mono-for-keys/ids/code rule, the model-glyph map, brand-mark rules ("do not invent a Bro logo"), and the flat-fills / no-gradients / sparing-shadow constraints. It grows as the catalog grows in later milestones.
+A project skill at `.claude/skills/design-system/SKILL.md` documents, for later feature work: token accessors and names, the component list with when-to-use guidance, the mono-for-keys/ids/code rule, brand-mark rules ("do not invent a Bro logo"), and the flat-fills / no-gradients / sparing-shadow constraints. It grows as the catalog grows in later milestones.

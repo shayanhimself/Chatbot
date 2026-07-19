@@ -150,10 +150,14 @@ All components are stateless and presentational — state in via parameters, eve
 
 - **core** — `Button` (filled / tonal / outlined / text / elevated), `IconButton` (standard / filled / tonal / outlined), `Icon`, `Card` (filled / outlined / elevated), `Badge`.
 - **forms** — `TextField` (outlined / filled, floating label, focus border thickens to 2px accent), `Switch`, `Chip` (assist / filter / input / suggestion).
-- **feedback** — `Dialog`, `Snackbar`, plus `LoadingIndicator`, `EmptyState`, and `ErrorState` (the states M1 chat screens need).
-- **chat** — `MessageBubble` (user / assistant, streaming caret, agentic tool chip e.g. "Reminder set"), `ConversationListItem` (avatar tile, title, snippet, timestamp, model badge), `ModelPicker` (pill: model glyph + label + chevron opening a model menu).
+- **feedback** — `Dialog`, `Snackbar`, `LoadingIndicator`, `ErrorState`.
 
-Chat components live here (not in a feature module) so the design system is the single source of their appearance; spec 005 wires them to ViewModels and data.
+**What is deliberately not here.** A component earns a place in `:core:ui` by having more than one consumer *and* a shape that does not vary per screen. Two families fail that test:
+
+- **Chat surfaces** — `MessageBubble`, `ConversationListItem`, `ModelPicker`. Single consumer (`:feature:conversation`), and their props are domain-shaped (message role, tool chips, model identity), which `:core:ui` cannot see. Hosting them here would mean duplicating those concepts as DS-local enums and mapping to them at every call site. They are built in the feature module under spec 005.
+- **Empty states** — structurally different per screen, not merely different in copy: the conversation screen wants a hero block, a list screen wants icon + line + optional CTA. A shared component would freeze a guessed layout before any screen exists to validate it. Features build their own; hoist only once two screens demonstrably share a structure.
+
+The design system remains the source of truth for their *appearance* regardless: bubble shapes (`ChatbotShapes.bubbleUser`/`bubbleAssistant`), the streaming-caret duration, and the model glyphs are tokens defined here and consumed there. Appearance SSOT is the token vocabulary, not every composition built from it.
 
 **Naming.** Components keep the familiar Material 3 names (`Button`, `Icon`, `Card`, …) even though they collide with the `androidx.compose.material3` composables. This is safe under one boundary rule: **feature modules import components only from `:core:ui`, never `androidx.compose.material3` directly** — so each feature file has exactly one `Button` (ours) in scope. Only the wrapper files inside `:core:ui` see both names, and they alias the M3 original (e.g. `import androidx.compose.material3.Button as M3Button`). The rule is enforced by convention (and, where practical, lint) and recorded in the `architecture` / `design-system` skills.
 

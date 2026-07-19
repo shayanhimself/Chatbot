@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build `:core:ui` — the Bro Material 3 design system: dark-first theme, full token layer, Material Symbols icon system, and the stateless component catalog (core / forms / feedback / chat), all screenshot-tested, plus the companion `design-system` project skill.
+**Goal:** Build `:core:ui` — the Bro Material 3 design system: dark-first theme, full token layer, Material Symbols icon system, and the stateless component catalog (core / forms / feedback), all screenshot-tested, plus the companion `design-system` project skill. Chat surfaces are built in `:feature:conversation` under spec 005, not here.
 
 **Architecture:** Two-tier color (internal primitives → two full `ColorScheme`s); standard tokens through `MaterialTheme`; `ExtendedColors` — the one token set that varies by scheme — through a CompositionLocal read via the `ChatbotExtendedTheme` accessor, while the constant `Spacing`, `Elevation`, `ChatbotShapes`, `Motion` and `MonoTextStyle` sets are plain objects read directly. Components are stateless wrappers over `androidx.compose.material3` (aliased `M3*` inside `:core:ui` only). Spec: `specs/002-design-system.md`. Component prop contracts were pulled from the upstream **Bro Design System** Claude Design project (projectId `c5a6030b-52d3-4ecc-ab51-4460eebdc7df`, via `pull-design` skill) on 2026-07-18 and are baked into the signatures below.
 
@@ -54,11 +54,7 @@ main/kotlin/.../core/ui/designsystem/
   component/Dialog.kt         Dialog
   component/Snackbar.kt       Snackbar
   component/LoadingIndicator.kt
-  component/EmptyState.kt
   component/ErrorState.kt
-  component/MessageBubble.kt  MessageBubble + MessageRole + ToolChip
-  component/ConversationListItem.kt
-  component/ModelPicker.kt    ModelPicker + ModelOption
 main/res/font/material_symbols_rounded.ttf   (downloaded variable font — module root, not nested)
 main/res/values/strings.xml                  generic strings (retry — module root)
 test/kotlin/.../core/ui/designsystem/...     JVM + Robolectric tests (mirrors main packages)
@@ -2274,14 +2270,13 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 
 ---
 
-### Task 10: Feedback — `Dialog`, `Snackbar`, `LoadingIndicator`, `EmptyState`, `ErrorState`
+### Task 10: Feedback — `Dialog`, `Snackbar`, `LoadingIndicator`, `ErrorState`
 
 **Files:**
 - Create: `core/ui/src/main/res/values/strings.xml`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Dialog.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Snackbar.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/LoadingIndicator.kt`
-- Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/EmptyState.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/ErrorState.kt`
 - Create: `core/ui/src/screenshotTest/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/preview/FeedbackPreviews.kt`
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/FeedbackTest.kt`
@@ -2301,15 +2296,12 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 
 @Composable fun LoadingIndicator(modifier: Modifier = Modifier, size: Dp = 40.dp)
 
-@Composable fun EmptyState(
-    glyph: String, title: String, modifier: Modifier = Modifier,
-    description: String? = null, actionText: String? = null, onAction: (() -> Unit)? = null,
-)
-
 @Composable fun ErrorState(message: String, modifier: Modifier = Modifier, onRetry: (() -> Unit)? = null)
 ```
 
 Generic strings live in `:core:ui` per the architecture skill — `ErrorState`'s retry label is `R.string.core_ui_retry`; dialog/confirm strings are caller-supplied (features own their copy).
+
+**No `EmptyState` here.** Empty states differ structurally per screen, not just in copy (the conversation screen's is a hero block; a reminders list wants icon + line + CTA; a memories list wants icon + line only). No feature screen exists yet to validate a shared shape against, so a DS component would freeze a guessed layout that callers then fight with nullable slots. Features build their own empty states from `Icon` + typography + `Button`; hoist into `:core:ui` only once two real screens demonstrably share a structure.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -2356,26 +2348,6 @@ class FeedbackTest {
     }
 
     @Test
-    fun emptyStateShowsTitleDescriptionAndAction() {
-        var acted = false
-        composeRule.setContent {
-            ChatbotTheme {
-                EmptyState(
-                    glyph = "forum",
-                    title = "No conversations",
-                    description = "Start a new chat to see it here.",
-                    actionText = "New chat",
-                    onAction = { acted = true },
-                )
-            }
-        }
-        composeRule.onNodeWithText("No conversations").assertIsDisplayed()
-        composeRule.onNodeWithText("Start a new chat to see it here.").assertIsDisplayed()
-        composeRule.onNodeWithText("New chat").performClick()
-        assertTrue(acted)
-    }
-
-    @Test
     fun errorStateShowsMessageAndRetries() {
         var retried = false
         composeRule.setContent {
@@ -2393,7 +2365,7 @@ class FeedbackTest {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.FeedbackTest"`
-Expected: FAIL — unresolved `Dialog` / `EmptyState` / `ErrorState` in `component` package.
+Expected: FAIL — unresolved `Dialog` / `ErrorState` in `component` package.
 
 - [ ] **Step 3: Implement**
 
@@ -2490,59 +2462,6 @@ fun LoadingIndicator(
 }
 ```
 
-`EmptyState.kt`:
-
-```kotlin
-package com.shayanaryan.chatbot.core.ui.designsystem.component
-
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-
-@Composable
-fun EmptyState(
-    glyph: String,
-    title: String,
-    modifier: Modifier = Modifier,
-    description: String? = null,
-    actionText: String? = null,
-    onAction: (() -> Unit)? = null,
-) {
-    Column(
-        modifier.fillMaxWidth().padding(Spacing.xxl),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(glyph, contentDescription = null, size = 48.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(Spacing.md))
-        Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-        if (description != null) {
-            Spacer(Modifier.height(Spacing.xs))
-            Text(
-                description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
-        if (actionText != null && onAction != null) {
-            Spacer(Modifier.height(Spacing.md))
-            Button(text = actionText, onClick = onAction, variant = ButtonVariant.Tonal)
-        }
-    }
-}
-```
-
 `ErrorState.kt`:
 
 ```kotlin
@@ -2589,11 +2508,11 @@ fun ErrorState(
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.FeedbackTest"`
-Expected: PASS (3 tests).
+Expected: PASS (2 tests).
 
 - [ ] **Step 5: Previews + screenshots**
 
-`FeedbackPreviews.kt` — `LoadingIndicator`, `EmptyState` (with action), `ErrorState` (with retry); dark + light pair, same gallery pattern. `Dialog` and `Snackbar` render in overlay windows the preview tool can't capture from a plain composable — preview their content by rendering the M3 pieces inline is out of scope; cover Dialog via the semantics test above and a manual check in later feature work:
+`FeedbackPreviews.kt` — `LoadingIndicator`, `ErrorState` (with retry); dark + light pair, same gallery pattern. `Dialog` and `Snackbar` render in overlay windows the preview tool can't capture from a plain composable — preview their content by rendering the M3 pieces inline is out of scope; cover Dialog via the semantics test above and a manual check in later feature work:
 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.preview
@@ -2605,7 +2524,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
-import com.shayanaryan.chatbot.core.ui.designsystem.component.EmptyState
 import com.shayanaryan.chatbot.core.ui.designsystem.component.ErrorState
 import com.shayanaryan.chatbot.core.ui.designsystem.component.LoadingIndicator
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
@@ -2615,13 +2533,6 @@ private fun FeedbackGallery() {
     Surface {
         Column(Modifier.padding(Spacing.md)) {
             LoadingIndicator()
-            EmptyState(
-                glyph = "forum",
-                title = "No conversations",
-                description = "Start a new chat to see it here.",
-                actionText = "New chat",
-                onAction = {},
-            )
             ErrorState(message = "Couldn't reach Claude", onRetry = {})
         }
     }
@@ -2652,546 +2563,14 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 
 ---
 
-### Task 11: Chat — `MessageBubble`, `ConversationListItem`, `ModelPicker`
-
-**Files:**
-- Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/MessageBubble.kt`
-- Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/ConversationListItem.kt`
-- Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/ModelPicker.kt`
-- Create: `core/ui/src/screenshotTest/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/preview/ChatPreviews.kt`
-- Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/ChatComponentsTest.kt`
-
-**Interfaces:**
-- Consumes: `Icon`, `Glyphs` (Task 6), `Badge` (Task 8), `ChatbotShapes.bubbleUser/bubbleAssistant`, `Motion.caretBlinkMillis`.
-- Produces (spec 005 wires these to ViewModels/data):
-
-```kotlin
-enum class MessageRole { User, Assistant }
-@Immutable data class ToolChip(val label: String, val glyph: String = "bolt")
-@Composable fun MessageBubble(
-    text: String, role: MessageRole, modifier: Modifier = Modifier,
-    streaming: Boolean = false,      // assistant-only: blinking caret
-    toolChip: ToolChip? = null,      // assistant-only: agentic-action tag above the bubble
-)
-
-@Composable fun ConversationListItem(
-    title: String, onClick: () -> Unit, modifier: Modifier = Modifier,
-    snippet: String? = null, time: String? = null,
-    modelLabel: String? = null, modelGlyph: String? = null,
-    unread: Boolean = false, selected: Boolean = false,
-)
-
-@Immutable data class ModelOption(val id: String, val name: String, val glyph: String, val blurb: String? = null)
-@Composable fun ModelPicker(
-    selectedId: String, options: List<ModelOption>, onSelect: (String) -> Unit,
-    modifier: Modifier = Modifier, enabled: Boolean = true,
-)
-```
-
-Upstream layout facts (from `components/chat/MessageBubble.jsx`, pulled 2026-07-18): bubble max width 82%, padding 10dp vertical / 16dp horizontal, user = primaryContainer/onPrimaryContainer aligned end, assistant = surfaceContainerHigh/onSurface aligned start, bodyLarge; tool chip = pill, primaryContainer, 16dp filled glyph, labelMedium, only on assistant turns; caret = 8×18dp, 2dp radius, primary, 1s two-step blink (opacity 1 first half, 0 second half). `ModelPicker` menu-expanded state is transient view state and stays internal (`remember`) — the *selection* remains hoisted, so the component stays stateless where it matters.
-
-- [ ] **Step 1: Write the failing test**
-
-```kotlin
-package com.shayanaryan.chatbot.core.ui.designsystem.component
-
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Rule
-import org.junit.Test
-import org.junit.runner.RunWith
-
-@RunWith(AndroidJUnit4::class)
-class ChatComponentsTest {
-    @get:Rule
-    val composeRule = createComposeRule()
-
-    private val models =
-        listOf(
-            ModelOption("claude-sonnet-5", "Sonnet 5", Glyphs.ModelSonnet, "Balanced"),
-            ModelOption("claude-haiku-4-5", "Haiku 4.5", Glyphs.ModelHaiku, "Fastest"),
-            ModelOption("claude-opus-4-8", "Opus 4.8", Glyphs.ModelOpus, "Most capable"),
-        )
-
-    @Test
-    fun messageBubbleRendersTextAndToolChip() {
-        composeRule.setContent {
-            ChatbotTheme {
-                MessageBubble(
-                    text = "Reminder saved for tomorrow.",
-                    role = MessageRole.Assistant,
-                    toolChip = ToolChip(label = "Reminder set", glyph = "alarm"),
-                )
-            }
-        }
-        composeRule.onNodeWithText("Reminder saved for tomorrow.").assertIsDisplayed()
-        composeRule.onNodeWithText("Reminder set").assertIsDisplayed()
-    }
-
-    @Test
-    fun conversationListItemShowsMetadataAndClicks() {
-        var clicked = false
-        composeRule.setContent {
-            ChatbotTheme {
-                ConversationListItem(
-                    title = "Trip planning",
-                    onClick = { clicked = true },
-                    snippet = "Sure, here are the options…",
-                    time = "14:02",
-                    modelLabel = "Sonnet 5",
-                    modelGlyph = Glyphs.ModelSonnet,
-                    unread = true,
-                )
-            }
-        }
-        composeRule.onNodeWithText("Trip planning").assertIsDisplayed()
-        composeRule.onNodeWithText("Sure, here are the options…").assertIsDisplayed()
-        composeRule.onNodeWithText("14:02").assertIsDisplayed()
-        composeRule.onNodeWithText("Sonnet 5").assertIsDisplayed()
-        composeRule.onNodeWithText("Trip planning").performClick()
-        assertTrue(clicked)
-    }
-
-    @Test
-    fun modelPickerOpensMenuAndEmitsSelection() {
-        var selectedId = "claude-sonnet-5"
-        composeRule.setContent {
-            ChatbotTheme {
-                ModelPicker(selectedId = selectedId, options = models, onSelect = { selectedId = it })
-            }
-        }
-        composeRule.onNodeWithText("Sonnet 5").performClick() // open menu
-        composeRule.onNodeWithText("Haiku 4.5").performClick() // pick
-        assertEquals("claude-haiku-4-5", selectedId)
-    }
-}
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.ChatComponentsTest"`
-Expected: FAIL — unresolved `MessageBubble` / `ConversationListItem` / `ModelPicker`.
-
-- [ ] **Step 3: Implement**
-
-`MessageBubble.kt`:
-
-```kotlin
-package com.shayanaryan.chatbot.core.ui.designsystem.component
-
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.unit.dp
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-
-enum class MessageRole { User, Assistant }
-
-/** Agentic-action tag above an assistant turn, e.g. "Reminder set". */
-@Immutable
-data class ToolChip(val label: String, val glyph: String = "bolt")
-
-@Composable
-fun MessageBubble(
-    text: String,
-    role: MessageRole,
-    modifier: Modifier = Modifier,
-    streaming: Boolean = false,
-    toolChip: ToolChip? = null,
-) {
-    val isUser = role == MessageRole.User
-    val shapes = ChatbotShapes
-    val scheme = MaterialTheme.colorScheme
-    Row(
-        modifier.fillMaxWidth(),
-        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
-    ) {
-        Column(
-            Modifier.fillMaxWidth(fraction = 0.82f),
-            horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            if (toolChip != null && !isUser) {
-                Row(
-                    Modifier
-                        .background(scheme.primaryContainer, ChatbotShapes.chip)
-                        .padding(start = Spacing.xs, end = 10.dp, top = Spacing.xxs, bottom = Spacing.xxs),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(toolChip.glyph, contentDescription = null, size = 16.dp, filled = true, tint = scheme.onPrimaryContainer)
-                    Text(toolChip.label, style = MaterialTheme.typography.labelMedium, color = scheme.onPrimaryContainer)
-                }
-            }
-            Box(
-                Modifier
-                    .background(
-                        color = if (isUser) scheme.primaryContainer else scheme.surfaceContainerHigh,
-                        shape = if (isUser) ChatbotShapes.bubbleUser else ChatbotShapes.bubbleAssistant,
-                    )
-                    .padding(horizontal = Spacing.md, vertical = 10.dp),
-            ) {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        text,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (isUser) scheme.onPrimaryContainer else scheme.onSurface,
-                    )
-                    if (streaming) {
-                        StreamingCaret()
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StreamingCaret() {
-    val blinkMillis = Motion.caretBlinkMillis
-    val transition = rememberInfiniteTransition(label = "streaming-caret")
-    val alpha by transition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1f,
-        animationSpec =
-            infiniteRepeatable(
-                animation =
-                    keyframes {
-                        durationMillis = blinkMillis
-                        1f at 0
-                        1f at blinkMillis / 2 - 1
-                        0f at blinkMillis / 2
-                        0f at blinkMillis - 1
-                    },
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "caret-alpha",
-    )
-    Box(
-        Modifier
-            .padding(start = 3.dp)
-            .size(width = 8.dp, height = 18.dp)
-            .alpha(alpha)
-            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)),
-    )
-}
-```
-
-`ConversationListItem.kt`:
-
-```kotlin
-package com.shayanaryan.chatbot.core.ui.designsystem.component
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-
-@Composable
-fun ConversationListItem(
-    title: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    snippet: String? = null,
-    time: String? = null,
-    modelLabel: String? = null,
-    modelGlyph: String? = null,
-    unread: Boolean = false,
-    selected: Boolean = false,
-) {
-    val scheme = MaterialTheme.colorScheme
-    Row(
-        modifier
-            .fillMaxWidth()
-            .background(if (selected) scheme.surfaceContainerHigh else scheme.surface)
-            .clickable(onClick = onClick)
-            .padding(horizontal = Spacing.gutter, vertical = Spacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-    ) {
-        // Avatar tile
-        Box(
-            Modifier
-                .size(44.dp)
-                .background(scheme.primaryContainer, ChatbotShapes.card),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Glyphs.Brand, contentDescription = null, size = 22.dp, filled = true, tint = scheme.onPrimaryContainer)
-        }
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                if (time != null) {
-                    Text(time, style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
-                }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                if (snippet != null) {
-                    Text(
-                        snippet,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = scheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                }
-                if (modelGlyph != null) {
-                    Icon(modelGlyph, contentDescription = null, size = 14.dp, tint = scheme.onSurfaceVariant)
-                }
-                if (modelLabel != null) {
-                    Text(modelLabel, style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
-                }
-                if (unread) {
-                    Badge()
-                }
-            }
-        }
-    }
-}
-```
-
-`ModelPicker.kt`:
-
-```kotlin
-package com.shayanaryan.chatbot.core.ui.designsystem.component
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-import androidx.compose.material3.DropdownMenu as M3DropdownMenu
-import androidx.compose.material3.DropdownMenuItem as M3DropdownMenuItem
-
-@Immutable
-data class ModelOption(
-    val id: String,
-    val name: String,
-    val glyph: String,
-    val blurb: String? = null,
-)
-
-@Composable
-fun ModelPicker(
-    selectedId: String,
-    options: List<ModelOption>,
-    onSelect: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val selected = options.firstOrNull { it.id == selectedId } ?: options.first()
-    val scheme = MaterialTheme.colorScheme
-    Box(modifier) {
-        Row(
-            Modifier
-                .heightIn(min = 32.dp)
-                .background(scheme.surfaceContainerHigh, ChatbotShapes.chip)
-                .clickable(enabled = enabled) { expanded = true }
-                .padding(horizontal = Spacing.sm, vertical = Spacing.xxs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(selected.glyph, contentDescription = null, size = 16.dp, tint = scheme.primary)
-            Text(
-                selected.name,
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(horizontal = Spacing.xs),
-            )
-            Icon("keyboard_arrow_down", contentDescription = null, size = 16.dp, tint = scheme.onSurfaceVariant)
-        }
-        M3DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { option ->
-                M3DropdownMenuItem(
-                    text = {
-                        Column {
-                            Text(option.name, style = MaterialTheme.typography.bodyLarge)
-                            if (option.blurb != null) {
-                                Text(option.blurb, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
-                            }
-                        }
-                    },
-                    leadingIcon = { Icon(option.glyph, contentDescription = null, size = 20.dp) },
-                    trailingIcon =
-                        if (option.id == selected.id) {
-                            { Icon("check", contentDescription = null, size = 18.dp, tint = scheme.primary) }
-                        } else {
-                            null
-                        },
-                    onClick = {
-                        expanded = false
-                        onSelect(option.id)
-                    },
-                )
-            }
-        }
-    }
-}
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.ChatComponentsTest"`
-Expected: PASS (3 tests).
-
-- [ ] **Step 5: Fidelity check against upstream, then previews + screenshots**
-
-Use the `pull-design` skill to `get_file` `components/chat/ConversationListItem.jsx` and `components/chat/ModelPicker.jsx` from the Bro Design System project and compare against the implementations above (avatar tile size/shape/color, picker pill colors). Adjust only what actually differs; the `MessageBubble` layout is already verified against its `.jsx`.
-
-`ChatPreviews.kt` — user bubble, assistant bubble streaming, assistant with tool chip, two list items (one selected+unread), `ModelPicker` collapsed; dark + light pair, same gallery pattern:
-
-```kotlin
-package com.shayanaryan.chatbot.core.ui.designsystem.preview
-
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.android.tools.screenshot.PreviewTest
-import com.shayanaryan.chatbot.core.ui.designsystem.component.ConversationListItem
-import com.shayanaryan.chatbot.core.ui.designsystem.component.MessageBubble
-import com.shayanaryan.chatbot.core.ui.designsystem.component.MessageRole
-import com.shayanaryan.chatbot.core.ui.designsystem.component.ModelOption
-import com.shayanaryan.chatbot.core.ui.designsystem.component.ModelPicker
-import com.shayanaryan.chatbot.core.ui.designsystem.component.ToolChip
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-
-@Composable
-private fun ChatGallery() {
-    Surface {
-        Column(
-            Modifier.padding(Spacing.md),
-            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-        ) {
-            MessageBubble(text = "Remind me to call mom tomorrow at 6pm", role = MessageRole.User)
-            MessageBubble(text = "Done — I'll remind you tomorrow at 6pm.", role = MessageRole.Assistant, toolChip = ToolChip("Reminder set", "alarm"))
-            MessageBubble(text = "Let me think about that", role = MessageRole.Assistant, streaming = true)
-            ConversationListItem(
-                title = "Trip planning",
-                onClick = {},
-                snippet = "Sure, here are the options…",
-                time = "14:02",
-                modelLabel = "Sonnet 5",
-                modelGlyph = Glyphs.ModelSonnet,
-                unread = true,
-            )
-            ConversationListItem(title = "Groceries", onClick = {}, snippet = "Saved to memory.", time = "Tue", selected = true)
-            ModelPicker(
-                selectedId = "claude-sonnet-5",
-                options =
-                    listOf(
-                        ModelOption("claude-sonnet-5", "Sonnet 5", Glyphs.ModelSonnet, "Balanced"),
-                        ModelOption("claude-haiku-4-5", "Haiku 4.5", Glyphs.ModelHaiku, "Fastest"),
-                        ModelOption("claude-opus-4-8", "Opus 4.8", Glyphs.ModelOpus, "Most capable"),
-                    ),
-                onSelect = {},
-            )
-        }
-    }
-}
-
-@PreviewTest
-@Preview(name = "chat-dark")
-@Composable
-private fun ChatGalleryDarkPreview() {
-    ChatbotTheme(darkTheme = true) { ChatGallery() }
-}
-
-@PreviewTest
-@Preview(name = "chat-light")
-@Composable
-private fun ChatGalleryLightPreview() {
-    ChatbotTheme(darkTheme = false) { ChatGallery() }
-}
-```
-
-Screenshot note: the streaming preview captures the caret at animation start (alpha 1) — deterministic, safe to golden.
-
-Run: `./gradlew :core:ui:updateDebugScreenshotTest :core:ui:validateDebugScreenshotTest`
-Expected: BUILD SUCCESSFUL; check bubble tails (user squared bottom-end, assistant bottom-start).
-
-- [ ] **Step 6: Format and wrap up (no commit)**
-
-Run: `./gradlew :core:ui:spotlessApply :core:ui:spotlessCheck :core:ui:testDebugUnitTest`
-Expected: BUILD SUCCESSFUL. Leave in tree.
-
----
-
-### Task 12: `design-system` skill + spec value migration
+### Task 11: `design-system` skill + spec value migration
 
 **Files:**
 - Create: `.claude/skills/design-system/SKILL.md`
 - Modify: `specs/002-design-system.md` (remove migrated value tables)
 
 **Interfaces:**
-- Consumes: everything built in Tasks 1–11 (the skill documents it; verify names against the actual code, not this plan).
+- Consumes: everything built in Tasks 1–10 (the skill documents it; verify names against the actual code, not this plan).
 - Produces: the usage skill later feature milestones load; spec 002 slimmed to structure/rationale.
 
 This task is documentation — no unit test. Its "test" is the prose-review skill plus a final full-module verification.
@@ -3240,9 +2619,14 @@ Bro DS, 2026-07-18).
 - forms: `TextField` (Outlined/Filled; `mono = true` for keys/ids), `Switch`,
   `Chip` (Assist/Filter/Input/Suggestion).
 - feedback: `Dialog`, `Snackbar` (drop into M3 `SnackbarHost`),
-  `LoadingIndicator`, `EmptyState`, `ErrorState`.
-- chat: `MessageBubble` (+ `MessageRole`, `ToolChip`), `ConversationListItem`,
-  `ModelPicker` (+ `ModelOption`).
+  `LoadingIndicator`, `ErrorState`.
+
+There is no `EmptyState` and there are no chat components here. Empty states and
+chat surfaces (`MessageBubble`, `ConversationListItem`, `ModelPicker`) are built
+in the feature module that owns them, from these tokens and components. Bubble
+shapes (`ChatbotShapes.bubbleUser`/`bubbleAssistant`), the caret duration
+(`Motion.caretBlinkMillis`) and the model glyphs (`Glyphs`) stay here — they are
+vocabulary, not compositions.
 
 ## Rules
 
@@ -3302,6 +2686,7 @@ Report the working tree ready for user review: new `:core:ui` sources + goldens,
 
 ## Self-Review (done at plan-writing time)
 
-- **Spec coverage:** module/deps → T1; two-tier color + both schemes + scrims → T1; extended colors + state layers → T3; typography 15 roles + mono → T2; shapes (incl. bubble tails) → T3; spacing/gutter/touch target → T3; elevation + motion (easings, durations, press scales, caret 1s) → T3, exercised in T7/T11; theme entry, no dynamic color → T4; icon font bundled in-APK + axes + ligatures → T6; model glyphs + brand mark + no-logo rule → T6/T8; naming boundary + M3 aliasing → global + T7 code; component catalog: core → T7/T8, forms → T9, feedback → T10, chat → T11; stateless rule → signatures throughout; screenshot testing dark+light per component → T5 + each task; Roborazzi fallback → T5; companion skill → T12; value migration out of spec → T12.
-- **Known judgment calls (flag at review, don't silently change):** mono uses `FontFamily.Monospace` instead of a bundled Roboto Mono (T2); label/display letter-spacing kept M3-exact where the upstream CSS port is lossy (T2, see tracking note); web `size`/`fullWidth` props dropped (T7); Dialog uses confirm/dismiss params instead of an actions list (T10); `ModelPicker` keeps menu-expanded state internal (T11); bubble/list-item paddings taken from upstream `.jsx` with a T11 fidelity re-check for the two files not pulled at plan time.
-- **Type consistency:** verified — `Glyphs.ModelSonnet/ModelHaiku/ModelOpus/Brand`, `Spacing.md/xs/…`, `ChatbotShapes.bubbleUser/bubbleAssistant`, `Motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant`/`MessageRole` are used with these exact names in every later task.
+- **Spec coverage:** module/deps → T1; two-tier color + both schemes + scrims → T1; extended colors + state layers → T3; typography 15 roles + mono → T2; shapes (incl. bubble tails) → T3; spacing/gutter/touch target → T3; elevation + motion (easings, durations, press scales, caret 1s) → T3, exercised in T7; theme entry, no dynamic color → T4; icon font bundled in-APK + axes + ligatures → T6; model glyphs + brand mark + no-logo rule → T6/T8; naming boundary + M3 aliasing → global + T7 code; component catalog: core → T7/T8, forms → T9, feedback → T10; stateless rule → signatures throughout; screenshot testing dark+light per component → T5 + each task; Roborazzi fallback → T5; companion skill → T11; value migration out of spec → T11.
+- **Scope boundary:** chat components (`MessageBubble`, `ConversationListItem`, `ModelPicker`) and `EmptyState` are deliberately *not* in `:core:ui` — see spec 002 §Component catalog. The chat trio has a single consumer (`:feature:conversation`) and domain-shaped props, so it is built there under spec 005. Empty states differ structurally per screen and have no validated shared shape yet. The tokens they consume (bubble shapes, caret duration, model glyphs) are still built here, in T3/T6.
+- **Known judgment calls (flag at review, don't silently change):** mono uses `FontFamily.Monospace` instead of a bundled Roboto Mono (T2); label/display letter-spacing kept M3-exact where the upstream CSS port is lossy (T2, see tracking note); web `size`/`fullWidth` props dropped (T7); Dialog uses confirm/dismiss params instead of an actions list (T10).
+- **Type consistency:** verified — `Glyphs.ModelSonnet/ModelHaiku/ModelOpus/Brand`, `Spacing.md/xs/…`, `ChatbotShapes.bubbleUser/bubbleAssistant`, `Motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant` are used with these exact names in every later task.

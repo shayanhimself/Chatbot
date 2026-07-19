@@ -138,7 +138,7 @@ Selects the dark or light `ColorScheme`, installs `MaterialTheme(colorScheme, ty
 
 `Icon` wraps **Material Symbols Rounded**, shipped as a **variable-font asset in `:core:ui`** (the source loads it from the Google Fonts CDN; the app bundles it in-APK so chrome renders offline). Glyphs are referenced by ligature name; variable axes `FILL` (0 at rest → 1 when selected/active), `wght` (default 400), `GRAD`, and optical size are settable per use. No PNG/SVG icon assets; emoji are never UI icons. The entire icon set is that one bundled font file — no per-icon drawables; subsetting the font to only used glyphs is a deferred APK-size optimization.
 
-Model-glyph constants: Sonnet → `balance`, Haiku → `bolt`, Opus → `auto_awesome`.
+Every ligature the app renders is a constant on `Glyphs` — model identity (Sonnet → `balance`, Haiku → `bolt`, Opus → `auto_awesome`), the brand mark, and UI chrome — so no call site spells one out. Feature modules extend it as their screens need glyphs.
 
 **Brand mark.** The wordmark renders lowercase **bro** in Roboto Medium beside a `forum`-glyph tile in the accent color. No standalone logo asset exists and none is to be invented.
 
@@ -151,6 +151,8 @@ All components are stateless and presentational — state in via parameters, eve
 - **core** — `Button` (filled / tonal / outlined / text / elevated; a `loading` state distinct from disabled — full colour and label kept, trailing slot becomes a spinner, click swallowed), `IconButton` (standard / filled / tonal / outlined), `Icon`, `Card` (filled / outlined / elevated), `Badge`.
 - **forms** — `TextField` (outlined / filled, floating label, focus border thickens to 2px accent), `Switch`, `Chip` (assist / filter / input / suggestion).
 - **feedback** — `Dialog`, `Snackbar`, `LoadingIndicator`, `ErrorState`.
+
+**Strings.** No component holds a user-visible literal. Text a user reads or TalkBack speaks resolves from `:core:ui`'s `strings.xml`, and the module declares only strings that are generic by nature — a loading state description, a retry label, a dismiss description, the wordmark. Per-screen copy is a component parameter: the feature owns the words and resolves them from its own resources at the call site, which is what keeps `:core:ui` free of product vocabulary. Material Symbols ligature names are glyph identifiers rather than text, so they stay in code — but only in `Glyphs`, never at a call site: a mistyped ligature renders nothing and no compiler catches it.
 
 **What is deliberately not here.** A component earns a place in `:core:ui` by having more than one consumer *and* a shape that does not vary per screen. Two families fail that test:
 

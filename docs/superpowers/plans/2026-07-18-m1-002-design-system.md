@@ -18,6 +18,7 @@
 - Naming boundary: components keep M3 names (`Button`, `Icon`, `Card`, …). Wrapper files inside `:core:ui` alias the original (`import androidx.compose.material3.Button as M3Button`). Feature modules must import components only from `:core:ui`.
 - "Bro" is display-name only — never in code identifiers, packages, files, or functions.
 - All components stateless/presentational: state in via parameters, events out via lambdas.
+- **No hardcoded user-visible text in component source.** Any string a user reads or TalkBack speaks — labels, content descriptions, state descriptions — comes from `core/ui/src/main/res/values/strings.xml` via `stringResource(...)`, never a Kotlin literal. Per the architecture skill, `:core:ui` owns only *generic* strings; caller-supplied copy (dialog titles, button labels, error messages) stays a parameter. Material Symbols ligature names are glyph identifiers rather than text, so they don't go in `strings.xml` — but they don't belong at call sites either: every one is a constant on `Glyphs` (Task 6), the only file where the literal appears. Preview and test sources use literal sample *copy* freely, but still take glyphs from `Glyphs`.
 - Every component ships `@PreviewTest` previews for its variants in **both** dark and light.
 - Compose test rule: `import androidx.compose.ui.test.junit4.v2.createComposeRule` (the parent-package name is the deprecated v1 rule).
 - No MockK or mocking libraries — fakes and real objects only.
@@ -56,7 +57,7 @@ main/kotlin/.../core/ui/designsystem/
   component/LoadingIndicator.kt
   component/ErrorState.kt
 main/res/font/material_symbols_rounded.ttf   (downloaded variable font — module root, not nested)
-main/res/values/strings.xml                  generic strings (loading, retry — module root)
+main/res/values/strings.xml                  generic strings (loading, retry, dismiss, wordmark — module root)
 test/kotlin/.../core/ui/designsystem/...     JVM + Robolectric tests (mirrors main packages)
 test/resources/robolectric.properties        sdk=36
 screenshotTest/kotlin/.../core/ui/designsystem/preview/   @PreviewTest previews, one file per component family
@@ -1067,6 +1068,9 @@ object Glyphs {
     const val ModelHaiku = "bolt"
     const val ModelOpus = "auto_awesome"
     const val Brand = "forum"
+    const val Close = "close"
+    const val Error = "error"
+    const val ArrowForward = "arrow_forward"
 }
 
 @Composable fun Icon(
@@ -1123,8 +1127,8 @@ class IconTest {
             ChatbotTheme { Icon(glyph = Glyphs.ModelHaiku, contentDescription = "Haiku") }
         }
         composeRule.onNodeWithContentDescription("Haiku").assertIsDisplayed()
-        // Ligature text must not leak into semantics — TalkBack would read "bolt".
-        composeRule.onNodeWithText("bolt").assertDoesNotExist()
+        // Ligature text must not leak into semantics — TalkBack would read the raw glyph name.
+        composeRule.onNodeWithText(Glyphs.ModelHaiku).assertDoesNotExist()
     }
 
     @Test
@@ -1149,12 +1153,27 @@ Expected: FAIL — unresolved `Icon` / `Glyphs`.
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.icon
 
-/** Material Symbols Rounded ligature names used across the app. */
+/**
+ * Material Symbols Rounded ligature names used across the app.
+ *
+ * Every glyph a component renders is named here — a bare `"close"` at a call site is a typo away
+ * from a missing symbol that no compiler catches, and the ligature name is the one string in the
+ * icon system that a wrong value fails silently on. Feature modules add their own constants here
+ * as screens need them.
+ */
 object Glyphs {
+    // Model identity — see spec 002.
     const val ModelSonnet = "balance"
     const val ModelHaiku = "bolt"
     const val ModelOpus = "auto_awesome"
+
+    // Brand.
     const val Brand = "forum"
+
+    // UI chrome.
+    const val Close = "close"
+    const val Error = "error"
+    const val ArrowForward = "arrow_forward"
 }
 ```
 
@@ -1295,7 +1314,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 **Files:**
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Button.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/IconButton.kt`
-- Create: `core/ui/src/main/res/values/strings.xml` (the `loading` state description; Task 10 appends `retry` to this same file)
+- Create: `core/ui/src/main/res/values/strings.xml` (the module's complete generic-string set — Tasks 8/9/10 consume it, none add to it)
 - Create: `core/ui/src/screenshotTest/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/preview/ButtonPreviews.kt`
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/ButtonTest.kt`
 
@@ -1432,7 +1451,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
@@ -1468,7 +1487,7 @@ fun Button(
     )
     // Loading is deliberately not folded into `enabled`: disabled dims the button, loading keeps
     // the full filled appearance and the label, and only swallows the click.
-    val loadingDescription = LocalContext.current.getString(R.string.core_ui_loading)
+    val loadingDescription = stringResource(R.string.core_ui_loading)
     val pressModifier =
         modifier
             .graphicsLayer {
@@ -1513,13 +1532,20 @@ fun Button(
 
 ```
 
-`strings.xml` (module root — Task 10 appends `core_ui_retry` to this file):
+`strings.xml` (module root — the whole generic-string set for `:core:ui`, written once here; Tasks 8/9/10 only reference it):
 
 ```xml
 <resources>
     <string name="core_ui_loading">Loading</string>
+    <string name="core_ui_retry">Retry</string>
+    <!-- %1$s is the chip's own label, e.g. "Dismiss Sonnet". -->
+    <string name="core_ui_dismiss">Dismiss %1$s</string>
+    <!-- Brand wordmark: a name, never translated or capitalized. -->
+    <string name="core_ui_brand_wordmark" translatable="false">bro</string>
 </resources>
 ```
+
+`core_ui_retry`/`core_ui_dismiss`/`core_ui_brand_wordmark` have no consumer until Tasks 8–10; declaring them together keeps one edit of this file instead of three, and lint's unused-resource check does not fire on library `values/` strings.
 
 `IconButton.kt`:
 
@@ -1627,8 +1653,7 @@ private fun ButtonGallery() {
             ButtonVariant.entries.forEach { variant ->
                 Button(text = variant.name, onClick = {}, variant = variant, leadingGlyph = Glyphs.ModelHaiku)
             }
-            // Plain ligature, not a Glyphs constant — Glyphs holds only the model and brand glyphs.
-            Button(text = "Continue", onClick = {}, trailingGlyph = "arrow_forward")
+            Button(text = "Continue", onClick = {}, trailingGlyph = Glyphs.ArrowForward)
             Button(text = "Disabled", onClick = {}, enabled = false)
             // Loading sits beside disabled on purpose — the golden is what proves they look different.
             Button(text = "Validating…", onClick = {}, loading = true)
@@ -1865,8 +1890,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shayanaryan.chatbot.core.ui.R
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
@@ -1884,7 +1911,12 @@ fun BrandMark(modifier: Modifier = Modifier) {
             Icon(Glyphs.Brand, contentDescription = null, size = 20.dp, filled = true, tint = MaterialTheme.colorScheme.onPrimary)
         }
         Spacer(Modifier.width(Spacing.xs))
-        Text("bro", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium)
+        // `translatable="false"` — the wordmark is a name, and lowercase is part of the mark.
+        Text(
+            stringResource(R.string.core_ui_brand_wordmark),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 ```
@@ -2014,7 +2046,10 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import android.content.Context
+import com.shayanaryan.chatbot.core.ui.R
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -2072,7 +2107,11 @@ class FormsTest {
             }
         }
         ChipVariant.entries.forEach { composeRule.onNodeWithText(it.name).assertIsDisplayed() }
-        composeRule.onNodeWithContentDescription("Dismiss Input").performClick()
+        // Resolved from resources, not spelled out — this asserts the wiring, not the copy.
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        composeRule
+            .onNodeWithContentDescription(context.getString(R.string.core_ui_dismiss, ChipVariant.Input.name))
+            .performClick()
         assertTrue(dismissed)
     }
 }
@@ -2191,7 +2230,10 @@ package com.shayanaryan.chatbot.core.ui.designsystem.component
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.shayanaryan.chatbot.core.ui.R
+import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import androidx.compose.material3.AssistChip as M3AssistChip
@@ -2241,12 +2283,12 @@ private fun M3IconForDismiss(
     onDismiss: () -> Unit,
 ) {
     androidx.compose.material3.IconButton(onClick = onDismiss, modifier = Modifier) {
-        Icon("close", contentDescription = "Dismiss $label", size = 18.dp)
+        Icon(Glyphs.Close, contentDescription = stringResource(R.string.core_ui_dismiss, label), size = 18.dp)
     }
 }
 ```
 
-Note: the test dismisses via content description `"Dismiss Input"` — the `Icon` inside the dismiss button provides it. If the M3 `InputChip` trailing slot clips the 48dp `IconButton` ripple target, replace the inner `IconButton` with `Icon("close", contentDescription = "Dismiss $label", size = 18.dp, modifier = Modifier.clickable(onClick = onDismiss))` — behavior over pixel-perfection here; keep the content description.
+Note: the test dismisses via the resolved `core_ui_dismiss` description — the `Icon` inside the dismiss button provides it. If the M3 `InputChip` trailing slot clips the 48dp `IconButton` ripple target, replace the inner `IconButton` with `Icon(Glyphs.Close, contentDescription = stringResource(R.string.core_ui_dismiss, label), size = 18.dp, modifier = Modifier.clickable(onClick = onDismiss))` — behavior over pixel-perfection here; keep the content description.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -2330,7 +2372,6 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 ### Task 10: Feedback — `Dialog`, `Snackbar`, `LoadingIndicator`, `ErrorState`
 
 **Files:**
-- Modify: `core/ui/src/main/res/values/strings.xml` (created in Task 7)
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Dialog.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Snackbar.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/LoadingIndicator.kt`
@@ -2356,7 +2397,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 @Composable fun ErrorState(message: String, modifier: Modifier = Modifier, onRetry: (() -> Unit)? = null)
 ```
 
-Generic strings live in `:core:ui` per the architecture skill — `ErrorState`'s retry label is `R.string.core_ui_retry`; dialog/confirm strings are caller-supplied (features own their copy).
+Generic strings live in `:core:ui` per the architecture skill — `ErrorState`'s retry label is `R.string.core_ui_retry`, already declared in Task 7's `strings.xml`. `Dialog`'s title/text/confirm/dismiss strings stay caller-supplied parameters: they are per-screen copy, so features own them and resolve them from their own `strings.xml` at the call site.
 
 **No `EmptyState` here.** Empty states differ structurally per screen, not just in copy (the conversation screen's is a hero block; a reminders list wants icon + line + CTA; a memories list wants icon + line only). No feature screen exists yet to validate a shared shape against, so a DS component would freeze a guessed layout that callers then fight with nullable slots. Features build their own empty states from `Icon` + typography + `Button`; hoist into `:core:ui` only once two real screens demonstrably share a structure.
 
@@ -2369,7 +2410,10 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import android.content.Context
+import com.shayanaryan.chatbot.core.ui.R
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -2411,7 +2455,9 @@ class FeedbackTest {
             ChatbotTheme { ErrorState(message = "Something went wrong", onRetry = { retried = true }) }
         }
         composeRule.onNodeWithText("Something went wrong").assertIsDisplayed()
-        composeRule.onNodeWithText("Retry").performClick()
+        // `message` is caller-supplied so it stays a literal; the retry label is ours, so resolve it.
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        composeRule.onNodeWithText(context.getString(R.string.core_ui_retry)).performClick()
         assertTrue(retried)
     }
 }
@@ -2425,15 +2471,6 @@ Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core
 Expected: FAIL — unresolved `Dialog` / `ErrorState` in `component` package.
 
 - [ ] **Step 3: Implement**
-
-`strings.xml` — add `core_ui_retry` alongside the `core_ui_loading` string Task 7 created:
-
-```xml
-<resources>
-    <string name="core_ui_loading">Loading</string>
-    <string name="core_ui_retry">Retry</string>
-</resources>
-```
 
 `Dialog.kt`:
 
@@ -2539,6 +2576,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.R
+import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 
@@ -2552,7 +2590,7 @@ fun ErrorState(
         modifier.fillMaxWidth().padding(Spacing.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon("error", contentDescription = null, size = 48.dp, filled = true, tint = MaterialTheme.colorScheme.error)
+        Icon(Glyphs.Error, contentDescription = null, size = 48.dp, filled = true, tint = MaterialTheme.colorScheme.error)
         Spacer(Modifier.height(Spacing.md))
         Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
         if (onRetry != null) {
@@ -2691,11 +2729,20 @@ vocabulary, not compositions.
 - **Import boundary:** feature modules import components only from `:core:ui`,
   never `androidx.compose.material3` directly. Only `:core:ui` wrapper files
   see both names (aliased `M3*`).
-- **Icons:** `Icon(glyph = …)` with Material Symbols Rounded ligature names via
-  `Glyphs` constants. Model glyphs: Sonnet → `balance`, Haiku → `bolt`,
-  Opus → `auto_awesome`. Emoji are never UI icons; no PNG/SVG icon assets.
+- **Icons:** `Icon(glyph = …)` always takes a `Glyphs` constant, never a bare
+  ligature string — a typo'd ligature renders nothing and compiles fine. Add new
+  glyphs to `Glyphs` as screens need them. Model glyphs: Sonnet → `balance`,
+  Haiku → `bolt`, Opus → `auto_awesome`. Emoji are never UI icons; no PNG/SVG
+  icon assets.
 - **Mono rule:** API keys, model ids, and code render in
   `MonoTextStyle` (`TextField(mono = true)` for inputs).
+- **Strings:** no user-visible literal in component source — labels, content
+  descriptions and state descriptions come from `strings.xml` via
+  `stringResource(...)`. `:core:ui` owns only generic strings
+  (`core_ui_loading`, `core_ui_retry`, `core_ui_dismiss`,
+  `core_ui_brand_wordmark`); per-screen copy is a component *parameter* the
+  feature resolves from its own `strings.xml`. Material Symbols ligature names
+  are glyph ids, not text, and stay literals.
 - **Brand:** the wordmark is `BrandMark` (forum tile + lowercase "bro").
   Do not invent a Bro logo. "Bro" never appears in code identifiers.
 - **Surfaces:** flat tonal fills; no gradients; no glass/backdrop blur; shadow

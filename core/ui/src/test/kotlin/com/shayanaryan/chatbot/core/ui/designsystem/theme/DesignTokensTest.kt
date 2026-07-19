@@ -7,8 +7,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DesignTokensTest {
-    private val motion = Motion()
-
     @Test
     fun spacingFollowsFourDpGrid() {
         assertEquals(0.dp, Spacing.none)
@@ -54,15 +52,15 @@ class DesignTokensTest {
 
     @Test
     fun motionDurationsScalesAndStateLayers() {
-        assertEquals(150, motion.durationShortMillis)
-        assertEquals(250, motion.durationMediumMillis)
-        assertEquals(400, motion.durationLongMillis)
-        assertEquals(0.97f, motion.pressScaleButton, 0f)
-        assertEquals(0.90f, motion.pressScaleIconButton, 0f)
-        assertEquals(0.08f, motion.stateLayerHover, 0f)
-        assertEquals(0.10f, motion.stateLayerFocus, 0f)
-        assertEquals(0.12f, motion.stateLayerPressed, 0f)
-        assertEquals(1000, motion.caretBlinkMillis)
+        assertEquals(150, Motion.durationShortMillis)
+        assertEquals(250, Motion.durationMediumMillis)
+        assertEquals(400, Motion.durationLongMillis)
+        assertEquals(0.97f, Motion.pressScaleButton, 0f)
+        assertEquals(0.90f, Motion.pressScaleIconButton, 0f)
+        assertEquals(0.08f, Motion.stateLayerHover, 0f)
+        assertEquals(0.10f, Motion.stateLayerFocus, 0f)
+        assertEquals(0.12f, Motion.stateLayerPressed, 0f)
+        assertEquals(1000, Motion.caretBlinkMillis)
     }
 
     @Test

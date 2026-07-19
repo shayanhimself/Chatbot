@@ -27,7 +27,7 @@ The exact value tables in this spec (primitive hexes, role values, type metrics)
 
 Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — semantic/extended colors, motion, the mono text style, named component shapes — live in `:core:ui`, split by whether their value depends on runtime state.
 
-A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. Those are installed by `ChatbotTheme` and read via the `ChatbotTheme` accessor object (`ChatbotTheme.extendedColors`, `ChatbotTheme.motion`). Everything else is constant and read directly — `Spacing.md`, `Elevation.level2`, `ChatbotShapes.bubbleUser`, `MonoTextStyle` — with no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
+A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. Today `ExtendedColors` is the only one: it is installed by `ChatbotTheme` and read via the `ChatbotTheme` accessor object (`ChatbotTheme.extendedColors`). Everything else is constant and read directly — `Spacing.md`, `Elevation.level2`, `ChatbotShapes.bubbleUser`, `Motion.durationMediumMillis`, `MonoTextStyle` — with no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
 
 ### Color
 
@@ -122,7 +122,9 @@ M3 `Shapes`: xs 4 · sm 8 · md 12 · lg 16 · xl 28. Named component shapes on 
 
 Dark elevation is conveyed by tonal surface color; shadow (`Elevation`, levels 1–5) is reserved for FAB, menus, dialogs, and the fire-time heads-up notification. Cards default to flat filled surfaces. The shadow ramp is identical in both schemes — depth in dark comes from the tonal `surfaceContainer*` roles, not from different shadow values.
 
-Motion (`ChatbotTheme.motion`): standard easing `cubic-bezier(0.2,0,0,1)`, emphasized easing `cubic-bezier(0.05,0.7,0.1,1)` (plus decelerate/accelerate variants); durations short 150 / medium 250 / long 400 ms. Press scales the target down (button 0.97, icon button 0.90) and, on filled surfaces, shifts to the pressed color; hover applies an 8% state layer. Streaming caret blinks at 1s. No infinite decorative loops. No glass/backdrop blur; `scrim` dims behind dialogs.
+Motion (`Motion`): standard easing `cubic-bezier(0.2,0,0,1)`, emphasized easing `cubic-bezier(0.05,0.7,0.1,1)` (plus decelerate/accelerate variants); durations short 150 / medium 250 / long 400 ms. Press scales the target down (button 0.97, icon button 0.90) and, on filled surfaces, shifts to the pressed color; hover applies an 8% state layer. Streaming caret blinks at 1s. No infinite decorative loops. No glass/backdrop blur; `scrim` dims behind dialogs.
+
+Honouring the system reduce-motion setting is out of scope. Compose does not apply the platform animator scale to these durations automatically, so it would be deliberate work; if it is ever specced, `Motion` becomes a CompositionLocal again so durations can be zeroed in one place rather than checked in every animated component.
 
 ## Theme entry
 

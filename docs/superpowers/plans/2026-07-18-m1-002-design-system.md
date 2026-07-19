@@ -39,7 +39,7 @@ main/kotlin/.../core/ui/designsystem/
   theme/Shape.kt              M3 Shapes + ChatbotShapes (button/chip/card/input/dialog/bubbles), constants
   theme/Spacing.kt            4dp-grid Spacing (constants)
   theme/Elevation.kt          Elevation levels 1–5 (constants)
-  theme/Motion.kt             easings, durations, press scales, state-layer opacities + Local
+  theme/Motion.kt             easings, durations, press scales, state-layer opacities (constants)
   theme/Theme.kt              ChatbotTheme composable + ChatbotTheme accessor object (replaces template)
   icon/Icon.kt                Icon composable over the variable font
   icon/Glyphs.kt              model-glyph + brand-glyph constants
@@ -527,7 +527,7 @@ Expected: BUILD SUCCESSFUL, all module tests green. Leave in tree.
   - `object Spacing` — `none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l: Dp` = 0/4/8/12/16/20/24/32/40/48/64, plus `gutter: Dp = md`. Constant across devices and themes, so plain constants with no CompositionLocal — readable outside composition. No `minTouchTarget` token: use `Modifier.minimumInteractiveComponentSize()`, which expands the touch area without changing visual layout.
   - `internal val ChatbotM3Shapes: Shapes` (xs 4 / sm 8 / md 12 / lg 16 / xl 28); `object ChatbotShapes` — `button/chip: Shape` (pill), `card`/`input`/`dialog: Shape` resolving to `ChatbotM3Shapes.medium`/`.extraSmall`/`.extraLarge` rather than restating 12/4/28, `bubbleUser/bubbleAssistant: Shape` (20 with 4dp squared tail: bottom-end for user, bottom-start for assistant). Constant, so no CompositionLocal.
   - `object Elevation` — `level1..level5: Dp` = 1/3/6/8/12. Same ramp in both schemes (depth in dark comes from the tonal `surfaceContainer*` roles, not different shadow values), so plain constants with no CompositionLocal.
-  - `@Immutable class Motion` — easings, durations (150/250/400), `pressScaleButton = 0.97f`, `pressScaleIconButton = 0.90f`, state-layer opacities (0.08/0.10/0.12), `caretBlinkMillis = 1000`; `LocalMotion`.
+  - `object Motion` — easings, durations (150/250/400), `pressScaleButton = 0.97f`, `pressScaleIconButton = 0.90f`, state-layer opacities (0.08/0.10/0.12), `caretBlinkMillis = 1000`. Constant, so no CompositionLocal. (Honouring the system reduce-motion setting is not in scope; if it is ever specced, this becomes a Local again so durations can be zeroed in one place.)
   - `@Immutable class ExtendedColors` — `success/onSuccess/successContainer/warning/primaryHover/primaryPressed: Color`; `internal val DarkExtendedColors/LightExtendedColors`; `LocalExtendedColors`.
 
 - [x] **Step 1: Write the failing test**
@@ -542,10 +542,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DesignTokensTest {
-    private val spacing = Spacing
-    private val shapes = ChatbotShapes
-    private val motion = Motion()
-
     @Test
     fun spacingFollowsFourDpGrid() {
         assertEquals(0.dp, Spacing.none)
@@ -575,15 +571,15 @@ class DesignTokensTest {
 
     @Test
     fun motionDurationsScalesAndStateLayers() {
-        assertEquals(150, motion.durationShortMillis)
-        assertEquals(250, motion.durationMediumMillis)
-        assertEquals(400, motion.durationLongMillis)
-        assertEquals(0.97f, motion.pressScaleButton, 0f)
-        assertEquals(0.90f, motion.pressScaleIconButton, 0f)
-        assertEquals(0.08f, motion.stateLayerHover, 0f)
-        assertEquals(0.10f, motion.stateLayerFocus, 0f)
-        assertEquals(0.12f, motion.stateLayerPressed, 0f)
-        assertEquals(1000, motion.caretBlinkMillis)
+        assertEquals(150, Motion.durationShortMillis)
+        assertEquals(250, Motion.durationMediumMillis)
+        assertEquals(400, Motion.durationLongMillis)
+        assertEquals(0.97f, Motion.pressScaleButton, 0f)
+        assertEquals(0.90f, Motion.pressScaleIconButton, 0f)
+        assertEquals(0.08f, Motion.stateLayerHover, 0f)
+        assertEquals(0.10f, Motion.stateLayerFocus, 0f)
+        assertEquals(0.12f, Motion.stateLayerPressed, 0f)
+        assertEquals(1000, Motion.caretBlinkMillis)
     }
 
     @Test
@@ -733,28 +729,23 @@ package com.shayanaryan.chatbot.core.ui.designsystem.theme
 
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.staticCompositionLocalOf
 
 // last synced from Bro DS, 2026-07-18
-@Immutable
-class Motion(
-    val easingStandard: Easing = CubicBezierEasing(0.2f, 0f, 0f, 1f),
-    val easingEmphasized: Easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f),
-    val easingDecelerate: Easing = CubicBezierEasing(0f, 0f, 0f, 1f),
-    val easingAccelerate: Easing = CubicBezierEasing(0.3f, 0f, 1f, 1f),
-    val durationShortMillis: Int = 150,
-    val durationMediumMillis: Int = 250,
-    val durationLongMillis: Int = 400,
-    val pressScaleButton: Float = 0.97f,
-    val pressScaleIconButton: Float = 0.90f,
-    val stateLayerHover: Float = 0.08f,
-    val stateLayerFocus: Float = 0.10f,
-    val stateLayerPressed: Float = 0.12f,
-    val caretBlinkMillis: Int = 1000,
-)
-
-internal val LocalMotion = staticCompositionLocalOf { Motion() }
+object Motion {
+    val easingStandard: Easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+    val easingEmphasized: Easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
+    val easingDecelerate: Easing = CubicBezierEasing(0f, 0f, 0f, 1f)
+    val easingAccelerate: Easing = CubicBezierEasing(0.3f, 0f, 1f, 1f)
+    val durationShortMillis: Int = 150
+    val durationMediumMillis: Int = 250
+    val durationLongMillis: Int = 400
+    val pressScaleButton: Float = 0.97f
+    val pressScaleIconButton: Float = 0.90f
+    val stateLayerHover: Float = 0.08f
+    val stateLayerFocus: Float = 0.10f
+    val stateLayerPressed: Float = 0.12f
+    val caretBlinkMillis: Int = 1000
+}
 ```
 
 `ExtendedColors.kt`:
@@ -820,7 +811,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/theme/ChatbotThemeTest.kt`
 
 **Interfaces:**
-- Consumes: `DarkColorScheme`/`LightColorScheme` (Task 1), `ChatbotTypography` (Task 2), the Task 3 token sets — `ExtendedColors`/`Motion` via their Locals, `Spacing`/`Elevation`/`ChatbotShapes` as constants.
+- Consumes: `DarkColorScheme`/`LightColorScheme` (Task 1), `ChatbotTypography` (Task 2), the Task 3 token sets — `ExtendedColors` via its Local, `Spacing`/`Elevation`/`ChatbotShapes`/`Motion` as constants.
 - Produces (the public theme API every later task and feature module uses):
 
 ```kotlin
@@ -828,7 +819,6 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 
 object ChatbotTheme {
     val extendedColors: ExtendedColors @Composable get
-    val motion: Motion @Composable get
 }
 ```
 
@@ -854,20 +844,17 @@ class ChatbotThemeTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun darkIsDefaultAndInstallsAllTokens() {
+    fun darkThemeInstallsDarkSchemeAndExtendedColors() {
         var primary = Color.Unspecified
         var success = Color.Unspecified
-        var duration = 0
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
                 primary = MaterialTheme.colorScheme.primary
                 success = ChatbotTheme.extendedColors.success
-                duration = ChatbotTheme.motion.durationMediumMillis
             }
         }
         assertEquals(ColorPrimitives.Orange50, primary)
         assertEquals(ColorPrimitives.Green50, success)
-        assertEquals(250, duration)
     }
 
     @Test
@@ -909,10 +896,7 @@ fun ChatbotTheme(
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val extendedColors = if (darkTheme) DarkExtendedColors else LightExtendedColors
-    CompositionLocalProvider(
-        LocalExtendedColors provides extendedColors,
-        LocalMotion provides Motion(),
-    ) {
+    CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = ChatbotTypography,
@@ -922,12 +906,14 @@ fun ChatbotTheme(
     }
 }
 
-/** Accessors for tokens which M3 has no slot for. Standard tokens come from [MaterialTheme]. */
+/**
+ * Accessors for tokens which M3 has no slot for and whose value depends on the active scheme.
+ * Standard tokens come from [MaterialTheme]; constant token sets ([Spacing], [Elevation],
+ * [ChatbotShapes], [Motion], [MonoTextStyle]) are read directly.
+ */
 object ChatbotTheme {
     val extendedColors: ExtendedColors
         @Composable @ReadOnlyComposable get() = LocalExtendedColors.current
-    val motion: Motion
-        @Composable @ReadOnlyComposable get() = LocalMotion.current
 }
 ```
 
@@ -1316,7 +1302,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/ButtonTest.kt`
 
 **Interfaces:**
-- Consumes: `Icon`, `Glyphs` (Task 6); `ChatbotShapes.button`, `ChatbotTheme.motion` (Tasks 3–4).
+- Consumes: `Icon`, `Glyphs` (Task 6); `ChatbotShapes.button`, `Motion` (Tasks 3–4).
 - Produces:
 
 ```kotlin
@@ -1449,10 +1435,9 @@ fun Button(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val motion = ChatbotTheme.motion
     val scale by animateFloatAsState(
-        targetValue = if (pressed) motion.pressScaleButton else 1f,
-        animationSpec = tween(motion.durationShortMillis, easing = motion.easingStandard),
+        targetValue = if (pressed) Motion.pressScaleButton else 1f,
+        animationSpec = tween(Motion.durationShortMillis, easing = Motion.easingStandard),
         label = "button-press-scale",
     )
     val pressModifier =
@@ -1524,10 +1509,9 @@ fun IconButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val motion = ChatbotTheme.motion
     val scale by animateFloatAsState(
-        targetValue = if (pressed) motion.pressScaleIconButton else 1f,
-        animationSpec = tween(motion.durationShortMillis, easing = motion.easingStandard),
+        targetValue = if (pressed) Motion.pressScaleIconButton else 1f,
+        animationSpec = tween(Motion.durationShortMillis, easing = Motion.easingStandard),
         label = "icon-button-press-scale",
     )
     val pressModifier =
@@ -2677,7 +2661,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/ChatComponentsTest.kt`
 
 **Interfaces:**
-- Consumes: `Icon`, `Glyphs` (Task 6), `Badge` (Task 8), `ChatbotShapes.bubbleUser/bubbleAssistant`, `ChatbotTheme.motion.caretBlinkMillis`.
+- Consumes: `Icon`, `Glyphs` (Task 6), `Badge` (Task 8), `ChatbotShapes.bubbleUser/bubbleAssistant`, `Motion.caretBlinkMillis`.
 - Produces (spec 005 wires these to ViewModels/data):
 
 ```kotlin
@@ -2890,7 +2874,7 @@ fun MessageBubble(
 
 @Composable
 private fun StreamingCaret() {
-    val blinkMillis = ChatbotTheme.motion.caretBlinkMillis
+    val blinkMillis = Motion.caretBlinkMillis
     val transition = rememberInfiniteTransition(label = "streaming-caret")
     val alpha by transition.animateFloat(
         initialValue = 1f,
@@ -3237,12 +3221,12 @@ Bro DS, 2026-07-18).
 - Constants, read directly — no theme lookup, usable outside composition:
   `Spacing` (none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l + gutter), `Elevation`
   (level1–5), `ChatbotShapes` (button, chip, card, input, dialog, bubbleUser,
-  bubbleAssistant). For touch targets use
-  `Modifier.minimumInteractiveComponentSize()`, not a spacing value.
-- Also constant: `MonoTextStyle` (14sp monospace) at the bottom of `Type.kt`.
-- Everything else via `ChatbotTheme`: `.extendedColors` (success/onSuccess/
-  successContainer, warning, primaryHover/primaryPressed), `.motion` (easings,
-  durations, press scales, state-layer opacities, caretBlinkMillis).
+  bubbleAssistant), `Motion` (easings, durations, press scales, state-layer
+  opacities, caretBlinkMillis), `MonoTextStyle` (14sp monospace, in `Type.kt`).
+  For touch targets use `Modifier.minimumInteractiveComponentSize()`, not a
+  spacing value.
+- Scheme-dependent, so via `ChatbotTheme`: `.extendedColors` (success/onSuccess/
+  successContainer, warning, primaryHover/primaryPressed). It is the only one.
 - Never hardcode a hex, dp, or sp that a token covers. Components read roles,
   never primitives (`ColorPrimitives` is internal to `:core:ui`).
 
@@ -3319,4 +3303,4 @@ Report the working tree ready for user review: new `:core:ui` sources + goldens,
 
 - **Spec coverage:** module/deps → T1; two-tier color + both schemes + scrims → T1; extended colors + state layers → T3; typography 15 roles + mono → T2; shapes (incl. bubble tails) → T3; spacing/gutter/touch target → T3; elevation + motion (easings, durations, press scales, caret 1s) → T3, exercised in T7/T11; theme entry, no dynamic color → T4; icon font bundled in-APK + axes + ligatures → T6; model glyphs + brand mark + no-logo rule → T6/T8; naming boundary + M3 aliasing → global + T7 code; component catalog: core → T7/T8, forms → T9, feedback → T10, chat → T11; stateless rule → signatures throughout; screenshot testing dark+light per component → T5 + each task; Roborazzi fallback → T5; companion skill → T12; value migration out of spec → T12.
 - **Known judgment calls (flag at review, don't silently change):** mono uses `FontFamily.Monospace` instead of a bundled Roboto Mono (T2); label/display letter-spacing kept M3-exact where the upstream CSS port is lossy (T2, see tracking note); web `size`/`fullWidth` props dropped (T7); Dialog uses confirm/dismiss params instead of an actions list (T10); `ModelPicker` keeps menu-expanded state internal (T11); bubble/list-item paddings taken from upstream `.jsx` with a T11 fidelity re-check for the two files not pulled at plan time.
-- **Type consistency:** verified — `Glyphs.ModelSonnet/ModelHaiku/ModelOpus/Brand`, `Spacing.md/xs/…`, `ChatbotShapes.bubbleUser/bubbleAssistant`, `motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant`/`MessageRole` are used with these exact names in every later task.
+- **Type consistency:** verified — `Glyphs.ModelSonnet/ModelHaiku/ModelOpus/Brand`, `Spacing.md/xs/…`, `ChatbotShapes.bubbleUser/bubbleAssistant`, `Motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant`/`MessageRole` are used with these exact names in every later task.

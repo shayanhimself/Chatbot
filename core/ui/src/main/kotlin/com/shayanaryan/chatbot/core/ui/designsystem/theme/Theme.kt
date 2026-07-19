@@ -13,10 +13,7 @@ fun ChatbotTheme(
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val extendedColors = if (darkTheme) DarkExtendedColors else LightExtendedColors
-    CompositionLocalProvider(
-        LocalExtendedColors provides extendedColors,
-        LocalMotion provides Motion(),
-    ) {
+    CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = ChatbotTypography,
@@ -31,7 +28,4 @@ object ChatbotTheme {
     val extendedColors: ExtendedColors
         @Composable @ReadOnlyComposable
         get() = LocalExtendedColors.current
-    val motion: Motion
-        @Composable @ReadOnlyComposable
-        get() = LocalMotion.current
 }

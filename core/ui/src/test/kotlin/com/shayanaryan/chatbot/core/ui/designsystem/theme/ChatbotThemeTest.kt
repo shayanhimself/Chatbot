@@ -15,20 +15,17 @@ class ChatbotThemeTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun darkIsDefaultAndInstallsAllTokens() {
+    fun darkThemeInstallsDarkSchemeAndExtendedColors() {
         var primary = Color.Unspecified
         var success = Color.Unspecified
-        var duration = 0
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
                 primary = MaterialTheme.colorScheme.primary
                 success = ChatbotTheme.extendedColors.success
-                duration = ChatbotTheme.motion.durationMediumMillis
             }
         }
         assertEquals(ColorPrimitives.Orange50, primary)
         assertEquals(ColorPrimitives.Green50, success)
-        assertEquals(250, duration)
     }
 
     @Test

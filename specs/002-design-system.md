@@ -25,7 +25,9 @@ The exact value tables in this spec (primitive hexes, role values, type metrics)
 
 ## Token layer
 
-Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — semantic/extended colors, motion, elevation, the mono text style, named component shapes — are exposed as immutable holders through CompositionLocals installed by `ChatbotTheme`, read via a `ChatbotTheme` accessor object (`ChatbotTheme.extendedColors`, `ChatbotTheme.motion`, `ChatbotTheme.shapes.bubble`, …). Spacing is the exception: it never varies by theme or device, so it is a plain constants object read directly as `Spacing.md`.
+Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — semantic/extended colors, motion, the mono text style, named component shapes — are exposed as immutable holders through CompositionLocals installed by `ChatbotTheme`, read via a `ChatbotTheme` accessor object (`ChatbotTheme.extendedColors`, `ChatbotTheme.motion`, `ChatbotTheme.shapes.bubble`, …).
+
+A token earns a CompositionLocal only if it varies by scheme or wants per-subtree override. Ramps that are the same everywhere — `Spacing` and `Elevation` — are plain constants objects read directly (`Spacing.md`, `Elevation.level2`): no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
 
 ### Color
 
@@ -118,7 +120,7 @@ M3 `Shapes`: xs 4 · sm 8 · md 12 · lg 16 · xl 28. Named component shapes on 
 
 ### Elevation & motion
 
-Dark elevation is conveyed by tonal surface color; shadow (`ChatbotTheme.elevation`, levels 1–5) is reserved for FAB, menus, dialogs, and the fire-time heads-up notification. Cards default to flat filled surfaces.
+Dark elevation is conveyed by tonal surface color; shadow (`Elevation`, levels 1–5) is reserved for FAB, menus, dialogs, and the fire-time heads-up notification. Cards default to flat filled surfaces. The shadow ramp is identical in both schemes — depth in dark comes from the tonal `surfaceContainer*` roles, not from different shadow values.
 
 Motion (`ChatbotTheme.motion`): standard easing `cubic-bezier(0.2,0,0,1)`, emphasized easing `cubic-bezier(0.05,0.7,0.1,1)` (plus decelerate/accelerate variants); durations short 150 / medium 250 / long 400 ms. Press scales the target down (button 0.97, icon button 0.90) and, on filled surfaces, shifts to the pressed color; hover applies an 8% state layer. Streaming caret blinks at 1s. No infinite decorative loops. No glass/backdrop blur; `scrim` dims behind dialogs.
 

@@ -17,7 +17,6 @@ fun ChatbotTheme(
         LocalExtendedColors provides extendedColors,
         LocalExtendedTypography provides DefaultExtendedTypography,
         LocalChatbotShapes provides ChatbotShapes(),
-        LocalElevation provides Elevation(),
         LocalMotion provides Motion(),
     ) {
         MaterialTheme(
@@ -29,7 +28,11 @@ fun ChatbotTheme(
     }
 }
 
-/** Accessors for tokens M3 has no slot for. Standard tokens come from [MaterialTheme]. */
+/**
+ * Accessors for tokens M3 has no slot for that vary by scheme or may be overridden per subtree.
+ * Standard tokens come from [MaterialTheme]; the constant [Spacing] and [Elevation] ramps are read
+ * directly.
+ */
 object ChatbotTheme {
     val extendedColors: ExtendedColors
         @Composable @ReadOnlyComposable
@@ -40,9 +43,6 @@ object ChatbotTheme {
     val shapes: ChatbotShapes
         @Composable @ReadOnlyComposable
         get() = LocalChatbotShapes.current
-    val elevation: Elevation
-        @Composable @ReadOnlyComposable
-        get() = LocalElevation.current
     val motion: Motion
         @Composable @ReadOnlyComposable
         get() = LocalMotion.current

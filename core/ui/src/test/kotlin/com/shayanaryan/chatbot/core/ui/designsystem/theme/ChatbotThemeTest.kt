@@ -20,19 +20,19 @@ class ChatbotThemeTest {
     fun darkIsDefaultAndInstallsAllTokens() {
         var primary = Color.Unspecified
         var success = Color.Unspecified
-        var elevation = 0.dp
+        var duration = 0
         var monoSize = 0.sp
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
                 primary = MaterialTheme.colorScheme.primary
                 success = ChatbotTheme.extendedColors.success
-                elevation = ChatbotTheme.elevation.level1
+                duration = ChatbotTheme.motion.durationMediumMillis
                 monoSize = ChatbotTheme.typography.mono.fontSize
             }
         }
         assertEquals(ColorPrimitives.Orange50, primary)
         assertEquals(ColorPrimitives.Green50, success)
-        assertEquals(1.dp, elevation)
+        assertEquals(250, duration)
         assertEquals(14.sp, monoSize)
     }
 

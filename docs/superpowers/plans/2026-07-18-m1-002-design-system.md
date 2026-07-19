@@ -4,7 +4,7 @@
 
 **Goal:** Build `:core:ui` — the Bro Material 3 design system: dark-first theme, full token layer, Material Symbols icon system, and the stateless component catalog (core / forms / feedback / chat), all screenshot-tested, plus the companion `design-system` project skill.
 
-**Architecture:** Two-tier color (internal primitives → two full `ColorScheme`s); standard tokens through `MaterialTheme`, everything M3 lacks (spacing, extended colors, motion, elevation, named shapes, mono style) through CompositionLocals read via a `ChatbotTheme` accessor object. Components are stateless wrappers over `androidx.compose.material3` (aliased `M3*` inside `:core:ui` only). Spec: `specs/002-design-system.md`. Component prop contracts were pulled from the upstream **Bro Design System** Claude Design project (projectId `c5a6030b-52d3-4ecc-ab51-4460eebdc7df`, via `pull-design` skill) on 2026-07-18 and are baked into the signatures below.
+**Architecture:** Two-tier color (internal primitives → two full `ColorScheme`s); standard tokens through `MaterialTheme`; the scheme-varying extras M3 lacks (extended colors, motion, named shapes, mono style) through CompositionLocals read via a `ChatbotTheme` accessor object, while the constant `Spacing` and `Elevation` ramps are plain objects read directly. Components are stateless wrappers over `androidx.compose.material3` (aliased `M3*` inside `:core:ui` only). Spec: `specs/002-design-system.md`. Component prop contracts were pulled from the upstream **Bro Design System** Claude Design project (projectId `c5a6030b-52d3-4ecc-ab51-4460eebdc7df`, via `pull-design` skill) on 2026-07-18 and are baked into the signatures below.
 
 **Tech Stack:** Kotlin 2.4.10, Compose BOM 2026.06.01, Material 3 (stable APIs only), Robolectric 4.16.1 (SDK 36, JDK 21 launcher), Compose test rule **v2**, Compose Preview Screenshot Testing plugin `0.0.1-alpha15` (latest on Google Maven as of 2026-07-18; Roborazzi is the documented fallback if it blocks).
 
@@ -39,7 +39,7 @@ main/kotlin/.../core/ui/designsystem/
   theme/ExtendedTypography.kt mono style holder + Local
   theme/Shape.kt              M3 Shapes + ChatbotShapes (button/chip/card/input/dialog/bubbles) + Local
   theme/Spacing.kt            4dp-grid Spacing + Local
-  theme/Elevation.kt          Elevation levels 1–5 + Local
+  theme/Elevation.kt          Elevation levels 1–5 (constants)
   theme/Motion.kt             easings, durations, press scales, state-layer opacities + Local
   theme/Theme.kt              ChatbotTheme composable + ChatbotTheme accessor object (replaces template)
   icon/Icon.kt                Icon composable over the variable font
@@ -542,7 +542,7 @@ Expected: BUILD SUCCESSFUL, all module tests green. Leave in tree.
 - Produces (Task 4 installs the Locals; components read via `ChatbotTheme`):
   - `object Spacing` — `none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l: Dp` = 0/4/8/12/16/20/24/32/40/48/64, plus `gutter: Dp = md`. Constant across devices and themes, so plain constants with no CompositionLocal — readable outside composition. No `minTouchTarget` token: use `Modifier.minimumInteractiveComponentSize()`, which expands the touch area without changing visual layout.
   - `internal val ChatbotM3Shapes: Shapes` (xs 4 / sm 8 / md 12 / lg 16 / xl 28); `@Immutable class ChatbotShapes` — `button/chip: Shape` (pill), `card: Shape` (12), `input: Shape` (4), `dialog: Shape` (28), `bubbleUser/bubbleAssistant: Shape` (20 with 4dp squared tail: bottom-end for user, bottom-start for assistant); `LocalChatbotShapes`.
-  - `@Immutable class Elevation` — `level1..level5: Dp` = 1/3/6/8/12; `LocalElevation`.
+  - `object Elevation` — `level1..level5: Dp` = 1/3/6/8/12. Same ramp in both schemes (depth in dark comes from the tonal `surfaceContainer*` roles, not different shadow values), so plain constants with no CompositionLocal.
   - `@Immutable class Motion` — easings, durations (150/250/400), `pressScaleButton = 0.97f`, `pressScaleIconButton = 0.90f`, state-layer opacities (0.08/0.10/0.12), `caretBlinkMillis = 1000`; `LocalMotion`.
   - `@Immutable class ExtendedColors` — `success/onSuccess/successContainer/warning/primaryHover/primaryPressed: Color`; `internal val DarkExtendedColors/LightExtendedColors`; `LocalExtendedColors`.
 
@@ -604,12 +604,11 @@ class DesignTokensTest {
 
     @Test
     fun elevationLevelsAreM3Dps() {
-        val elevation = Elevation()
-        assertEquals(1.dp, elevation.level1)
-        assertEquals(3.dp, elevation.level2)
-        assertEquals(6.dp, elevation.level3)
-        assertEquals(8.dp, elevation.level4)
-        assertEquals(12.dp, elevation.level5)
+        assertEquals(1.dp, Elevation.level1)
+        assertEquals(3.dp, Elevation.level2)
+        assertEquals(6.dp, Elevation.level3)
+        assertEquals(8.dp, Elevation.level4)
+        assertEquals(12.dp, Elevation.level5)
     }
 
     @Test
@@ -714,22 +713,23 @@ internal val LocalChatbotShapes = staticCompositionLocalOf { ChatbotShapes() }
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.theme
 
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** Shadow elevation levels — reserved for FAB, menus, dialogs, heads-up notification. Cards stay flat. */
-@Immutable
-class Elevation(
-    val level1: Dp = 1.dp,
-    val level2: Dp = 3.dp,
-    val level3: Dp = 6.dp,
-    val level4: Dp = 8.dp,
-    val level5: Dp = 12.dp,
-)
-
-internal val LocalElevation = staticCompositionLocalOf { Elevation() }
+/**
+ * Shadow elevation levels — reserved for FAB, menus, dialogs, heads-up notification. Cards stay flat.
+ *
+ * The same ramp applies in both schemes: depth in dark is carried by the tonal `surfaceContainer*`
+ * roles of the `ColorScheme`, not by different shadow values. Constant, so plain constants rather
+ * than CompositionLocal-backed tokens — readable outside composition, no theme lookup.
+ */
+object Elevation {
+    val level1: Dp = 1.dp
+    val level2: Dp = 3.dp
+    val level3: Dp = 6.dp
+    val level4: Dp = 8.dp
+    val level5: Dp = 12.dp
+}
 ```
 
 `Motion.kt`:
@@ -836,7 +836,6 @@ object ChatbotTheme {
     val extendedColors: ExtendedColors @Composable get
     val typography: ExtendedTypography @Composable get
     val shapes: ChatbotShapes @Composable get
-    val elevation: Elevation @Composable get
     val motion: Motion @Composable get
 }
 ```
@@ -868,19 +867,19 @@ class ChatbotThemeTest {
     fun darkIsDefaultAndInstallsAllTokens() {
         var primary = Color.Unspecified
         var success = Color.Unspecified
-        var elevation = 0.dp
+        var duration = 0
         var monoSize = 0.sp
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
                 primary = MaterialTheme.colorScheme.primary
                 success = ChatbotTheme.extendedColors.success
-                elevation = ChatbotTheme.elevation.level1
+                duration = ChatbotTheme.motion.durationMediumMillis
                 monoSize = ChatbotTheme.typography.mono.fontSize
             }
         }
         assertEquals(ColorPrimitives.Orange50, primary)
         assertEquals(ColorPrimitives.Green50, success)
-        assertEquals(1.dp, elevation)
+        assertEquals(250, duration)
         assertEquals(14.sp, monoSize)
     }
 
@@ -927,7 +926,6 @@ fun ChatbotTheme(
         LocalExtendedColors provides extendedColors,
         LocalExtendedTypography provides DefaultExtendedTypography,
         LocalChatbotShapes provides ChatbotShapes(),
-        LocalElevation provides Elevation(),
         LocalMotion provides Motion(),
     ) {
         MaterialTheme(
@@ -950,8 +948,6 @@ object ChatbotTheme {
         @Composable @ReadOnlyComposable get() = LocalExtendedTypography.current
     val shapes: ChatbotShapes
         @Composable @ReadOnlyComposable get() = LocalChatbotShapes.current
-    val elevation: Elevation
-        @Composable @ReadOnlyComposable get() = LocalElevation.current
     val motion: Motion
         @Composable @ReadOnlyComposable get() = LocalMotion.current
 }
@@ -3260,14 +3256,15 @@ Bro DS, 2026-07-18).
 ## Token accessors
 
 - Standard M3: `MaterialTheme.colorScheme` / `.typography` / `.shapes`.
-- Spacing: `Spacing` directly (none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l + gutter) —
-  constants, no theme lookup, usable outside composition. For touch targets use
+- Constants, read directly — no theme lookup, usable outside composition:
+  `Spacing` (none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l + gutter) and
+  `Elevation` (level1–5). For touch targets use
   `Modifier.minimumInteractiveComponentSize()`, not a spacing value.
 - Everything else via `ChatbotTheme`: `.extendedColors` (success/onSuccess/
   successContainer, warning, primaryHover/primaryPressed), `.typography.mono`,
   `.shapes` (button, chip, card, input, dialog, bubbleUser, bubbleAssistant),
-  `.elevation` (level1–5), `.motion` (easings, durations, press scales,
-  state-layer opacities, caretBlinkMillis).
+  `.motion` (easings, durations, press scales, state-layer opacities,
+  caretBlinkMillis).
 - Never hardcode a hex, dp, or sp that a token covers. Components read roles,
   never primitives (`ColorPrimitives` is internal to `:core:ui`).
 

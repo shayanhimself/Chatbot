@@ -68,12 +68,11 @@ class DesignTokensTest {
 
     @Test
     fun elevationLevelsAreM3Dps() {
-        val elevation = Elevation()
-        assertEquals(1.dp, elevation.level1)
-        assertEquals(3.dp, elevation.level2)
-        assertEquals(6.dp, elevation.level3)
-        assertEquals(8.dp, elevation.level4)
-        assertEquals(12.dp, elevation.level5)
+        assertEquals(1.dp, Elevation.level1)
+        assertEquals(3.dp, Elevation.level2)
+        assertEquals(6.dp, Elevation.level3)
+        assertEquals(8.dp, Elevation.level4)
+        assertEquals(12.dp, Elevation.level5)
     }
 
     @Test

@@ -37,7 +37,7 @@ main/kotlin/.../core/ui/designsystem/
   theme/Type.kt               15-role Roboto Typography                       (replaces AGP-template file)
   theme/ExtendedColors.kt     ExtendedColors + dark/light instances + Local
   theme/Shape.kt              M3 Shapes + ChatbotShapes (button/chip/card/input/dialog/bubbles), constants
-  theme/Spacing.kt            4dp-grid Spacing + Local
+  theme/Spacing.kt            4dp-grid Spacing (constants)
   theme/Elevation.kt          Elevation levels 1–5 (constants)
   theme/Motion.kt             easings, durations, press scales, state-layer opacities + Local
   theme/Theme.kt              ChatbotTheme composable + ChatbotTheme accessor object (replaces template)
@@ -820,7 +820,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/theme/ChatbotThemeTest.kt`
 
 **Interfaces:**
-- Consumes: `DarkColorScheme`/`LightColorScheme` (Task 1), `ChatbotTypography` (Task 2), all Task 3 holders + Locals.
+- Consumes: `DarkColorScheme`/`LightColorScheme` (Task 1), `ChatbotTypography` (Task 2), the Task 3 token sets — `ExtendedColors`/`Motion` via their Locals, `Spacing`/`Elevation`/`ChatbotShapes` as constants.
 - Produces (the public theme API every later task and feature module uses):
 
 ```kotlin
@@ -858,19 +858,16 @@ class ChatbotThemeTest {
         var primary = Color.Unspecified
         var success = Color.Unspecified
         var duration = 0
-        var monoSize = 0.sp
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
                 primary = MaterialTheme.colorScheme.primary
                 success = ChatbotTheme.extendedColors.success
                 duration = ChatbotTheme.motion.durationMediumMillis
-                monoSize = MonoTextStyle.fontSize
             }
         }
         assertEquals(ColorPrimitives.Orange50, primary)
         assertEquals(ColorPrimitives.Green50, success)
         assertEquals(250, duration)
-        assertEquals(14.sp, monoSize)
     }
 
     @Test

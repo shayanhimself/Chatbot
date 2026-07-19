@@ -27,7 +27,7 @@ The exact value tables in this spec (primitive hexes, role values, type metrics)
 
 Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — semantic/extended colors, motion, the mono text style, named component shapes — live in `:core:ui`, split by whether their value depends on runtime state.
 
-A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. Those are installed by `ChatbotTheme` and read via the `ChatbotTheme` accessor object (`ChatbotTheme.extendedColors`, `ChatbotTheme.motion`). Token sets that are the same everywhere — `Spacing`, `Elevation`, `ChatbotShapes` — are plain constants objects read directly (`Spacing.md`, `Elevation.level2`, `ChatbotShapes.bubbleUser`): no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
+A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. Those are installed by `ChatbotTheme` and read via the `ChatbotTheme` accessor object (`ChatbotTheme.extendedColors`, `ChatbotTheme.motion`). Everything else is constant and read directly — `Spacing.md`, `Elevation.level2`, `ChatbotShapes.bubbleUser`, `MonoTextStyle` — with no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
 
 ### Color
 
@@ -108,7 +108,7 @@ Full 15-role M3 scale on **Roboto**, exact metrics from the source (size / line-
 | titleLarge | 22 / 28 | labelMedium | 12 / 16 (+0.5) |
 | | | labelSmall | 11 / 16 (+0.5) |
 
-A **Roboto Mono** style (`ChatbotTheme.typography.mono`, 14sp) is used for API keys, model ids, and code — the one text style outside the M3 scale.
+A monospace style (`MonoTextStyle`, 14sp, alongside the M3 scale in `Type.kt`) is used for API keys, model ids, and code — the one text style outside the M3 scale. It resolves to the device monospace via `FontFamily.Monospace`; bundling a Roboto Mono asset is deferred until fidelity demands it.
 
 ### Shape
 

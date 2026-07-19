@@ -148,7 +148,7 @@ Model-glyph constants: Sonnet → `balance`, Haiku → `bolt`, Opus → `auto_aw
 
 All components are stateless and presentational — state in via parameters, events out via lambdas — so feature modules own state and these stay screenshot-testable. Grouped as in the source project:
 
-- **core** — `Button` (filled / tonal / outlined / text / elevated), `IconButton` (standard / filled / tonal / outlined), `Icon`, `Card` (filled / outlined / elevated), `Badge`.
+- **core** — `Button` (filled / tonal / outlined / text / elevated; a `loading` state distinct from disabled — full colour and label kept, trailing slot becomes a spinner, click swallowed), `IconButton` (standard / filled / tonal / outlined), `Icon`, `Card` (filled / outlined / elevated), `Badge`.
 - **forms** — `TextField` (outlined / filled, floating label, focus border thickens to 2px accent), `Switch`, `Chip` (assist / filter / input / suggestion).
 - **feedback** — `Dialog`, `Snackbar`, `LoadingIndicator`, `ErrorState`.
 

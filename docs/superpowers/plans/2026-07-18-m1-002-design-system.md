@@ -56,7 +56,7 @@ main/kotlin/.../core/ui/designsystem/
   component/LoadingIndicator.kt
   component/ErrorState.kt
 main/res/font/material_symbols_rounded.ttf   (downloaded variable font — module root, not nested)
-main/res/values/strings.xml                  generic strings (retry — module root)
+main/res/values/strings.xml                  generic strings (loading, retry — module root)
 test/kotlin/.../core/ui/designsystem/...     JVM + Robolectric tests (mirrors main packages)
 test/resources/robolectric.properties        sdk=36
 screenshotTest/kotlin/.../core/ui/designsystem/preview/   @PreviewTest previews, one file per component family
@@ -1295,6 +1295,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 **Files:**
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Button.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/IconButton.kt`
+- Create: `core/ui/src/main/res/values/strings.xml` (the `loading` state description; Task 10 appends `retry` to this same file)
 - Create: `core/ui/src/screenshotTest/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/preview/ButtonPreviews.kt`
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/ButtonTest.kt`
 
@@ -1307,6 +1308,7 @@ enum class ButtonVariant { Filled, Tonal, Outlined, Text, Elevated }
 @Composable fun Button(
     text: String, onClick: () -> Unit, modifier: Modifier = Modifier,
     variant: ButtonVariant = ButtonVariant.Filled, enabled: Boolean = true,
+    loading: Boolean = false,
     leadingGlyph: String? = null, trailingGlyph: String? = null,
 )
 
@@ -1320,6 +1322,12 @@ enum class IconButtonVariant { Standard, Filled, Tonal, Outlined }
 
 Upstream contract deltas, decided here: the web `size` prop (small/medium/large) and `fullWidth` are dropped — spec 002's catalog lists variants only; width comes from `Modifier`. `ariaLabel` becomes required `contentDescription` on `IconButton`.
 
+`loading` is a state distinct from `enabled = false`, and the distinction is load-bearing: **disabled dims the button; loading keeps the full filled appearance and the label**, swaps the trailing slot for a spinner, and drops the click. So it is *not* implemented as `enabled = enabled && !loading` — that would dim it. The button stays enabled and `onClick` becomes a no-op. Upstream sets `aria-busy`; the Compose equivalent is a `stateDescription` on the button node. `IconButton` has no loading state upstream and gets none here.
+
+The spinner is `androidx.compose.material3.CircularProgressIndicator` (aliased, per the wrapper rule), passing `trackColor` at 0.25 alpha to match the faint ring the upstream SVG draws under its arc. It is deliberately *not* a hand-drawn port of that SVG: M3's indeterminate motion differs (an arc that grows and shrinks over roughly 1.3s, against upstream's fixed 90° arc at a constant 0.7s), and that difference is not worth ~35 lines of `Canvas` geometry in `:core:ui`. The DS is the source of truth for the token vocabulary — colour, size, the ring — not for reimplementing platform primitives stroke-for-stroke; same reasoning as `card`/`input`/`dialog` resolving to M3 shapes instead of restating radii. Going custom later is a contained change behind this call site if the difference ever bothers anyone.
+
+It is also not the `LoadingIndicator` from Task 10 — Task 7 must not depend forward on Task 10, and that component is a differently-sized wrapper anyway.
+
 - [ ] **Step 1: Write the failing test**
 
 ```kotlin
@@ -1327,6 +1335,7 @@ package com.shayanaryan.chatbot.core.ui.designsystem.component
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -1335,6 +1344,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -1371,6 +1381,17 @@ class ButtonTest {
     }
 
     @Test
+    fun loadingButtonKeepsLabelAndBlocksClicks() {
+        var clicked = false
+        composeRule.setContent {
+            ChatbotTheme { Button(text = "Validating…", onClick = { clicked = true }, loading = true) }
+        }
+        // Loading is not disabled: the node stays enabled and full-colour, the click just does nothing.
+        composeRule.onNodeWithText("Validating…").assertIsDisplayed().assertIsEnabled().performClick()
+        assertFalse(clicked)
+    }
+
+    @Test
     fun iconButtonExposesContentDescriptionAndClicks() {
         var clicked = false
         composeRule.setContent {
@@ -1402,17 +1423,24 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import com.shayanaryan.chatbot.core.ui.R
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import androidx.compose.material3.Button as M3Button
+import androidx.compose.material3.CircularProgressIndicator as M3CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton as M3ElevatedButton
 import androidx.compose.material3.FilledTonalButton as M3FilledTonalButton
 import androidx.compose.material3.OutlinedButton as M3OutlinedButton
@@ -1427,6 +1455,7 @@ fun Button(
     modifier: Modifier = Modifier,
     variant: ButtonVariant = ButtonVariant.Filled,
     enabled: Boolean = true,
+    loading: Boolean = false,
     leadingGlyph: String? = null,
     trailingGlyph: String? = null,
 ) {
@@ -1437,11 +1466,16 @@ fun Button(
         animationSpec = tween(Motion.durationShortMillis, easing = Motion.easingStandard),
         label = "button-press-scale",
     )
+    // Loading is deliberately not folded into `enabled`: disabled dims the button, loading keeps
+    // the full filled appearance and the label, and only swallows the click.
+    val loadingDescription = LocalContext.current.getString(R.string.core_ui_loading)
     val pressModifier =
-        modifier.graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-        }
+        modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }.semantics { if (loading) stateDescription = loadingDescription }
+    val action = if (loading) ({}) else onClick
     val shape = ChatbotShapes.button
     val content: @Composable RowScope.() -> Unit = {
         if (leadingGlyph != null) {
@@ -1449,24 +1483,42 @@ fun Button(
             Spacer(Modifier.width(Spacing.xs))
         }
         Text(text)
-        if (trailingGlyph != null) {
+        // The spinner occupies the trailing slot, replacing any trailing glyph while it spins.
+        if (loading) {
+            Spacer(Modifier.width(Spacing.xs))
+            M3CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                color = LocalContentColor.current,
+                strokeWidth = 2.dp,
+                trackColor = LocalContentColor.current.copy(alpha = 0.25f),
+            )
+        } else if (trailingGlyph != null) {
             Spacer(Modifier.width(Spacing.xs))
             Icon(trailingGlyph, contentDescription = null, size = 18.dp)
         }
     }
     when (variant) {
         ButtonVariant.Filled ->
-            M3Button(onClick = onClick, modifier = pressModifier, enabled = enabled, shape = shape, interactionSource = interactionSource, content = content)
+            M3Button(onClick = action, modifier = pressModifier, enabled = enabled, shape = shape, interactionSource = interactionSource, content = content)
         ButtonVariant.Tonal ->
-            M3FilledTonalButton(onClick = onClick, modifier = pressModifier, enabled = enabled, shape = shape, interactionSource = interactionSource, content = content)
+            M3FilledTonalButton(onClick = action, modifier = pressModifier, enabled = enabled, shape = shape, interactionSource = interactionSource, content = content)
         ButtonVariant.Outlined ->
-            M3OutlinedButton(onClick = onClick, modifier = pressModifier, enabled = enabled, shape = shape, interactionSource = interactionSource, content = content)
+            M3OutlinedButton(onClick = action, modifier = pressModifier, enabled = enabled, shape = shape, interactionSource = interactionSource, content = content)
         ButtonVariant.Text ->
-            M3TextButton(onClick = onClick, modifier = pressModifier, enabled = enabled, shape = shape, interactionSource = interactionSource, content = content)
+            M3TextButton(onClick = action, modifier = pressModifier, enabled = enabled, shape = shape, interactionSource = interactionSource, content = content)
         ButtonVariant.Elevated ->
-            M3ElevatedButton(onClick = onClick, modifier = pressModifier, enabled = enabled, shape = shape, interactionSource = interactionSource, content = content)
+            M3ElevatedButton(onClick = action, modifier = pressModifier, enabled = enabled, shape = shape, interactionSource = interactionSource, content = content)
     }
 }
+
+```
+
+`strings.xml` (module root — Task 10 appends `core_ui_retry` to this file):
+
+```xml
+<resources>
+    <string name="core_ui_loading">Loading</string>
+</resources>
 ```
 
 `IconButton.kt`:
@@ -1544,7 +1596,7 @@ fun IconButton(
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.ButtonTest"`
-Expected: PASS (3 tests).
+Expected: PASS (4 tests).
 
 - [ ] **Step 5: Previews + screenshots**
 
@@ -1575,7 +1627,11 @@ private fun ButtonGallery() {
             ButtonVariant.entries.forEach { variant ->
                 Button(text = variant.name, onClick = {}, variant = variant, leadingGlyph = Glyphs.ModelHaiku)
             }
+            // Plain ligature, not a Glyphs constant — Glyphs holds only the model and brand glyphs.
+            Button(text = "Continue", onClick = {}, trailingGlyph = "arrow_forward")
             Button(text = "Disabled", onClick = {}, enabled = false)
+            // Loading sits beside disabled on purpose — the golden is what proves they look different.
+            Button(text = "Validating…", onClick = {}, loading = true)
             Row {
                 IconButtonVariant.entries.forEach { variant ->
                     IconButton(glyph = Glyphs.ModelSonnet, contentDescription = variant.name, onClick = {}, variant = variant)
@@ -1602,7 +1658,7 @@ private fun ButtonGalleryLightPreview() {
 ```
 
 Run: `./gradlew :core:ui:updateDebugScreenshotTest :core:ui:validateDebugScreenshotTest`
-Expected: BUILD SUCCESSFUL; eyeball goldens — pill shapes, orange filled button, glyphs render as symbols.
+Expected: BUILD SUCCESSFUL; eyeball goldens — pill shapes, orange filled button, glyphs render as symbols, and the loading button at full colour next to the dimmed disabled one, its spinner over a faint track ring. The rotation is infinite (functional, not one of the decorative loops the spec bans) and the preview samples one frame of it — if that turns out to be a *different* frame run to run, the golden will flake; drop the loading button from the preview and keep the semantics test as the only coverage. The animation itself is not screenshot-testable either way; eyeball it once in the running app.
 
 - [ ] **Step 6: Format and wrap up (no commit)**
 
@@ -1633,7 +1689,7 @@ enum class CardVariant { Filled, Outlined, Elevated }
 )
 
 enum class BadgeTone { Primary, Error, Success, Neutral }
-@Composable fun Badge(modifier: Modifier = Modifier, tone: BadgeTone = BadgeTone.Primary, text: String? = null)  // null text = dot
+@Composable fun Badge(modifier: Modifier = Modifier, tone: BadgeTone = BadgeTone.Error, text: String? = null)  // null text = dot
 
 @Composable fun BrandMark(modifier: Modifier = Modifier)
 ```
@@ -1766,7 +1822,8 @@ enum class BadgeTone { Primary, Error, Success, Neutral }
 @Composable
 fun Badge(
     modifier: Modifier = Modifier,
-    tone: BadgeTone = BadgeTone.Primary,
+    // Upstream default is `error` — an unqualified badge is an attention marker, not a brand accent.
+    tone: BadgeTone = BadgeTone.Error,
     text: String? = null,
 ) {
     val extended = ChatbotExtendedTheme.colors
@@ -1776,7 +1833,7 @@ fun Badge(
             BadgeTone.Primary -> scheme.primary to scheme.onPrimary
             BadgeTone.Error -> scheme.error to scheme.onError
             BadgeTone.Success -> extended.success to extended.onSuccess
-            BadgeTone.Neutral -> scheme.surfaceContainerHighest to scheme.onSurface
+            BadgeTone.Neutral -> scheme.surfaceContainerHighest to scheme.onSurfaceVariant
         }
     if (text == null) {
         Box(modifier.size(8.dp).background(container, CircleShape))
@@ -2273,7 +2330,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 ### Task 10: Feedback — `Dialog`, `Snackbar`, `LoadingIndicator`, `ErrorState`
 
 **Files:**
-- Create: `core/ui/src/main/res/values/strings.xml`
+- Modify: `core/ui/src/main/res/values/strings.xml` (created in Task 7)
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Dialog.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Snackbar.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/LoadingIndicator.kt`
@@ -2369,10 +2426,11 @@ Expected: FAIL — unresolved `Dialog` / `ErrorState` in `component` package.
 
 - [ ] **Step 3: Implement**
 
-`strings.xml`:
+`strings.xml` — add `core_ui_retry` alongside the `core_ui_loading` string Task 7 created:
 
 ```xml
 <resources>
+    <string name="core_ui_loading">Loading</string>
     <string name="core_ui_retry">Retry</string>
 </resources>
 ```

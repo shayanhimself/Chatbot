@@ -31,6 +31,29 @@ auth error, tell the user to run `/design-login`, then retry.
 Note: *Bro designs* is a design project, not a design system, so it is absent
 from `list_projects` — address it by its ID directly.
 
+## What the Design System project holds
+
+A map of where each kind of value lives, so you fetch only the files you need.
+Paths still change — `list_files` first and treat this as orientation, not a
+substitute.
+
+**`tokens/*.css` — canonical values, as CSS custom properties.** Two files
+carry more than their name suggests:
+
+| File | Tokens |
+|---|---|
+| `colors.css` | Primitives · dark + light roles · state opacities |
+| `typography.css` | Families · weights · M3 type scale |
+| `spacing.css` | Spacing |
+| `elevation.css` | Shadows · **motion** |
+| `fonts.css` | Font imports · icon-font axes |
+
+**Not in `tokens/`:** the model-glyph map and brand-mark rules live in
+`guidelines/brand-*.html`; per-component prop contracts live in
+`components/<group>/<Name>.d.ts` (with `.jsx` implementation and `.prompt.md`
+intent). Other `guidelines/*.html` are rendered rationale for the token values
+— read them when the *why* is in question, not to harvest values.
+
 ## What to do with what you pull
 
 - **Token structure and how values map to the app** (primitive vs. semantic

@@ -1,0 +1,34 @@
+package com.shayanaryan.chatbot.core.ui.designsystem.theme
+
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Shapes
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.dp
+
+internal val ChatbotM3Shapes =
+    Shapes(
+        extraSmall = RoundedCornerShape(4.dp),
+        small = RoundedCornerShape(8.dp),
+        medium = RoundedCornerShape(12.dp),
+        large = RoundedCornerShape(16.dp),
+        extraLarge = RoundedCornerShape(28.dp),
+    )
+
+/** Named component shapes. Bubble tail (4dp squared corner) sits bottom-end for user, bottom-start for assistant. */
+@Immutable
+class ChatbotShapes(
+    val button: Shape = CircleShape,
+    val chip: Shape = CircleShape,
+    val card: Shape = RoundedCornerShape(12.dp),
+    val input: Shape = RoundedCornerShape(4.dp),
+    val dialog: Shape = RoundedCornerShape(28.dp),
+    val bubbleUser: Shape =
+        RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 4.dp, bottomStart = 20.dp),
+    val bubbleAssistant: Shape =
+        RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 20.dp, bottomStart = 4.dp),
+)
+
+internal val LocalChatbotShapes = staticCompositionLocalOf { ChatbotShapes() }

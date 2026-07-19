@@ -120,7 +120,7 @@ M3 `Shapes`: xs 4 · sm 8 · md 12 · lg 16 · xl 28. Named component shapes on 
 
 Dark elevation is conveyed by tonal surface color; shadow (`ChatbotTheme.elevation`, levels 1–5) is reserved for FAB, menus, dialogs, and the fire-time heads-up notification. Cards default to flat filled surfaces.
 
-Motion (`ChatbotTheme.motion`): standard easing `cubic-bezier(0.2,0,0,1)` (plus decelerate/accelerate variants); durations short 150 / medium 250 / long 400 ms. Press scales the target down (button 0.97, icon button 0.90) and, on filled surfaces, shifts to the pressed color; hover applies an 8% state layer. Streaming caret blinks at 1s. No infinite decorative loops. No glass/backdrop blur; `scrim` dims behind dialogs.
+Motion (`ChatbotTheme.motion`): standard easing `cubic-bezier(0.2,0,0,1)`, emphasized easing `cubic-bezier(0.05,0.7,0.1,1)` (plus decelerate/accelerate variants); durations short 150 / medium 250 / long 400 ms. Press scales the target down (button 0.97, icon button 0.90) and, on filled surfaces, shifts to the pressed color; hover applies an 8% state layer. Streaming caret blinks at 1s. No infinite decorative loops. No glass/backdrop blur; `scrim` dims behind dialogs.
 
 ## Theme entry
 

@@ -21,6 +21,7 @@
 - Every component ships `@PreviewTest` previews for its variants in **both** dark and light.
 - Compose test rule: `import androidx.compose.ui.test.junit4.v2.createComposeRule` (the parent-package name is the deprecated v1 rule).
 - No MockK or mocking libraries — fakes and real objects only.
+- Never comment in the code: //last synced from DS on {date}
 - TDD: red → green → refactor for every step.
 - Formatting is a gate: run `./gradlew :core:ui:spotlessApply` before finishing each task; `spotlessCheck` must pass.
 - Emoji are never UI icons. No PNG/SVG icon assets — the single bundled variable font only.
@@ -546,7 +547,7 @@ Expected: BUILD SUCCESSFUL, all module tests green. Leave in tree.
   - `@Immutable class Motion` — easings, durations (150/250/400), `pressScaleButton = 0.97f`, `pressScaleIconButton = 0.90f`, state-layer opacities (0.08/0.10/0.12), `caretBlinkMillis = 1000`; `LocalMotion`.
   - `@Immutable class ExtendedColors` — `success/onSuccess/successContainer/warning/primaryHover/primaryPressed: Color`; `internal val DarkExtendedColors/LightExtendedColors`; `LocalExtendedColors`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.theme
@@ -632,12 +633,12 @@ class DesignTokensTest {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.theme.DesignTokensTest"`
 Expected: FAIL — unresolved references (`Spacing`, `ChatbotShapes`, `Motion`, `Elevation`, `DarkExtendedColors`).
 
-- [ ] **Step 3: Create the five token files**
+- [x] **Step 3: Create the five token files**
 
 `Spacing.kt`:
 
@@ -745,8 +746,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 @Immutable
 class Motion(
     val easingStandard: Easing = CubicBezierEasing(0.2f, 0f, 0f, 1f),
-    // Upstream defines emphasized with the same curve as standard; kept as its own token so a future retune stays local.
-    val easingEmphasized: Easing = CubicBezierEasing(0.2f, 0f, 0f, 1f),
+    val easingEmphasized: Easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f),
     val easingDecelerate: Easing = CubicBezierEasing(0f, 0f, 0f, 1f),
     val easingAccelerate: Easing = CubicBezierEasing(0.3f, 0f, 1f, 1f),
     val durationShortMillis: Int = 150,
@@ -807,12 +807,12 @@ internal val LightExtendedColors =
 internal val LocalExtendedColors = staticCompositionLocalOf { DarkExtendedColors }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.theme.DesignTokensTest"`
 Expected: PASS (5 tests).
 
-- [ ] **Step 5: Format and wrap up (no commit)**
+- [x] **Step 5: Format and wrap up (no commit)**
 
 Run: `./gradlew :core:ui:spotlessApply :core:ui:spotlessCheck :core:ui:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL. Leave in tree.

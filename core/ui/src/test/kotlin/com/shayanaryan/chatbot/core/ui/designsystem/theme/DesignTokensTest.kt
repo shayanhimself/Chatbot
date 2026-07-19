@@ -7,7 +7,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DesignTokensTest {
-    private val shapes = ChatbotShapes()
     private val motion = Motion()
 
     @Test
@@ -28,11 +27,11 @@ class DesignTokensTest {
 
     @Test
     fun componentShapesMatchSpec() {
-        assertEquals(CircleShape, shapes.button)
-        assertEquals(CircleShape, shapes.chip)
-        assertEquals(RoundedCornerShape(12.dp), shapes.card)
-        assertEquals(RoundedCornerShape(4.dp), shapes.input)
-        assertEquals(RoundedCornerShape(28.dp), shapes.dialog)
+        assertEquals(CircleShape, ChatbotShapes.button)
+        assertEquals(CircleShape, ChatbotShapes.chip)
+        assertEquals(RoundedCornerShape(12.dp), ChatbotShapes.card)
+        assertEquals(RoundedCornerShape(4.dp), ChatbotShapes.input)
+        assertEquals(RoundedCornerShape(28.dp), ChatbotShapes.dialog)
         assertEquals(
             RoundedCornerShape(
                 topStart = 20.dp,
@@ -40,7 +39,7 @@ class DesignTokensTest {
                 bottomEnd = 4.dp,
                 bottomStart = 20.dp,
             ),
-            shapes.bubbleUser,
+            ChatbotShapes.bubbleUser,
         )
         assertEquals(
             RoundedCornerShape(
@@ -49,7 +48,7 @@ class DesignTokensTest {
                 bottomEnd = 20.dp,
                 bottomStart = 4.dp,
             ),
-            shapes.bubbleAssistant,
+            ChatbotShapes.bubbleAssistant,
         )
     }
 

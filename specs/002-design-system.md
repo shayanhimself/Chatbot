@@ -25,9 +25,9 @@ The exact value tables in this spec (primitive hexes, role values, type metrics)
 
 ## Token layer
 
-Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — semantic/extended colors, motion, the mono text style, named component shapes — are exposed as immutable holders through CompositionLocals installed by `ChatbotTheme`, read via a `ChatbotTheme` accessor object (`ChatbotTheme.extendedColors`, `ChatbotTheme.motion`, `ChatbotTheme.shapes.bubble`, …).
+Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — semantic/extended colors, motion, the mono text style, named component shapes — live in `:core:ui`, split by whether their value depends on runtime state.
 
-A token earns a CompositionLocal only if it varies by scheme or wants per-subtree override. Ramps that are the same everywhere — `Spacing` and `Elevation` — are plain constants objects read directly (`Spacing.md`, `Elevation.level2`): no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
+A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. Those are installed by `ChatbotTheme` and read via the `ChatbotTheme` accessor object (`ChatbotTheme.extendedColors`, `ChatbotTheme.motion`). Token sets that are the same everywhere — `Spacing`, `Elevation`, `ChatbotShapes` — are plain constants objects read directly (`Spacing.md`, `Elevation.level2`, `ChatbotShapes.bubbleUser`): no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
 
 ### Color
 
@@ -112,7 +112,7 @@ A **Roboto Mono** style (`ChatbotTheme.typography.mono`, 14sp) is used for API k
 
 ### Shape
 
-M3 `Shapes`: xs 4 · sm 8 · md 12 · lg 16 · xl 28. Named component shapes on `ChatbotTheme.shapes`: `button`/`chip` = pill, `card` = 12, `input` = 4, `dialog` = 28, `bubble` = 20 with one squared tail corner (bottom-end for the user, bottom-start for the assistant).
+M3 `Shapes`: xs 4 · sm 8 · md 12 · lg 16 · xl 28. Named component shapes on `ChatbotShapes`: `button`/`chip` = pill, `card`/`input`/`dialog` resolve to the M3 `medium`/`extraSmall`/`extraLarge` rather than restating the radius (so a named shape cannot drift from the M3 role that M3 components read internally), `bubble` = 20 with one squared tail corner (bottom-end for the user, bottom-start for the assistant).
 
 ### Spacing
 

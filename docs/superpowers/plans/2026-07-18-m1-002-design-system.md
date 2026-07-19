@@ -37,7 +37,7 @@ main/kotlin/.../core/ui/designsystem/
   theme/Type.kt               15-role Roboto Typography                       (replaces AGP-template file)
   theme/ExtendedColors.kt     ExtendedColors + dark/light instances + Local
   theme/ExtendedTypography.kt mono style holder + Local
-  theme/Shape.kt              M3 Shapes + ChatbotShapes (button/chip/card/input/dialog/bubbles) + Local
+  theme/Shape.kt              M3 Shapes + ChatbotShapes (button/chip/card/input/dialog/bubbles), constants
   theme/Spacing.kt            4dp-grid Spacing + Local
   theme/Elevation.kt          Elevation levels 1–5 (constants)
   theme/Motion.kt             easings, durations, press scales, state-layer opacities + Local
@@ -541,7 +541,7 @@ Expected: BUILD SUCCESSFUL, all module tests green. Leave in tree.
 - Consumes: `ColorPrimitives` (Task 1).
 - Produces (Task 4 installs the Locals; components read via `ChatbotTheme`):
   - `object Spacing` — `none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l: Dp` = 0/4/8/12/16/20/24/32/40/48/64, plus `gutter: Dp = md`. Constant across devices and themes, so plain constants with no CompositionLocal — readable outside composition. No `minTouchTarget` token: use `Modifier.minimumInteractiveComponentSize()`, which expands the touch area without changing visual layout.
-  - `internal val ChatbotM3Shapes: Shapes` (xs 4 / sm 8 / md 12 / lg 16 / xl 28); `@Immutable class ChatbotShapes` — `button/chip: Shape` (pill), `card: Shape` (12), `input: Shape` (4), `dialog: Shape` (28), `bubbleUser/bubbleAssistant: Shape` (20 with 4dp squared tail: bottom-end for user, bottom-start for assistant); `LocalChatbotShapes`.
+  - `internal val ChatbotM3Shapes: Shapes` (xs 4 / sm 8 / md 12 / lg 16 / xl 28); `object ChatbotShapes` — `button/chip: Shape` (pill), `card`/`input`/`dialog: Shape` resolving to `ChatbotM3Shapes.medium`/`.extraSmall`/`.extraLarge` rather than restating 12/4/28, `bubbleUser/bubbleAssistant: Shape` (20 with 4dp squared tail: bottom-end for user, bottom-start for assistant). Constant, so no CompositionLocal.
   - `object Elevation` — `level1..level5: Dp` = 1/3/6/8/12. Same ramp in both schemes (depth in dark comes from the tonal `surfaceContainer*` roles, not different shadow values), so plain constants with no CompositionLocal.
   - `@Immutable class Motion` — easings, durations (150/250/400), `pressScaleButton = 0.97f`, `pressScaleIconButton = 0.90f`, state-layer opacities (0.08/0.10/0.12), `caretBlinkMillis = 1000`; `LocalMotion`.
   - `@Immutable class ExtendedColors` — `success/onSuccess/successContainer/warning/primaryHover/primaryPressed: Color`; `internal val DarkExtendedColors/LightExtendedColors`; `LocalExtendedColors`.
@@ -559,7 +559,7 @@ import org.junit.Test
 
 class DesignTokensTest {
     private val spacing = Spacing
-    private val shapes = ChatbotShapes()
+    private val shapes = ChatbotShapes
     private val motion = Motion()
 
     @Test
@@ -580,13 +580,13 @@ class DesignTokensTest {
 
     @Test
     fun componentShapesMatchSpec() {
-        assertEquals(CircleShape, shapes.button)
-        assertEquals(CircleShape, shapes.chip)
-        assertEquals(RoundedCornerShape(12.dp), shapes.card)
-        assertEquals(RoundedCornerShape(4.dp), shapes.input)
-        assertEquals(RoundedCornerShape(28.dp), shapes.dialog)
-        assertEquals(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 4.dp, bottomStart = 20.dp), shapes.bubbleUser)
-        assertEquals(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 20.dp, bottomStart = 4.dp), shapes.bubbleAssistant)
+        assertEquals(CircleShape, ChatbotShapes.button)
+        assertEquals(CircleShape, ChatbotShapes.chip)
+        assertEquals(RoundedCornerShape(12.dp), ChatbotShapes.card)
+        assertEquals(RoundedCornerShape(4.dp), ChatbotShapes.input)
+        assertEquals(RoundedCornerShape(28.dp), ChatbotShapes.dialog)
+        assertEquals(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 4.dp, bottomStart = 20.dp), ChatbotShapes.bubbleUser)
+        assertEquals(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 20.dp, bottomStart = 4.dp), ChatbotShapes.bubbleAssistant)
     }
 
     @Test
@@ -693,19 +693,29 @@ internal val ChatbotM3Shapes =
         extraLarge = RoundedCornerShape(28.dp),
     )
 
-/** Named component shapes. Bubble tail (4dp squared corner) sits bottom-end for user, bottom-start for assistant. */
-@Immutable
-class ChatbotShapes(
-    val button: Shape = CircleShape,
-    val chip: Shape = CircleShape,
-    val card: Shape = RoundedCornerShape(12.dp),
-    val input: Shape = RoundedCornerShape(4.dp),
-    val dialog: Shape = RoundedCornerShape(28.dp),
-    val bubbleUser: Shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 4.dp, bottomStart = 20.dp),
-    val bubbleAssistant: Shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 20.dp, bottomStart = 4.dp),
-)
-
-internal val LocalChatbotShapes = staticCompositionLocalOf { ChatbotShapes() }
+/**
+ * Named component shapes. Bubble tail (4dp squared corner) sits bottom-end for user, bottom-start
+ * for assistant.
+ *
+ * Shapes that exist on the M3 scale resolve to it rather than restating the radius, so a named
+ * shape and the M3 role it corresponds to cannot drift apart — M3 components read
+ * `MaterialTheme.shapes` internally while our wrappers read these. Only `button`/`chip` and the
+ * bubbles are additive.
+ *
+ * Constant across schemes and devices, so plain constants rather than CompositionLocal-backed
+ * tokens — readable outside composition, no theme lookup.
+ */
+object ChatbotShapes {
+    val button: Shape = CircleShape
+    val chip: Shape = CircleShape
+    val card: Shape = ChatbotM3Shapes.medium
+    val input: Shape = ChatbotM3Shapes.extraSmall
+    val dialog: Shape = ChatbotM3Shapes.extraLarge
+    val bubbleUser: Shape =
+        RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 4.dp, bottomStart = 20.dp)
+    val bubbleAssistant: Shape =
+        RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 20.dp, bottomStart = 4.dp)
+}
 ```
 
 `Elevation.kt`:
@@ -835,7 +845,6 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 object ChatbotTheme {
     val extendedColors: ExtendedColors @Composable get
     val typography: ExtendedTypography @Composable get
-    val shapes: ChatbotShapes @Composable get
     val motion: Motion @Composable get
 }
 ```
@@ -925,7 +934,6 @@ fun ChatbotTheme(
     CompositionLocalProvider(
         LocalExtendedColors provides extendedColors,
         LocalExtendedTypography provides DefaultExtendedTypography,
-        LocalChatbotShapes provides ChatbotShapes(),
         LocalMotion provides Motion(),
     ) {
         MaterialTheme(
@@ -946,8 +954,6 @@ object ChatbotTheme {
         @Composable @ReadOnlyComposable get() = LocalExtendedColors.current
     val typography: ExtendedTypography
         @Composable @ReadOnlyComposable get() = LocalExtendedTypography.current
-    val shapes: ChatbotShapes
-        @Composable @ReadOnlyComposable get() = LocalChatbotShapes.current
     val motion: Motion
         @Composable @ReadOnlyComposable get() = LocalMotion.current
 }
@@ -1042,12 +1048,12 @@ private fun ThemeSwatch() {
             Box(
                 Modifier
                     .size(Spacing.x4l)
-                    .background(MaterialTheme.colorScheme.primary, ChatbotTheme.shapes.card),
+                    .background(MaterialTheme.colorScheme.primary, ChatbotShapes.card),
             )
             Box(
                 Modifier
                     .size(Spacing.x4l)
-                    .background(ChatbotTheme.extendedColors.success, ChatbotTheme.shapes.card),
+                    .background(ChatbotTheme.extendedColors.success, ChatbotShapes.card),
             )
         }
     }
@@ -1338,7 +1344,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/ButtonTest.kt`
 
 **Interfaces:**
-- Consumes: `Icon`, `Glyphs` (Task 6); `ChatbotTheme.shapes.button`, `ChatbotTheme.motion` (Tasks 3–4).
+- Consumes: `Icon`, `Glyphs` (Task 6); `ChatbotShapes.button`, `ChatbotTheme.motion` (Tasks 3–4).
 - Produces:
 
 ```kotlin
@@ -1482,7 +1488,7 @@ fun Button(
             scaleX = scale
             scaleY = scale
         }
-    val shape = ChatbotTheme.shapes.button
+    val shape = ChatbotShapes.button
     val content: @Composable RowScope.() -> Unit = {
         if (leadingGlyph != null) {
             Icon(leadingGlyph, contentDescription = null, size = 18.dp)
@@ -1662,7 +1668,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/CardBadgeTest.kt`
 
 **Interfaces:**
-- Consumes: `Icon`, `Glyphs` (Task 6); `ChatbotTheme.shapes.card`, `ChatbotTheme.extendedColors` (Tasks 3–4).
+- Consumes: `Icon`, `Glyphs` (Task 6); `ChatbotShapes.card`, `ChatbotTheme.extendedColors` (Tasks 3–4).
 - Produces:
 
 ```kotlin
@@ -1760,7 +1766,7 @@ fun Card(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = ChatbotTheme.shapes.card
+    val shape = ChatbotShapes.card
     when (variant) {
         CardVariant.Filled ->
             if (onClick != null) {
@@ -1956,7 +1962,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/FormsTest.kt`
 
 **Interfaces:**
-- Consumes: `Icon` (Task 6), `ChatbotTheme.shapes.input` / `.chip`, `ChatbotTheme.typography.mono`.
+- Consumes: `Icon` (Task 6), `ChatbotShapes.input` / `.chip`, `ChatbotTheme.typography.mono`.
 - Produces:
 
 ```kotlin
@@ -2132,7 +2138,7 @@ fun TextField(
                 leadingIcon = leadingComposable, trailingIcon = trailingComposable,
                 supportingText = supportingComposable, isError = isError,
                 visualTransformation = visualTransformation, keyboardOptions = keyboardOptions,
-                singleLine = singleLine, minLines = minLines, shape = ChatbotTheme.shapes.input,
+                singleLine = singleLine, minLines = minLines, shape = ChatbotShapes.input,
             )
         TextFieldVariant.Filled ->
             M3TextField(
@@ -2196,7 +2202,7 @@ fun Chip(
     onDismiss: (() -> Unit)? = null,
     enabled: Boolean = true,
 ) {
-    val shape = ChatbotTheme.shapes.chip
+    val shape = ChatbotShapes.chip
     val labelComposable: @Composable () -> Unit = { Text(label) }
     val leadingComposable: (@Composable () -> Unit)? = leadingGlyph?.let { { Icon(it, contentDescription = null, size = 18.dp) } }
     when (variant) {
@@ -2324,7 +2330,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/FeedbackTest.kt`
 
 **Interfaces:**
-- Consumes: `Button`, `ButtonVariant` (Task 7), `Icon` (Task 6), `ChatbotTheme.shapes.dialog`.
+- Consumes: `Button`, `ButtonVariant` (Task 7), `Icon` (Task 6), `ChatbotShapes.dialog`.
 - Produces:
 
 ```kotlin
@@ -2471,7 +2477,7 @@ fun Dialog(
     M3AlertDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
-        shape = ChatbotTheme.shapes.dialog,
+        shape = ChatbotShapes.dialog,
         icon = glyph?.let { { Icon(it, contentDescription = null, size = 24.dp, tint = MaterialTheme.colorScheme.secondary) } },
         title = { Text(title) },
         text = text?.let { { Text(it) } },
@@ -2699,7 +2705,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/ChatComponentsTest.kt`
 
 **Interfaces:**
-- Consumes: `Icon`, `Glyphs` (Task 6), `Badge` (Task 8), `ChatbotTheme.shapes.bubbleUser/bubbleAssistant`, `ChatbotTheme.motion.caretBlinkMillis`.
+- Consumes: `Icon`, `Glyphs` (Task 6), `Badge` (Task 8), `ChatbotShapes.bubbleUser/bubbleAssistant`, `ChatbotTheme.motion.caretBlinkMillis`.
 - Produces (spec 005 wires these to ViewModels/data):
 
 ```kotlin
@@ -2864,7 +2870,7 @@ fun MessageBubble(
     toolChip: ToolChip? = null,
 ) {
     val isUser = role == MessageRole.User
-    val shapes = ChatbotTheme.shapes
+    val shapes = ChatbotShapes
     val scheme = MaterialTheme.colorScheme
     Row(
         modifier.fillMaxWidth(),
@@ -2878,7 +2884,7 @@ fun MessageBubble(
             if (toolChip != null && !isUser) {
                 Row(
                     Modifier
-                        .background(scheme.primaryContainer, shapes.chip)
+                        .background(scheme.primaryContainer, ChatbotShapes.chip)
                         .padding(start = Spacing.xs, end = 10.dp, top = Spacing.xxs, bottom = Spacing.xxs),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -2891,7 +2897,7 @@ fun MessageBubble(
                 Modifier
                     .background(
                         color = if (isUser) scheme.primaryContainer else scheme.surfaceContainerHigh,
-                        shape = if (isUser) shapes.bubbleUser else shapes.bubbleAssistant,
+                        shape = if (isUser) ChatbotShapes.bubbleUser else ChatbotShapes.bubbleAssistant,
                     )
                     .padding(horizontal = Spacing.md, vertical = 10.dp),
             ) {
@@ -2992,7 +2998,7 @@ fun ConversationListItem(
         Box(
             Modifier
                 .size(44.dp)
-                .background(scheme.primaryContainer, ChatbotTheme.shapes.card),
+                .background(scheme.primaryContainer, ChatbotShapes.card),
             contentAlignment = Alignment.Center,
         ) {
             Icon(Glyphs.Brand, contentDescription = null, size = 22.dp, filled = true, tint = scheme.onPrimaryContainer)
@@ -3087,7 +3093,7 @@ fun ModelPicker(
         Row(
             Modifier
                 .heightIn(min = 32.dp)
-                .background(scheme.surfaceContainerHigh, ChatbotTheme.shapes.chip)
+                .background(scheme.surfaceContainerHigh, ChatbotShapes.chip)
                 .clickable(enabled = enabled) { expanded = true }
                 .padding(horizontal = Spacing.sm, vertical = Spacing.xxs),
             verticalAlignment = Alignment.CenterVertically,
@@ -3257,12 +3263,12 @@ Bro DS, 2026-07-18).
 
 - Standard M3: `MaterialTheme.colorScheme` / `.typography` / `.shapes`.
 - Constants, read directly — no theme lookup, usable outside composition:
-  `Spacing` (none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l + gutter) and
-  `Elevation` (level1–5). For touch targets use
+  `Spacing` (none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l + gutter), `Elevation`
+  (level1–5), `ChatbotShapes` (button, chip, card, input, dialog, bubbleUser,
+  bubbleAssistant). For touch targets use
   `Modifier.minimumInteractiveComponentSize()`, not a spacing value.
 - Everything else via `ChatbotTheme`: `.extendedColors` (success/onSuccess/
   successContainer, warning, primaryHover/primaryPressed), `.typography.mono`,
-  `.shapes` (button, chip, card, input, dialog, bubbleUser, bubbleAssistant),
   `.motion` (easings, durations, press scales, state-layer opacities,
   caretBlinkMillis).
 - Never hardcode a hex, dp, or sp that a token covers. Components read roles,
@@ -3341,4 +3347,4 @@ Report the working tree ready for user review: new `:core:ui` sources + goldens,
 
 - **Spec coverage:** module/deps → T1; two-tier color + both schemes + scrims → T1; extended colors + state layers → T3; typography 15 roles + mono → T2; shapes (incl. bubble tails) → T3; spacing/gutter/touch target → T3; elevation + motion (easings, durations, press scales, caret 1s) → T3, exercised in T7/T11; theme entry, no dynamic color → T4; icon font bundled in-APK + axes + ligatures → T6; model glyphs + brand mark + no-logo rule → T6/T8; naming boundary + M3 aliasing → global + T7 code; component catalog: core → T7/T8, forms → T9, feedback → T10, chat → T11; stateless rule → signatures throughout; screenshot testing dark+light per component → T5 + each task; Roborazzi fallback → T5; companion skill → T12; value migration out of spec → T12.
 - **Known judgment calls (flag at review, don't silently change):** mono uses `FontFamily.Monospace` instead of a bundled Roboto Mono (T2); label/display letter-spacing kept M3-exact where the upstream CSS port is lossy (T2, see tracking note); web `size`/`fullWidth` props dropped (T7); Dialog uses confirm/dismiss params instead of an actions list (T10); `ModelPicker` keeps menu-expanded state internal (T11); bubble/list-item paddings taken from upstream `.jsx` with a T11 fidelity re-check for the two files not pulled at plan time.
-- **Type consistency:** verified — `Glyphs.ModelSonnet/ModelHaiku/ModelOpus/Brand`, `Spacing.md/xs/…`, `shapes.bubbleUser/bubbleAssistant`, `motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant`/`MessageRole` are used with these exact names in every later task.
+- **Type consistency:** verified — `Glyphs.ModelSonnet/ModelHaiku/ModelOpus/Brand`, `Spacing.md/xs/…`, `ChatbotShapes.bubbleUser/bubbleAssistant`, `motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant`/`MessageRole` are used with these exact names in every later task.

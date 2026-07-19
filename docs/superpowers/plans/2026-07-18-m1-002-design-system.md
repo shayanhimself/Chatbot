@@ -540,7 +540,7 @@ Expected: BUILD SUCCESSFUL, all module tests green. Leave in tree.
 **Interfaces:**
 - Consumes: `ColorPrimitives` (Task 1).
 - Produces (Task 4 installs the Locals; components read via `ChatbotTheme`):
-  - `@Immutable class Spacing` — `none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l: Dp` = 0/4/8/12/16/20/24/32/40/48/64, plus `gutter: Dp = 16.dp`, `minTouchTarget: Dp = 48.dp`; `LocalSpacing`.
+  - `object Spacing` — `none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l: Dp` = 0/4/8/12/16/20/24/32/40/48/64, plus `gutter: Dp = md`. Constant across devices and themes, so plain constants with no CompositionLocal — readable outside composition. No `minTouchTarget` token: use `Modifier.minimumInteractiveComponentSize()`, which expands the touch area without changing visual layout.
   - `internal val ChatbotM3Shapes: Shapes` (xs 4 / sm 8 / md 12 / lg 16 / xl 28); `@Immutable class ChatbotShapes` — `button/chip: Shape` (pill), `card: Shape` (12), `input: Shape` (4), `dialog: Shape` (28), `bubbleUser/bubbleAssistant: Shape` (20 with 4dp squared tail: bottom-end for user, bottom-start for assistant); `LocalChatbotShapes`.
   - `@Immutable class Elevation` — `level1..level5: Dp` = 1/3/6/8/12; `LocalElevation`.
   - `@Immutable class Motion` — easings, durations (150/250/400), `pressScaleButton = 0.97f`, `pressScaleIconButton = 0.90f`, state-layer opacities (0.08/0.10/0.12), `caretBlinkMillis = 1000`; `LocalMotion`.
@@ -558,25 +558,24 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DesignTokensTest {
-    private val spacing = Spacing()
+    private val spacing = Spacing
     private val shapes = ChatbotShapes()
     private val motion = Motion()
 
     @Test
     fun spacingFollowsFourDpGrid() {
-        assertEquals(0.dp, spacing.none)
-        assertEquals(4.dp, spacing.xxs)
-        assertEquals(8.dp, spacing.xs)
-        assertEquals(12.dp, spacing.sm)
-        assertEquals(16.dp, spacing.md)
-        assertEquals(20.dp, spacing.lg)
-        assertEquals(24.dp, spacing.xl)
-        assertEquals(32.dp, spacing.xxl)
-        assertEquals(40.dp, spacing.x3l)
-        assertEquals(48.dp, spacing.x4l)
-        assertEquals(64.dp, spacing.x5l)
-        assertEquals(16.dp, spacing.gutter)
-        assertEquals(48.dp, spacing.minTouchTarget)
+        assertEquals(0.dp, Spacing.none)
+        assertEquals(4.dp, Spacing.xxs)
+        assertEquals(8.dp, Spacing.xs)
+        assertEquals(12.dp, Spacing.sm)
+        assertEquals(16.dp, Spacing.md)
+        assertEquals(20.dp, Spacing.lg)
+        assertEquals(24.dp, Spacing.xl)
+        assertEquals(32.dp, Spacing.xxl)
+        assertEquals(40.dp, Spacing.x3l)
+        assertEquals(48.dp, Spacing.x4l)
+        assertEquals(64.dp, Spacing.x5l)
+        assertEquals(16.dp, Spacing.gutter)
     }
 
     @Test
@@ -643,30 +642,33 @@ Expected: FAIL — unresolved references (`Spacing`, `ChatbotShapes`, `Motion`, 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.theme
 
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** 4dp-grid spacing scale. `gutter` is the default screen gutter; `minTouchTarget` the minimum touch size. */
-@Immutable
-class Spacing(
-    val none: Dp = 0.dp,
-    val xxs: Dp = 4.dp,
-    val xs: Dp = 8.dp,
-    val sm: Dp = 12.dp,
-    val md: Dp = 16.dp,
-    val lg: Dp = 20.dp,
-    val xl: Dp = 24.dp,
-    val xxl: Dp = 32.dp,
-    val x3l: Dp = 40.dp,
-    val x4l: Dp = 48.dp,
-    val x5l: Dp = 64.dp,
-    val gutter: Dp = 16.dp,
-    val minTouchTarget: Dp = 48.dp,
-)
-
-internal val LocalSpacing = staticCompositionLocalOf { Spacing() }
+/**
+ * 4dp-grid spacing scale. `gutter` is the default screen gutter.
+ *
+ * These values are constant across devices and themes, so they are plain constants rather than
+ * CompositionLocal-backed tokens — readable from non-composable code (draw scopes, previews,
+ * test fixtures) with no theme lookup.
+ *
+ * Minimum touch targets are not a token here: use `Modifier.minimumInteractiveComponentSize()`,
+ * which expands the touch area without altering visual layout.
+ */
+object Spacing {
+    val none: Dp = 0.dp
+    val xxs: Dp = 4.dp
+    val xs: Dp = 8.dp
+    val sm: Dp = 12.dp
+    val md: Dp = 16.dp
+    val lg: Dp = 20.dp
+    val xl: Dp = 24.dp
+    val xxl: Dp = 32.dp
+    val x3l: Dp = 40.dp
+    val x4l: Dp = 48.dp
+    val x5l: Dp = 64.dp
+    val gutter: Dp = md
+}
 ```
 
 `Shape.kt`:
@@ -833,7 +835,6 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 object ChatbotTheme {
     val extendedColors: ExtendedColors @Composable get
     val typography: ExtendedTypography @Composable get
-    val spacing: Spacing @Composable get
     val shapes: ChatbotShapes @Composable get
     val elevation: Elevation @Composable get
     val motion: Motion @Composable get
@@ -867,19 +868,19 @@ class ChatbotThemeTest {
     fun darkIsDefaultAndInstallsAllTokens() {
         var primary = Color.Unspecified
         var success = Color.Unspecified
-        var gutter = 0.dp
+        var elevation = 0.dp
         var monoSize = 0.sp
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
                 primary = MaterialTheme.colorScheme.primary
                 success = ChatbotTheme.extendedColors.success
-                gutter = ChatbotTheme.spacing.gutter
+                elevation = ChatbotTheme.elevation.level1
                 monoSize = ChatbotTheme.typography.mono.fontSize
             }
         }
         assertEquals(ColorPrimitives.Orange50, primary)
         assertEquals(ColorPrimitives.Green50, success)
-        assertEquals(16.dp, gutter)
+        assertEquals(1.dp, elevation)
         assertEquals(14.sp, monoSize)
     }
 
@@ -925,7 +926,6 @@ fun ChatbotTheme(
     CompositionLocalProvider(
         LocalExtendedColors provides extendedColors,
         LocalExtendedTypography provides DefaultExtendedTypography,
-        LocalSpacing provides Spacing(),
         LocalChatbotShapes provides ChatbotShapes(),
         LocalElevation provides Elevation(),
         LocalMotion provides Motion(),
@@ -939,14 +939,15 @@ fun ChatbotTheme(
     }
 }
 
-/** Accessors for tokens M3 has no slot for. Standard tokens come from [MaterialTheme]. */
+/**
+ * Accessors for tokens M3 has no slot for. Standard tokens come from [MaterialTheme];
+ * the 4dp spacing scale is constant and read directly from [Spacing].
+ */
 object ChatbotTheme {
     val extendedColors: ExtendedColors
         @Composable @ReadOnlyComposable get() = LocalExtendedColors.current
     val typography: ExtendedTypography
         @Composable @ReadOnlyComposable get() = LocalExtendedTypography.current
-    val spacing: Spacing
-        @Composable @ReadOnlyComposable get() = LocalSpacing.current
     val shapes: ChatbotShapes
         @Composable @ReadOnlyComposable get() = LocalChatbotShapes.current
     val elevation: Elevation
@@ -1037,19 +1038,19 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 @Composable
 private fun ThemeSwatch() {
     Surface {
-        Column(Modifier.padding(ChatbotTheme.spacing.md)) {
+        Column(Modifier.padding(Spacing.md)) {
             Text("Display", style = MaterialTheme.typography.displaySmall)
             Text("Title", style = MaterialTheme.typography.titleMedium)
             Text("Body", style = MaterialTheme.typography.bodyMedium)
             Text("api-key-0000", style = ChatbotTheme.typography.mono)
             Box(
                 Modifier
-                    .size(ChatbotTheme.spacing.x4l)
+                    .size(Spacing.x4l)
                     .background(MaterialTheme.colorScheme.primary, ChatbotTheme.shapes.card),
             )
             Box(
                 Modifier
-                    .size(ChatbotTheme.spacing.x4l)
+                    .size(Spacing.x4l)
                     .background(ChatbotTheme.extendedColors.success, ChatbotTheme.shapes.card),
             )
         }
@@ -1298,7 +1299,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 @Composable
 private fun IconRow() {
     Surface {
-        Row(Modifier.padding(ChatbotTheme.spacing.md)) {
+        Row(Modifier.padding(Spacing.md)) {
             Icon(Glyphs.ModelSonnet, contentDescription = null)
             Icon(Glyphs.ModelHaiku, contentDescription = null, filled = true)
             Icon(Glyphs.ModelOpus, contentDescription = null, weight = 600)
@@ -1486,15 +1487,14 @@ fun Button(
             scaleY = scale
         }
     val shape = ChatbotTheme.shapes.button
-    val spacing = ChatbotTheme.spacing
     val content: @Composable RowScope.() -> Unit = {
         if (leadingGlyph != null) {
             Icon(leadingGlyph, contentDescription = null, size = 18.dp)
-            Spacer(Modifier.width(spacing.xs))
+            Spacer(Modifier.width(Spacing.xs))
         }
         Text(text)
         if (trailingGlyph != null) {
-            Spacer(Modifier.width(spacing.xs))
+            Spacer(Modifier.width(Spacing.xs))
             Icon(trailingGlyph, contentDescription = null, size = 18.dp)
         }
     }
@@ -1616,7 +1616,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 @Composable
 private fun ButtonGallery() {
     Surface {
-        Column(Modifier.padding(ChatbotTheme.spacing.md)) {
+        Column(Modifier.padding(Spacing.md)) {
             ButtonVariant.entries.forEach { variant ->
                 Button(text = variant.name, onClick = {}, variant = variant, leadingGlyph = Glyphs.ModelHaiku)
             }
@@ -1871,7 +1871,7 @@ fun BrandMark(modifier: Modifier = Modifier) {
         ) {
             Icon(Glyphs.Brand, contentDescription = null, size = 20.dp, filled = true, tint = MaterialTheme.colorScheme.onPrimary)
         }
-        Spacer(Modifier.width(ChatbotTheme.spacing.xs))
+        Spacer(Modifier.width(Spacing.xs))
         Text("bro", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium)
     }
 }
@@ -1908,16 +1908,16 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 @Composable
 private fun CardBadgeGallery() {
     Surface {
-        Column(Modifier.padding(ChatbotTheme.spacing.md)) {
+        Column(Modifier.padding(Spacing.md)) {
             BrandMark()
             CardVariant.entries.forEach { variant ->
-                Card(variant = variant, modifier = Modifier.padding(top = ChatbotTheme.spacing.xs)) {
-                    Text(variant.name, Modifier.padding(ChatbotTheme.spacing.md))
+                Card(variant = variant, modifier = Modifier.padding(top = Spacing.xs)) {
+                    Text(variant.name, Modifier.padding(Spacing.md))
                 }
             }
-            Row(Modifier.padding(top = ChatbotTheme.spacing.xs)) {
+            Row(Modifier.padding(top = Spacing.xs)) {
                 BadgeTone.entries.forEach { tone ->
-                    Badge(tone = tone, text = "3", modifier = Modifier.padding(end = ChatbotTheme.spacing.xxs))
+                    Badge(tone = tone, text = "3", modifier = Modifier.padding(end = Spacing.xxs))
                 }
                 Badge()
             }
@@ -2266,7 +2266,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 @Composable
 private fun FormsGallery() {
     Surface {
-        Column(Modifier.padding(ChatbotTheme.spacing.md)) {
+        Column(Modifier.padding(Spacing.md)) {
             TextField(value = "", onValueChange = {}, label = "Label")
             TextField(value = "sk-ant-api03-xxxx", onValueChange = {}, label = "API key", mono = true, variant = TextFieldVariant.Filled)
             TextField(value = "bad", onValueChange = {}, label = "Key", isError = true, supportingText = "Invalid key")
@@ -2282,7 +2282,7 @@ private fun FormsGallery() {
                         variant = variant,
                         selected = variant == ChipVariant.Filter,
                         onDismiss = if (variant == ChipVariant.Input) fun() {} else null,
-                        modifier = Modifier.padding(end = ChatbotTheme.spacing.xxs),
+                        modifier = Modifier.padding(end = Spacing.xxs),
                     )
                 }
             }
@@ -2561,14 +2561,14 @@ fun EmptyState(
     onAction: (() -> Unit)? = null,
 ) {
     Column(
-        modifier.fillMaxWidth().padding(ChatbotTheme.spacing.xxl),
+        modifier.fillMaxWidth().padding(Spacing.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(glyph, contentDescription = null, size = 48.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(ChatbotTheme.spacing.md))
+        Spacer(Modifier.height(Spacing.md))
         Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
         if (description != null) {
-            Spacer(Modifier.height(ChatbotTheme.spacing.xs))
+            Spacer(Modifier.height(Spacing.xs))
             Text(
                 description,
                 style = MaterialTheme.typography.bodyMedium,
@@ -2577,7 +2577,7 @@ fun EmptyState(
             )
         }
         if (actionText != null && onAction != null) {
-            Spacer(Modifier.height(ChatbotTheme.spacing.md))
+            Spacer(Modifier.height(Spacing.md))
             Button(text = actionText, onClick = onAction, variant = ButtonVariant.Tonal)
         }
     }
@@ -2613,14 +2613,14 @@ fun ErrorState(
     onRetry: (() -> Unit)? = null,
 ) {
     Column(
-        modifier.fillMaxWidth().padding(ChatbotTheme.spacing.xxl),
+        modifier.fillMaxWidth().padding(Spacing.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon("error", contentDescription = null, size = 48.dp, filled = true, tint = MaterialTheme.colorScheme.error)
-        Spacer(Modifier.height(ChatbotTheme.spacing.md))
+        Spacer(Modifier.height(Spacing.md))
         Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
         if (onRetry != null) {
-            Spacer(Modifier.height(ChatbotTheme.spacing.md))
+            Spacer(Modifier.height(Spacing.md))
             Button(text = stringResource(R.string.core_ui_retry), onClick = onRetry, variant = ButtonVariant.Tonal)
         }
     }
@@ -2654,7 +2654,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 @Composable
 private fun FeedbackGallery() {
     Surface {
-        Column(Modifier.padding(ChatbotTheme.spacing.md)) {
+        Column(Modifier.padding(Spacing.md)) {
             LoadingIndicator()
             EmptyState(
                 glyph = "forum",
@@ -2869,7 +2869,6 @@ fun MessageBubble(
 ) {
     val isUser = role == MessageRole.User
     val shapes = ChatbotTheme.shapes
-    val spacing = ChatbotTheme.spacing
     val scheme = MaterialTheme.colorScheme
     Row(
         modifier.fillMaxWidth(),
@@ -2884,7 +2883,7 @@ fun MessageBubble(
                 Row(
                     Modifier
                         .background(scheme.primaryContainer, shapes.chip)
-                        .padding(start = spacing.xs, end = 10.dp, top = spacing.xxs, bottom = spacing.xxs),
+                        .padding(start = Spacing.xs, end = 10.dp, top = Spacing.xxs, bottom = Spacing.xxs),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
@@ -2898,7 +2897,7 @@ fun MessageBubble(
                         color = if (isUser) scheme.primaryContainer else scheme.surfaceContainerHigh,
                         shape = if (isUser) shapes.bubbleUser else shapes.bubbleAssistant,
                     )
-                    .padding(horizontal = spacing.md, vertical = 10.dp),
+                    .padding(horizontal = Spacing.md, vertical = 10.dp),
             ) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
@@ -2958,7 +2957,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -2984,17 +2982,15 @@ fun ConversationListItem(
     unread: Boolean = false,
     selected: Boolean = false,
 ) {
-    val spacing = ChatbotTheme.spacing
     val scheme = MaterialTheme.colorScheme
     Row(
         modifier
             .fillMaxWidth()
-            .heightIn(min = spacing.minTouchTarget)
             .background(if (selected) scheme.surfaceContainerHigh else scheme.surface)
             .clickable(onClick = onClick)
-            .padding(horizontal = spacing.gutter, vertical = spacing.sm),
+            .padding(horizontal = Spacing.gutter, vertical = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         // Avatar tile
         Box(
@@ -3018,7 +3014,7 @@ fun ConversationListItem(
                     Text(time, style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 if (snippet != null) {
                     Text(
                         snippet,
@@ -3090,7 +3086,6 @@ fun ModelPicker(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = options.firstOrNull { it.id == selectedId } ?: options.first()
-    val spacing = ChatbotTheme.spacing
     val scheme = MaterialTheme.colorScheme
     Box(modifier) {
         Row(
@@ -3098,14 +3093,14 @@ fun ModelPicker(
                 .heightIn(min = 32.dp)
                 .background(scheme.surfaceContainerHigh, ChatbotTheme.shapes.chip)
                 .clickable(enabled = enabled) { expanded = true }
-                .padding(horizontal = spacing.sm, vertical = spacing.xxs),
+                .padding(horizontal = Spacing.sm, vertical = Spacing.xxs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(selected.glyph, contentDescription = null, size = 16.dp, tint = scheme.primary)
             Text(
                 selected.name,
                 style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(horizontal = spacing.xs),
+                modifier = Modifier.padding(horizontal = Spacing.xs),
             )
             Icon("keyboard_arrow_down", contentDescription = null, size = 16.dp, tint = scheme.onSurfaceVariant)
         }
@@ -3173,8 +3168,8 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 private fun ChatGallery() {
     Surface {
         Column(
-            Modifier.padding(ChatbotTheme.spacing.md),
-            verticalArrangement = Arrangement.spacedBy(ChatbotTheme.spacing.xs),
+            Modifier.padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
             MessageBubble(text = "Remind me to call mom tomorrow at 6pm", role = MessageRole.User)
             MessageBubble(text = "Done — I'll remind you tomorrow at 6pm.", role = MessageRole.Assistant, toolChip = ToolChip("Reminder set", "alarm"))
@@ -3265,9 +3260,11 @@ Bro DS, 2026-07-18).
 ## Token accessors
 
 - Standard M3: `MaterialTheme.colorScheme` / `.typography` / `.shapes`.
+- Spacing: `Spacing` directly (none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l + gutter) —
+  constants, no theme lookup, usable outside composition. For touch targets use
+  `Modifier.minimumInteractiveComponentSize()`, not a spacing value.
 - Everything else via `ChatbotTheme`: `.extendedColors` (success/onSuccess/
   successContainer, warning, primaryHover/primaryPressed), `.typography.mono`,
-  `.spacing` (none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l + gutter, minTouchTarget),
   `.shapes` (button, chip, card, input, dialog, bubbleUser, bubbleAssistant),
   `.elevation` (level1–5), `.motion` (easings, durations, press scales,
   state-layer opacities, caretBlinkMillis).
@@ -3347,4 +3344,4 @@ Report the working tree ready for user review: new `:core:ui` sources + goldens,
 
 - **Spec coverage:** module/deps → T1; two-tier color + both schemes + scrims → T1; extended colors + state layers → T3; typography 15 roles + mono → T2; shapes (incl. bubble tails) → T3; spacing/gutter/touch target → T3; elevation + motion (easings, durations, press scales, caret 1s) → T3, exercised in T7/T11; theme entry, no dynamic color → T4; icon font bundled in-APK + axes + ligatures → T6; model glyphs + brand mark + no-logo rule → T6/T8; naming boundary + M3 aliasing → global + T7 code; component catalog: core → T7/T8, forms → T9, feedback → T10, chat → T11; stateless rule → signatures throughout; screenshot testing dark+light per component → T5 + each task; Roborazzi fallback → T5; companion skill → T12; value migration out of spec → T12.
 - **Known judgment calls (flag at review, don't silently change):** mono uses `FontFamily.Monospace` instead of a bundled Roboto Mono (T2); label/display letter-spacing kept M3-exact where the upstream CSS port is lossy (T2, see tracking note); web `size`/`fullWidth` props dropped (T7); Dialog uses confirm/dismiss params instead of an actions list (T10); `ModelPicker` keeps menu-expanded state internal (T11); bubble/list-item paddings taken from upstream `.jsx` with a T11 fidelity re-check for the two files not pulled at plan time.
-- **Type consistency:** verified — `Glyphs.ModelSonnet/ModelHaiku/ModelOpus/Brand`, `ChatbotTheme.spacing.md/xs/…`, `shapes.bubbleUser/bubbleAssistant`, `motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant`/`MessageRole` are used with these exact names in every later task.
+- **Type consistency:** verified — `Glyphs.ModelSonnet/ModelHaiku/ModelOpus/Brand`, `Spacing.md/xs/…`, `shapes.bubbleUser/bubbleAssistant`, `motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant`/`MessageRole` are used with these exact names in every later task.

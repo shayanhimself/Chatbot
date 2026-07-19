@@ -25,7 +25,7 @@ The exact value tables in this spec (primitive hexes, role values, type metrics)
 
 ## Token layer
 
-Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — spacing, semantic/extended colors, motion, the mono text style, named component shapes — are exposed as immutable holders through CompositionLocals installed by `ChatbotTheme`, read via a `ChatbotTheme` accessor object (`ChatbotTheme.spacing`, `ChatbotTheme.extendedColors`, `ChatbotTheme.motion`, `ChatbotTheme.shapes.bubble`, …).
+Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — semantic/extended colors, motion, elevation, the mono text style, named component shapes — are exposed as immutable holders through CompositionLocals installed by `ChatbotTheme`, read via a `ChatbotTheme` accessor object (`ChatbotTheme.extendedColors`, `ChatbotTheme.motion`, `ChatbotTheme.shapes.bubble`, …). Spacing is the exception: it never varies by theme or device, so it is a plain constants object read directly as `Spacing.md`.
 
 ### Color
 
@@ -114,7 +114,7 @@ M3 `Shapes`: xs 4 · sm 8 · md 12 · lg 16 · xl 28. Named component shapes on 
 
 ### Spacing
 
-4dp grid on `ChatbotTheme.spacing`: 0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64. Default screen gutter 16dp; minimum touch target 48dp.
+4dp grid on `Spacing`: 0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64. Default screen gutter 16dp.
 
 ### Elevation & motion
 

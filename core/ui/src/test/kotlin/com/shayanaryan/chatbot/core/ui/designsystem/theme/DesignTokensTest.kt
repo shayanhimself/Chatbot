@@ -7,25 +7,23 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DesignTokensTest {
-    private val spacing = Spacing()
     private val shapes = ChatbotShapes()
     private val motion = Motion()
 
     @Test
     fun spacingFollowsFourDpGrid() {
-        assertEquals(0.dp, spacing.none)
-        assertEquals(4.dp, spacing.xxs)
-        assertEquals(8.dp, spacing.xs)
-        assertEquals(12.dp, spacing.sm)
-        assertEquals(16.dp, spacing.md)
-        assertEquals(20.dp, spacing.lg)
-        assertEquals(24.dp, spacing.xl)
-        assertEquals(32.dp, spacing.xxl)
-        assertEquals(40.dp, spacing.x3l)
-        assertEquals(48.dp, spacing.x4l)
-        assertEquals(64.dp, spacing.x5l)
-        assertEquals(16.dp, spacing.gutter)
-        assertEquals(48.dp, spacing.minTouchTarget)
+        assertEquals(0.dp, Spacing.none)
+        assertEquals(4.dp, Spacing.xxs)
+        assertEquals(8.dp, Spacing.xs)
+        assertEquals(12.dp, Spacing.sm)
+        assertEquals(16.dp, Spacing.md)
+        assertEquals(20.dp, Spacing.lg)
+        assertEquals(24.dp, Spacing.xl)
+        assertEquals(32.dp, Spacing.xxl)
+        assertEquals(40.dp, Spacing.x3l)
+        assertEquals(48.dp, Spacing.x4l)
+        assertEquals(64.dp, Spacing.x5l)
+        assertEquals(16.dp, Spacing.gutter)
     }
 
     @Test

@@ -16,7 +16,6 @@ fun ChatbotTheme(
     CompositionLocalProvider(
         LocalExtendedColors provides extendedColors,
         LocalExtendedTypography provides DefaultExtendedTypography,
-        LocalSpacing provides Spacing(),
         LocalChatbotShapes provides ChatbotShapes(),
         LocalElevation provides Elevation(),
         LocalMotion provides Motion(),
@@ -38,9 +37,6 @@ object ChatbotTheme {
     val typography: ExtendedTypography
         @Composable @ReadOnlyComposable
         get() = LocalExtendedTypography.current
-    val spacing: Spacing
-        @Composable @ReadOnlyComposable
-        get() = LocalSpacing.current
     val shapes: ChatbotShapes
         @Composable @ReadOnlyComposable
         get() = LocalChatbotShapes.current

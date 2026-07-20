@@ -1,0 +1,7 @@
+<resources>
+    <string name="core_ui_loading">Loading</string>
+    <string name="core_ui_retry">Retry</string>
+    <string name="core_ui_dismiss">Dismiss %1$s</string>
+    <!-- Brand wordmark: a name, never translated or capitalized. -->
+    <string name="core_ui_brand_wordmark" translatable="false">bro</string>
+</resources>

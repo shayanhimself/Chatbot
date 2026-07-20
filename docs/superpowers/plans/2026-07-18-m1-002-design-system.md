@@ -18,7 +18,8 @@
 - Naming boundary: components keep M3 names (`Button`, `Icon`, `Card`, …). Wrapper files inside `:core:ui` alias the original (`import androidx.compose.material3.Button as M3Button`). Feature modules must import components only from `:core:ui`.
 - All components stateless/presentational: state in via parameters, events out via lambdas.
 - **No hardcoded user-visible text in component source.** Any string a user reads or TalkBack speaks — labels, content descriptions, state descriptions — comes from `core/ui/src/main/res/values/strings.xml` via `stringResource(...)`, never a Kotlin literal. Per the architecture skill, `:core:ui` owns only *generic* strings; caller-supplied copy (dialog titles, button labels, error messages) stays a parameter. Material Symbols ligature names are glyph identifiers rather than text, so they don't go in `strings.xml` — but they don't belong at call sites either: every one is a constant on `Glyphs` (Task 6), the only file where the literal appears. Preview and test sources use literal sample *copy* freely, but still take glyphs from `Glyphs`.
-- Every component ships `@PreviewTest` previews for its variants in **both** dark and light.
+- Every component ships `@PreviewTest` previews for its variants in **both** dark and light (in the `screenshotTest` source set — the golden coverage).
+- **Colocated previews (CLAUDE.md rule).** Separately from the `screenshotTest` goldens, every `public @Composable` also ships at least one plain `@Preview` in its **own source file**, one per distinct visual state, each wrapped in `ChatbotTheme` (see `icon/Icon.kt`). This is the IDE preview and is required by CLAUDE.md; the `@PreviewTest` set does not satisfy it.
 - Compose test rule: `import androidx.compose.ui.test.junit4.v2.createComposeRule` (the parent-package name is the deprecated v1 rule).
 - No MockK or mocking libraries — fakes and real objects only.
 - Never comment in the code: //last synced from DS on {date}
@@ -1352,7 +1353,7 @@ The spinner is `androidx.compose.material3.CircularProgressIndicator` (aliased, 
 
 It is also not the `LoadingIndicator` from Task 10 — Task 7 must not depend forward on Task 10, and that component is a differently-sized wrapper anyway.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.component
@@ -1429,12 +1430,12 @@ class ButtonTest {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.ButtonTest"`
 Expected: FAIL — unresolved `Button` in package `component` / `ButtonVariant`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `Button.kt` (the M3 aliasing pattern — only wrapper files inside `:core:ui` see both names):
 
@@ -1624,12 +1625,12 @@ fun IconButton(
 
 (If an M3 overload's parameter order fights you, keep everything named as above — the M3 signatures put other params between these.)
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.ButtonTest"`
 Expected: PASS (4 tests).
 
-- [ ] **Step 5: Previews + screenshots**
+- [x] **Step 5: Previews + screenshots**
 
 `ButtonPreviews.kt` — all five `Button` variants (one disabled) + all four `IconButton` variants + one `selected = true`, dark and light:
 
@@ -1690,7 +1691,7 @@ private fun ButtonGalleryLightPreview() {
 Run: `./gradlew :core:ui:updateDebugScreenshotTest :core:ui:validateDebugScreenshotTest`
 Expected: BUILD SUCCESSFUL; eyeball goldens — pill shapes, orange filled button, glyphs render as symbols, and the loading button at full colour next to the dimmed disabled one, its spinner over a faint track ring. The rotation is infinite (functional, not one of the decorative loops the spec bans) and the preview samples one frame of it — if that turns out to be a *different* frame run to run, the golden will flake; drop the loading button from the preview and keep the semantics test as the only coverage. The animation itself is not screenshot-testable either way; eyeball it once in the running app.
 
-- [ ] **Step 6: Format and wrap up (no commit)**
+- [x] **Step 6: Format and wrap up (no commit)**
 
 Run: `./gradlew :core:ui:spotlessApply :core:ui:spotlessCheck :core:ui:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL. Leave in tree.

@@ -16,7 +16,6 @@
 - Module: `:core:ui`, package `com.shayanaryan.chatbot.core.ui`. The Bro Design System (theme, icons, catalog, previews) nests under `com.shayanaryan.chatbot.core.ui.designsystem.*`; the `…core.ui` top level stays empty for future non-DS core:ui code. Android library, **not** KMP. Depends only on Compose BOM, Material 3, icon/screenshot tooling — never on `:shared` or feature modules.
 - Dark is the default scheme; light is a full opt-in scheme. **No dynamic color** (no `dynamicColor` parameter), no gradients, flat tonal fills; shadow reserved for FAB/menus/dialogs/heads-up notification.
 - Naming boundary: components keep M3 names (`Button`, `Icon`, `Card`, …). Wrapper files inside `:core:ui` alias the original (`import androidx.compose.material3.Button as M3Button`). Feature modules must import components only from `:core:ui`.
-- "Bro" is display-name only — never in code identifiers, packages, files, or functions.
 - All components stateless/presentational: state in via parameters, events out via lambdas.
 - **No hardcoded user-visible text in component source.** Any string a user reads or TalkBack speaks — labels, content descriptions, state descriptions — comes from `core/ui/src/main/res/values/strings.xml` via `stringResource(...)`, never a Kotlin literal. Per the architecture skill, `:core:ui` owns only *generic* strings; caller-supplied copy (dialog titles, button labels, error messages) stays a parameter. Material Symbols ligature names are glyph identifiers rather than text, so they don't go in `strings.xml` — but they don't belong at call sites either: every one is a constant on `Glyphs` (Task 6), the only file where the literal appears. Preview and test sources use literal sample *copy* freely, but still take glyphs from `Glyphs`.
 - Every component ships `@PreviewTest` previews for its variants in **both** dark and light.
@@ -1078,10 +1077,10 @@ Expected: BUILD SUCCESSFUL. Leave in tree (including the recorded goldens).
 
 ```kotlin
 object Glyphs {
-    const val Brand = "forum"
-    const val Close = "close"
-    const val Error = "error"
-    const val ArrowForward = "arrow_forward"
+    const val BRAND = "forum"
+    const val CLOSE = "close"
+    const val ERROR = "error"
+    const val ARROW_FORWARD = "arrow_forward"
 }
 
 @Composable fun Icon(
@@ -1098,7 +1097,7 @@ object Glyphs {
 
 All later components render glyphs through this `Icon`.
 
-- [ ] **Step 1: Download the font**
+- [x] **Step 1: Download the font**
 
 The source project loads Material Symbols Rounded from the Google Fonts CDN; we bundle the same variable font in-APK (axes FILL, GRAD, opsz, wght). Res font names must be lowercase:
 
@@ -1111,7 +1110,7 @@ file core/ui/src/main/res/font/material_symbols_rounded.ttf
 
 Expected: `TrueType font data`, size roughly 5–12 MB. (Subsetting to used glyphs is an explicitly deferred APK-size optimization — do not subset now.) If the GitHub raw URL 404s, fetch the same file from https://github.com/google/material-design-icons (`variablefont/` directory) — verify the name still matches the four axes.
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.icon
@@ -1135,29 +1134,29 @@ class IconTest {
     @Test
     fun iconExposesContentDescriptionNotLigatureText() {
         composeRule.setContent {
-            ChatbotTheme { Icon(glyph = Glyphs.Close, contentDescription = "Close") }
+            ChatbotTheme { Icon(glyph = Glyphs.CLOSE, contentDescription = "Close") }
         }
         composeRule.onNodeWithContentDescription("Close").assertIsDisplayed()
         // Ligature text must not leak into semantics — TalkBack would read the raw glyph name.
-        composeRule.onNodeWithText(Glyphs.Close).assertDoesNotExist()
+        composeRule.onNodeWithText(Glyphs.CLOSE).assertDoesNotExist()
     }
 
     @Test
     fun glyphConstantsMatchSpec() {
-        assertEquals("forum", Glyphs.Brand)
-        assertEquals("close", Glyphs.Close)
-        assertEquals("error", Glyphs.Error)
-        assertEquals("arrow_forward", Glyphs.ArrowForward)
+        assertEquals("forum", Glyphs.BRAND)
+        assertEquals("close", Glyphs.CLOSE)
+        assertEquals("error", Glyphs.ERROR)
+        assertEquals("arrow_forward", Glyphs.ARROW_FORWARD)
     }
 }
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.icon.IconTest"`
 Expected: FAIL — unresolved `Icon` / `Glyphs`.
 
-- [ ] **Step 4: Implement**
+- [x] **Step 4: Implement**
 
 `Glyphs.kt`:
 
@@ -1174,12 +1173,12 @@ package com.shayanaryan.chatbot.core.ui.designsystem.icon
  */
 object Glyphs {
     // Brand.
-    const val Brand = "forum"
+    const val BRAND = "forum"
 
     // UI chrome.
-    const val Close = "close"
-    const val Error = "error"
-    const val ArrowForward = "arrow_forward"
+    const val CLOSE = "close"
+    const val ERROR = "error"
+    const val ARROW_FORWARD = "arrow_forward"
 }
 ```
 
@@ -1254,12 +1253,12 @@ fun Icon(
 }
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.icon.IconTest"`
 Expected: PASS (2 tests).
 
-- [ ] **Step 6: Previews + screenshots**
+- [x] **Step 6: Previews + screenshots**
 
 `IconPreviews.kt`:
 
@@ -1282,10 +1281,10 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 private fun IconRow() {
     Surface {
         Row(Modifier.padding(Spacing.md)) {
-            Icon(Glyphs.Close, contentDescription = null)
-            Icon(Glyphs.Error, contentDescription = null, filled = true)
-            Icon(Glyphs.ArrowForward, contentDescription = null, weight = 600)
-            Icon(Glyphs.Brand, contentDescription = null, size = 40.dp, filled = true)
+            Icon(Glyphs.CLOSE, contentDescription = null)
+            Icon(Glyphs.ERROR, contentDescription = null, filled = true)
+            Icon(Glyphs.ARROW_FORWARD, contentDescription = null, weight = 600)
+            Icon(Glyphs.BRAND, contentDescription = null, size = 40.dp, filled = true)
         }
     }
 }
@@ -1308,7 +1307,7 @@ private fun IconRowLightPreview() {
 Run: `./gradlew :core:ui:updateDebugScreenshotTest :core:ui:validateDebugScreenshotTest`
 Expected: BUILD SUCCESSFUL. **Inspect the new goldens by eye**: glyphs must render as symbols, not ligature text — if you see the literal word "close", the variable font didn't load and the task is not done.
 
-- [ ] **Step 7: Format and wrap up (no commit)**
+- [x] **Step 7: Format and wrap up (no commit)**
 
 Run: `./gradlew :core:ui:spotlessApply :core:ui:spotlessCheck :core:ui:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL. Leave in tree.
@@ -1421,7 +1420,7 @@ class ButtonTest {
         var clicked = false
         composeRule.setContent {
             ChatbotTheme {
-                IconButton(glyph = Glyphs.Close, contentDescription = "Close", onClick = { clicked = true })
+                IconButton(glyph = Glyphs.CLOSE, contentDescription = "Close", onClick = { clicked = true })
             }
         }
         composeRule.onNodeWithContentDescription("Close").assertIsDisplayed().performClick()
@@ -1657,17 +1656,17 @@ private fun ButtonGallery() {
     Surface {
         Column(Modifier.padding(Spacing.md)) {
             ButtonVariant.entries.forEach { variant ->
-                Button(text = variant.name, onClick = {}, variant = variant, leadingGlyph = Glyphs.Close)
+                Button(text = variant.name, onClick = {}, variant = variant, leadingGlyph = Glyphs.CLOSE)
             }
-            Button(text = "Continue", onClick = {}, trailingGlyph = Glyphs.ArrowForward)
+            Button(text = "Continue", onClick = {}, trailingGlyph = Glyphs.ARROW_FORWARD)
             Button(text = "Disabled", onClick = {}, enabled = false)
             // Loading sits beside disabled on purpose — the golden is what proves they look different.
             Button(text = "Validating…", onClick = {}, loading = true)
             Row {
                 IconButtonVariant.entries.forEach { variant ->
-                    IconButton(glyph = Glyphs.Close, contentDescription = variant.name, onClick = {}, variant = variant)
+                    IconButton(glyph = Glyphs.CLOSE, contentDescription = variant.name, onClick = {}, variant = variant)
                 }
-                IconButton(glyph = Glyphs.Close, contentDescription = "Selected", onClick = {}, selected = true)
+                IconButton(glyph = Glyphs.CLOSE, contentDescription = "Selected", onClick = {}, selected = true)
             }
         }
     }
@@ -1914,7 +1913,7 @@ fun BrandMark(modifier: Modifier = Modifier) {
                 .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Glyphs.Brand, contentDescription = null, size = 20.dp, filled = true, tint = MaterialTheme.colorScheme.onPrimary)
+            Icon(Glyphs.BRAND, contentDescription = null, size = 20.dp, filled = true, tint = MaterialTheme.colorScheme.onPrimary)
         }
         Spacer(Modifier.width(Spacing.xs))
         // `translatable="false"` — the wordmark is a name, and lowercase is part of the mark.
@@ -2289,12 +2288,12 @@ private fun M3IconForDismiss(
     onDismiss: () -> Unit,
 ) {
     androidx.compose.material3.IconButton(onClick = onDismiss, modifier = Modifier) {
-        Icon(Glyphs.Close, contentDescription = stringResource(R.string.core_ui_dismiss, label), size = 18.dp)
+        Icon(Glyphs.CLOSE, contentDescription = stringResource(R.string.core_ui_dismiss, label), size = 18.dp)
     }
 }
 ```
 
-Note: the test dismisses via the resolved `core_ui_dismiss` description — the `Icon` inside the dismiss button provides it. If the M3 `InputChip` trailing slot clips the 48dp `IconButton` ripple target, replace the inner `IconButton` with `Icon(Glyphs.Close, contentDescription = stringResource(R.string.core_ui_dismiss, label), size = 18.dp, modifier = Modifier.clickable(onClick = onDismiss))` — behavior over pixel-perfection here; keep the content description.
+Note: the test dismisses via the resolved `core_ui_dismiss` description — the `Icon` inside the dismiss button provides it. If the M3 `InputChip` trailing slot clips the 48dp `IconButton` ripple target, replace the inner `IconButton` with `Icon(Glyphs.CLOSE, contentDescription = stringResource(R.string.core_ui_dismiss, label), size = 18.dp, modifier = Modifier.clickable(onClick = onDismiss))` — behavior over pixel-perfection here; keep the content description.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -2596,7 +2595,7 @@ fun ErrorState(
         modifier.fillMaxWidth().padding(Spacing.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(Glyphs.Error, contentDescription = null, size = 48.dp, filled = true, tint = MaterialTheme.colorScheme.error)
+        Icon(Glyphs.ERROR, contentDescription = null, size = 48.dp, filled = true, tint = MaterialTheme.colorScheme.error)
         Spacer(Modifier.height(Spacing.md))
         Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
         if (onRetry != null) {
@@ -2754,9 +2753,14 @@ Models carry no glyph: a model is identified by name only, never an icon.
 - **Surfaces:** flat tonal fills; no gradients; no glass/backdrop blur; shadow
   only for FAB, menus, dialogs, heads-up notification. Dark is default; every
   screen must also render in light.
+- **Colocated previews:** every `public @Composable` ships at least one plain
+  `@Preview` (no `@PreviewTest`) in its own file, one per distinct visual state
+  (enabled / disabled / loading / selected …), each wrapped in `ChatbotTheme` —
+  these feed the IDE panel and stay in the component file.
 - **Screenshot tests:** every new component/variant adds `@PreviewTest`
   previews (dark + light) under `core/ui/src/screenshotTest/.../designsystem/preview/`,
-  then `updateDebugScreenshotTest` + `validateDebugScreenshotTest`.
+  then `updateDebugScreenshotTest` + `validateDebugScreenshotTest`. These are
+  separate from the colocated `@Preview`s above and never live in the component file.
 
 ## Sync procedure (manual, on upstream change)
 
@@ -2800,4 +2804,4 @@ Report the working tree ready for user review: new `:core:ui` sources + goldens,
 - **Spec coverage:** module/deps → T1; two-tier color + both schemes + scrims → T1; extended colors + state layers → T3; typography 15 roles + mono → T2; shapes (incl. bubble tails) → T3; spacing/gutter/touch target → T3; elevation + motion (easings, durations, press scales, caret 1s) → T3, exercised in T7; theme entry, no dynamic color → T4; icon font bundled in-APK + axes + ligatures → T6; brand mark + no-logo rule (models carry no glyph) → T6/T8; naming boundary + M3 aliasing → global + T7 code; component catalog: core → T7/T8, forms → T9, feedback → T10; stateless rule → signatures throughout; screenshot testing dark+light per component → T5 + each task; Roborazzi fallback → T5; companion skill → T11; value migration out of spec → T11.
 - **Scope boundary:** chat components (`MessageBubble`, `ConversationListItem`, `ModelPicker`) and `EmptyState` are deliberately *not* in `:core:ui` — see spec 002 §Component catalog. The chat trio has a single consumer (`:feature:conversation`) and domain-shaped props, so it is built there under spec 005. Empty states differ structurally per screen and have no validated shared shape yet. The tokens they consume (bubble shapes, caret duration) are still built here, in T3/T6; models carry no glyph, so there is none to build.
 - **Known judgment calls (flag at review, don't silently change):** mono uses `FontFamily.Monospace` instead of a bundled Roboto Mono (T2); label/display letter-spacing kept M3-exact where the upstream CSS port is lossy (T2, see tracking note); web `size`/`fullWidth` props dropped (T7); Dialog uses confirm/dismiss params instead of an actions list (T10).
-- **Type consistency:** verified — `Glyphs.Brand/Close/Error/ArrowForward`, `Spacing.md/xs/…`, `ChatbotShapes.bubbleUser/bubbleAssistant`, `Motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant` are used with these exact names in every later task.
+- **Type consistency:** verified — `Glyphs.BRAND/CLOSE/ERROR/ARROW_FORWARD`, `Spacing.md/xs/…`, `ChatbotShapes.bubbleUser/bubbleAssistant`, `Motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant` are used with these exact names in every later task.

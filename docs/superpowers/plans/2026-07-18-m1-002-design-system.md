@@ -1978,7 +1978,7 @@ enum class ChipVariant { Assist, Filter, Input, Suggestion }
 
 Contract deltas: web `multiline/rows` become `singleLine/minLines`; `helperText` → `supportingText` (M3 name); `type` → `visualTransformation` + `keyboardOptions` (Android idiom, needed for API-key masking in 006). Floating label and the 2dp accent focus border come from M3 `OutlinedTextField`/`TextField` defaults — do not re-implement.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.component
@@ -2062,12 +2062,12 @@ class FormsTest {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.FormsTest"`
 Expected: FAIL — unresolved `TextField` / `Switch` / `Chip` in `component` package.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `TextField.kt`:
 
@@ -2235,12 +2235,12 @@ private fun M3IconForDismiss(
 
 Note: the test dismisses via the resolved `core_ui_dismiss` description — the `Icon` inside the dismiss button provides it. If the M3 `InputChip` trailing slot clips the 48dp `IconButton` ripple target, replace the inner `IconButton` with `Icon(Glyphs.CLOSE, contentDescription = stringResource(R.string.core_ui_dismiss, label), size = 18.dp, modifier = Modifier.clickable(onClick = onDismiss))` — behavior over pixel-perfection here; keep the content description.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.FormsTest"`
 Expected: PASS (4 tests).
 
-- [ ] **Step 5: Previews + screenshots**
+- [x] **Step 5: Previews + screenshots**
 
 `FormsPreviews.kt` — outlined + filled text fields (one error, one mono with a fake key), switch on/off, all four chip variants (filter selected); dark + light pair, same gallery pattern:
 
@@ -2307,7 +2307,7 @@ private fun FormsGalleryLightPreview() {
 Run: `./gradlew :core:ui:updateDebugScreenshotTest :core:ui:validateDebugScreenshotTest`
 Expected: BUILD SUCCESSFUL; mono field renders monospace, chips are pills.
 
-- [ ] **Step 6: Format and wrap up (no commit)**
+- [x] **Step 6: Format and wrap up (no commit)**
 
 Run: `./gradlew :core:ui:spotlessApply :core:ui:spotlessCheck :core:ui:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL. Leave in tree.

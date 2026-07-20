@@ -1,0 +1,52 @@
+package com.shayanaryan.chatbot.core.ui.designsystem.component
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
+import androidx.compose.material3.Switch as M3Switch
+
+/**
+ * Design-system toggle switch — a thin wrapper over the M3 [M3Switch] with our theme colors.
+ *
+ * @param checked whether the switch is on.
+ * @param onCheckedChange invoked with the new state on toggle.
+ */
+@Composable
+fun Switch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    M3Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier,
+        enabled = enabled,
+    )
+}
+
+@Preview
+@Composable
+private fun SwitchPreview() {
+    ChatbotTheme(darkTheme = true) {
+        Surface {
+            Row(
+                modifier = Modifier.padding(Spacing.md),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            ) {
+                Switch(
+                    checked = true,
+                    onCheckedChange = {},
+                )
+                Switch(checked = false, onCheckedChange = {})
+            }
+        }
+    }
+}

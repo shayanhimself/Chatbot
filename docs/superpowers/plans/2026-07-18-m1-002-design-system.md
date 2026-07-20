@@ -48,7 +48,6 @@ main/kotlin/.../core/ui/designsystem/
   component/IconButton.kt     IconButton + IconButtonVariant
   component/Card.kt           Card + CardVariant
   component/Badge.kt          Badge + BadgeTone
-  component/BrandMark.kt      "bro" wordmark + forum tile
   component/TextField.kt      TextField + TextFieldVariant
   component/Switch.kt         Switch
   component/Chip.kt           Chip + ChipVariant
@@ -1551,7 +1550,7 @@ fun Button(
 </resources>
 ```
 
-`core_ui_retry`/`core_ui_dismiss`/`core_ui_brand_wordmark` have no consumer until Tasks 8–10; declaring them together keeps one edit of this file instead of three, and lint's unused-resource check does not fire on library `values/` strings.
+`core_ui_retry`/`core_ui_dismiss` have no consumer until Tasks 9–10, and `core_ui_brand_wordmark` has none at all (no `BrandMark` component ships — it stays as the reserved brand-name string); declaring them together keeps one edit of this file instead of several, and lint's unused-resource check does not fire on library `values/` strings.
 
 `IconButton.kt`:
 
@@ -1698,17 +1697,16 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 
 ---
 
-### Task 8: Core components II — `Card`, `Badge`, `BrandMark`
+### Task 8: Core components II — `Card`, `Badge`
 
 **Files:**
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Card.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Badge.kt`
-- Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/BrandMark.kt`
 - Create: `core/ui/src/screenshotTest/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/preview/CardBadgePreviews.kt`
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/CardBadgeTest.kt`
 
 **Interfaces:**
-- Consumes: `Icon`, `Glyphs` (Task 6); `ChatbotShapes.card`, `ChatbotExtendedTheme.colors` (Tasks 3–4).
+- Consumes: `ChatbotShapes.card`, `ChatbotExtendedTheme.colors` (Tasks 3–4).
 - Produces:
 
 ```kotlin
@@ -1721,11 +1719,9 @@ enum class CardVariant { Filled, Outlined, Elevated }
 
 enum class BadgeTone { Primary, Error, Success, Neutral }
 @Composable fun Badge(modifier: Modifier = Modifier, tone: BadgeTone = BadgeTone.Error, text: String? = null)  // null text = dot
-
-@Composable fun BrandMark(modifier: Modifier = Modifier)
 ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.component
@@ -1766,23 +1762,15 @@ class CardBadgeTest {
         }
         composeRule.onNodeWithText("3").assertIsDisplayed()
     }
-
-    @Test
-    fun brandMarkShowsLowercaseWordmark() {
-        composeRule.setContent {
-            ChatbotTheme { BrandMark() }
-        }
-        composeRule.onNodeWithText("bro").assertIsDisplayed()
-    }
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.CardBadgeTest"`
-Expected: FAIL — unresolved `Card` / `Badge` / `BrandMark` in `component` package.
+Expected: FAIL — unresolved `Card` / `Badge` in `component` package.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `Card.kt` — flat filled surfaces by default; `Elevated` is the only shadowed variant:
 
@@ -1879,62 +1867,14 @@ fun Badge(
 }
 ```
 
-`BrandMark.kt` — wordmark only; never invent a standalone Bro logo:
-
-```kotlin
-package com.shayanaryan.chatbot.core.ui.designsystem.component
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import com.shayanaryan.chatbot.core.ui.R
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-
-/** The "bro" wordmark: forum-glyph tile in the accent color beside lowercase Roboto Medium text. */
-@Composable
-fun BrandMark(modifier: Modifier = Modifier) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            Modifier
-                .size(32.dp)
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Glyphs.BRAND, contentDescription = null, size = 20.dp, filled = true, tint = MaterialTheme.colorScheme.onPrimary)
-        }
-        Spacer(Modifier.width(Spacing.xs))
-        // `translatable="false"` — the wordmark is a name, and lowercase is part of the mark.
-        Text(
-            stringResource(R.string.core_ui_brand_wordmark),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Medium,
-        )
-    }
-}
-```
-
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.CardBadgeTest"`
-Expected: PASS (3 tests).
+Expected: PASS (2 tests).
 
-- [ ] **Step 5: Previews + screenshots**
+- [x] **Step 5: Previews + screenshots**
 
-`CardBadgePreviews.kt` — `BrandMark`, three card variants, four badge tones + dot; same gallery pattern (private gallery composable + `@PreviewTest @Preview` dark/light pair in `ChatbotTheme`):
+`CardBadgePreviews.kt` — three card variants, four badge tones + dot; same gallery pattern (private gallery composable + `@PreviewTest @Preview` dark/light pair in `ChatbotTheme`):
 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.preview
@@ -1950,16 +1890,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
 import com.shayanaryan.chatbot.core.ui.designsystem.component.Badge
 import com.shayanaryan.chatbot.core.ui.designsystem.component.BadgeTone
-import com.shayanaryan.chatbot.core.ui.designsystem.component.BrandMark
 import com.shayanaryan.chatbot.core.ui.designsystem.component.Card
 import com.shayanaryan.chatbot.core.ui.designsystem.component.CardVariant
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 
 @Composable
 private fun CardBadgeGallery() {
     Surface {
         Column(Modifier.padding(Spacing.md)) {
-            BrandMark()
             CardVariant.entries.forEach { variant ->
                 Card(variant = variant, modifier = Modifier.padding(top = Spacing.xs)) {
                     Text(variant.name, Modifier.padding(Spacing.md))
@@ -1993,7 +1932,7 @@ private fun CardBadgeGalleryLightPreview() {
 Run: `./gradlew :core:ui:updateDebugScreenshotTest :core:ui:validateDebugScreenshotTest`
 Expected: BUILD SUCCESSFUL.
 
-- [ ] **Step 6: Format and wrap up (no commit)**
+- [x] **Step 6: Format and wrap up (no commit)**
 
 Run: `./gradlew :core:ui:spotlessApply :core:ui:spotlessCheck :core:ui:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL. Leave in tree.
@@ -2717,7 +2656,7 @@ Bro DS, 2026-07-18).
 - core: `Button` (Filled/Tonal/Outlined/Text/Elevated), `IconButton`
   (Standard/Filled/Tonal/Outlined, `selected` fills the glyph), `Card`
   (Filled/Outlined/Elevated), `Badge` (Primary/Error/Success/Neutral, null
-  text = dot), `BrandMark`.
+  text = dot).
 - forms: `TextField` (Outlined/Filled; `mono = true` for keys/ids), `Switch`,
   `Chip` (Assist/Filter/Input/Suggestion).
 - feedback: `Dialog`, `Snackbar` (drop into M3 `SnackbarHost`),
@@ -2749,7 +2688,8 @@ Models carry no glyph: a model is identified by name only, never an icon.
   `core_ui_brand_wordmark`); per-screen copy is a component *parameter* the
   feature resolves from its own `strings.xml`. Material Symbols ligature names
   are glyph ids, not text, and stay literals.
-- **Brand:** the wordmark is `BrandMark` (forum tile + lowercase "bro").
+- **Brand:** the lowercase "bro" wordmark string (`core_ui_brand_wordmark`) and
+  the `forum` glyph tile are the brand vocabulary; no `BrandMark` component ships.
   Do not invent a Bro logo. "Bro" never appears in code identifiers.
 - **Surfaces:** flat tonal fills; no gradients; no glass/backdrop blur; shadow
   only for FAB, menus, dialogs, heads-up notification. Dark is default; every
@@ -2802,7 +2742,7 @@ Report the working tree ready for user review: new `:core:ui` sources + goldens,
 
 ## Self-Review (done at plan-writing time)
 
-- **Spec coverage:** module/deps → T1; two-tier color + both schemes + scrims → T1; extended colors + state layers → T3; typography 15 roles + mono → T2; shapes (incl. bubble tails) → T3; spacing/gutter/touch target → T3; elevation + motion (easings, durations, press scales, caret 1s) → T3, exercised in T7; theme entry, no dynamic color → T4; icon font bundled in-APK + axes + ligatures → T6; brand mark + no-logo rule (models carry no glyph) → T6/T8; naming boundary + M3 aliasing → global + T7 code; component catalog: core → T7/T8, forms → T9, feedback → T10; stateless rule → signatures throughout; screenshot testing dark+light per component → T5 + each task; Roborazzi fallback → T5; companion skill → T11; value migration out of spec → T11.
+- **Spec coverage:** module/deps → T1; two-tier color + both schemes + scrims → T1; extended colors + state layers → T3; typography 15 roles + mono → T2; shapes (incl. bubble tails) → T3; spacing/gutter/touch target → T3; elevation + motion (easings, durations, press scales, caret 1s) → T3, exercised in T7; theme entry, no dynamic color → T4; icon font bundled in-APK + axes + ligatures → T6; brand wordmark string + no-logo rule (no `BrandMark` component; models carry no glyph) → T6; naming boundary + M3 aliasing → global + T7 code; component catalog: core → T7/T8, forms → T9, feedback → T10; stateless rule → signatures throughout; screenshot testing dark+light per component → T5 + each task; Roborazzi fallback → T5; companion skill → T11; value migration out of spec → T11.
 - **Scope boundary:** chat components (`MessageBubble`, `ConversationListItem`, `ModelPicker`) and `EmptyState` are deliberately *not* in `:core:ui` — see spec 002 §Component catalog. The chat trio has a single consumer (`:feature:conversation`) and domain-shaped props, so it is built there under spec 005. Empty states differ structurally per screen and have no validated shared shape yet. The tokens they consume (bubble shapes, caret duration) are still built here, in T3/T6; models carry no glyph, so there is none to build.
 - **Known judgment calls (flag at review, don't silently change):** mono uses `FontFamily.Monospace` instead of a bundled Roboto Mono (T2); label/display letter-spacing kept M3-exact where the upstream CSS port is lossy (T2, see tracking note); web `size`/`fullWidth` props dropped (T7); Dialog uses confirm/dismiss params instead of an actions list (T10).
 - **Type consistency:** verified — `Glyphs.BRAND/CLOSE/ERROR/ARROW_FORWARD`, `Spacing.md/xs/…`, `ChatbotShapes.bubbleUser/bubbleAssistant`, `Motion.durationShortMillis/pressScaleButton/caretBlinkMillis`, `ButtonVariant`/`IconButtonVariant`/`CardVariant`/`BadgeTone`/`TextFieldVariant`/`ChipVariant` are used with these exact names in every later task.

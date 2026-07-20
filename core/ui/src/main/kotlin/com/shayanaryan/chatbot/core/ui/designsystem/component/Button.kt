@@ -164,7 +164,7 @@ fun Button(
 @Preview
 @Composable
 private fun ButtonPreview() {
-    ChatbotTheme {
+    ChatbotTheme(darkTheme = true) {
         Surface {
             Column(
                 modifier = Modifier.padding(Spacing.md),

@@ -118,7 +118,7 @@ fun IconButton(
 @Preview
 @Composable
 private fun IconButtonPreview() {
-    ChatbotTheme {
+    ChatbotTheme(darkTheme = true) {
         Surface {
             Row(Modifier.padding(Spacing.md)) {
                 IconButton(

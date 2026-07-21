@@ -53,8 +53,6 @@ main/kotlin/.../core/ui/designsystem/
   component/Chip.kt           Chip + ChipVariant
   component/Dialog.kt         Dialog
   component/Snackbar.kt       Snackbar
-  component/LoadingIndicator.kt
-  component/ErrorState.kt
 main/res/font/material_symbols_rounded.ttf   (downloaded variable font — module root, not nested)
 main/res/values/strings.xml                  generic strings (loading, retry, dismiss, wordmark — module root)
 test/kotlin/.../core/ui/designsystem/...     JVM + Robolectric tests (mirrors main packages)
@@ -2478,6 +2476,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 
 **Files:**
 - Create: `.claude/skills/design-system/SKILL.md`
+- Modify: `.claude/skills/architecture/SKILL.md` (cross-link `design-system` + screenshot tests in §"Building a feature end to end")
 - Modify: `specs/002-design-system.md` (remove migrated value tables)
 
 **Interfaces:**
@@ -2488,103 +2487,141 @@ This task is documentation — no unit test. Its "test" is the prose-review skil
 
 - [ ] **Step 1: Write `.claude/skills/design-system/SKILL.md`**
 
-Content requirements (from spec 002 §Companion skill; keep it concise, it grows in later milestones):
+Content requirements (from spec 002 §Companion skill; keep it concise, it grows in later milestones). The skill is what a later milestone loads to *build a screen*. It does **not** restate token/component names or carry when-to-use guidance — the code is the SSOT for names/values, and the design decides which role/component each element uses. It must instead carry: a short **screen recipe**, pointers to look tokens/components up **in the code**, and the **design→Compose translation layer** (mockup and code don't share vocabulary — type/spacing are raw px, sizing props were dropped, off-grid px needs drift-reporting, a token-styled `<div>` is feature-composed). Verify every path against the actual `:core:ui` code before writing. Draft:
 
 ```markdown
 ---
 name: design-system
-description: Use when building or styling any screen or component in this app —
-  choosing colors, text styles, spacing, shapes, icons, or picking a catalog
-  component; also owns the manual sync procedure against the upstream Bro
-  Design System.
+description: Use when building or styling any screen or component in this app — choosing colors, text styles, spacing, shapes, icons, or picking a catalog component; also the manual procedure (run only when explicitly invoked) to sync :core:ui with the upstream Bro Design System.
+metadata:
+  keywords:
+  - design system
+  - theme
+  - colorScheme
+  - typography
+  - text style
+  - Spacing
+  - Jetpack Compose
+  - Compose screen
 ---
 
 # Chatbot Design System (`:core:ui`)
 
-Dark-first Material 3. Upstream SSOT: "Bro Design System" Claude Design project —
-sync via `pull-design`. Exact token values live in the Kotlin token files, not here:
-`core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/theme/` (last synced from
-Bro DS, 2026-07-18).
+Material 3.
 
-## Token accessors
+- **Design System SSOT is**: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/`.
+  It mirrors upstream and is canonical for exact token values, accessor names, and
+  component APIs/variants. **Read it** to find the right token/component and the
+  design→code mapping.
 
-- Standard M3: `MaterialTheme.colorScheme` / `.typography` / `.shapes`.
-- Constants, read directly — no theme lookup, usable outside composition:
-  `Spacing` (none/xxs/xs/sm/md/lg/xl/xxl/x3l/x4l/x5l + gutter), `Elevation`
-  (level1–5), `ChatbotShapes` (button, chip, card, input, dialog, bubbleUser,
-  bubbleAssistant), `Motion` (easings, durations, press scales, state-layer
-  opacities, caretBlinkMillis), `MonoTextStyle` (14sp monospace, in `Type.kt`).
-  For touch targets use `Modifier.minimumInteractiveComponentSize()`, not a
-  spacing value.
-- Scheme-dependent, so via `ChatbotExtendedTheme.colors` (success/onSuccess/
-  successContainer, warning, primaryHover/primaryPressed). It is the only one.
-- Never hardcode a hex, dp, or sp that a token covers. Components read roles,
-  never primitives (`ColorPrimitives` is internal to `:core:ui`).
+## Building a screen
 
-## Component catalog (import from `com.shayanaryan.chatbot.core.ui.designsystem.component`)
+1. Content is already wrapped in `ChatbotTheme { }` at the app root (`MainActivity`),
+   so `MaterialTheme` colors/type/shapes are in scope.
+2. Screen gutter: `Modifier.padding(horizontal = Spacing.gutter)`. Space on the
+   `Spacing` scale — never a raw `.dp`.
+3. Edge-to-edge is applied at app level (see the `edge-to-edge` skill) — consume
+   system insets via `Scaffold`/`WindowInsets`, don't hardcode status/nav padding.
+4. Compose from the component + icon package. For any component the
+   catalog wraps, import ours (`…core.ui.designsystem.component`), never the M3
+   original — they share names, and one `Button` per file avoids the collision. M3
+   primitives the catalog does *not* wrap are used directly from M3/foundation. If the catalog lacks
+   a component you need more than once, wrap it in the feature module — not inline,
+   not forced into `:core:ui`.
 
-- core: `Button` (Filled/Tonal/Outlined/Text/Elevated), `IconButton`
-  (Standard/Filled/Tonal/Outlined, `selected` fills the glyph), `Card`
-  (Filled/Outlined/Elevated), `Badge` (Primary/Error/Success/Neutral, null
-  text = dot).
-- forms: `TextField` (Outlined/Filled; `mono = true` for keys/ids), `Switch`,
-  `Chip` (Assist/Filter/Input/Suggestion).
-- feedback: `Dialog`, `Snackbar` (drop into M3 `SnackbarHost`),
-  `LoadingIndicator`, `ErrorState`.
+## Tokens & components — look them up in the code
 
-There is no `EmptyState` and there are no chat components here. Empty states and
-chat surfaces (`MessageBubble`, `ConversationListItem`, `ModelPicker`) are built
-in the feature module that owns them, from these tokens and components. Bubble
-shapes (`ChatbotShapes.bubbleUser`/`bubbleAssistant`) and the caret duration
-(`Motion.caretBlinkMillis`) stay here — they are vocabulary, not compositions.
-Models carry no glyph: a model is identified by name only, never an icon.
+Inventory, so you know what exists to grep for (exact members,
+variants and values live in the file):
 
-## Rules
+- theme (`…designsystem/theme/`): `MaterialTheme.colorScheme` roles + `ChatbotExtendedTheme.colors`;
+  `MaterialTheme.typography` + `MonoTextStyle`; `ChatbotShapes`; `Spacing`;
+  `Elevation`; `Motion`.
+- component (`…designsystem/component/`): `Button`, `IconButton`, `Card`, `Badge`, `TextField`, `Switch`,
+  `Chip`, `Dialog`, `Snackbar`.
+- icon (`…designsystem/icon/`): `Icon`, `Glyphs`.
 
-- **Import boundary:** feature modules import components only from `:core:ui`,
-  never `androidx.compose.material3` directly. Only `:core:ui` wrapper files
-  see both names (aliased `M3*`).
-- **Icons:** `Icon(glyph = …)` always takes a `Glyphs` constant, never a bare
-  ligature string — a typo'd ligature renders nothing and compiles fine. Add new
-  glyphs to `Glyphs` as screens need them. Models carry no glyph — a model is
-  identified by name only, never an icon. Emoji are never UI icons; no PNG/SVG
-  icon assets.
-- **Mono rule:** API keys, model ids, and code render in
-  `MonoTextStyle` (`TextField(mono = true)` for inputs).
-- **Strings:** no user-visible literal in component source — labels, content
-  descriptions and state descriptions come from `strings.xml` via
-  `stringResource(...)`. `:core:ui` owns only generic strings
-  (`core_ui_loading`, `core_ui_retry`, `core_ui_dismiss`,
-  `core_ui_brand_wordmark`); per-screen copy is a component *parameter* the
-  feature resolves from its own `strings.xml`. Material Symbols ligature names
-  are glyph ids, not text, and stay literals.
-- **Brand:** the lowercase "bro" wordmark string (`core_ui_brand_wordmark`) and
-  the `forum` glyph tile are the brand vocabulary; no `BrandMark` component ships.
-  Do not invent a Bro logo. "Bro" never appears in code identifiers.
-- **Surfaces:** flat tonal fills; no gradients; no glass/backdrop blur; shadow
-  only for FAB, menus, dialogs, heads-up notification. Dark is default; every
-  screen must also render in light.
-- **Colocated previews:** every `public @Composable` ships at least one plain
-  `@Preview` (no `@PreviewTest`) in its own file, one per distinct visual state
-  (enabled / disabled / loading / selected …), each wrapped in `ChatbotTheme` —
-  these feed the IDE panel and stay in the component file.
-- **Screenshot tests:** every new component/variant adds `@PreviewTest`
-  previews (dark + light) under `core/ui/src/screenshotTest/.../designsystem/preview/`,
-  then `updateDebugScreenshotTest` + `validateDebugScreenshotTest`. These are
-  separate from the colocated `@Preview`s above and never live in the component file.
+How they're accessed:
 
-## Sync procedure (manual, on upstream change)
+- Standard M3 through the theme: `MaterialTheme.colorScheme` / `.typography` / `.shapes`.
+- Scheme-dependent tokens M3 has no slot for: `ChatbotExtendedTheme.colors` — the
+  only CompositionLocal-backed set.
+- Everything else is a plain constant, read directly — no theme lookup, usable
+  outside composition (`Spacing`, `Elevation`, `ChatbotShapes`, `Motion`, `MonoTextStyle`).
+- Touch targets: `Modifier.minimumInteractiveComponentSize()`, not a spacing value.
 
-1. `pull-design` → fetch current tokens/components from the Bro Design System
-   project.
-2. Diff against the Kotlin token files and component wrappers; change only what
-   differs, re-verify the rest.
-3. Update this skill's usage guidance if accessors/components changed.
-4. Re-record screenshot goldens; review the image diffs.
-5. Stamp the new `last synced from Bro DS, <date>` in the touched files.
+## Which token / component to use = the design decides
+
+The mockup dictates the color role, type, and component for each element (see
+"Reading a design → Compose"). This skill carries no when-to-use guidance per role
+or component — that call lives in the design. Your job: translate what the design
+specifies into the looked-up code token/component.
+
+## Reading a design → Compose
+
+Screen mockups come from the *Bro designs* project (`pull-design`). The markup
+already names the DS component, color role and type for each element — translate,
+don't reinvent. But the four axes translate differently, and two of them need a
+human call.
+
+- **Color — exact.** Mockup writes a role name: `var(--on-surface-variant)` →
+  `MaterialTheme.colorScheme.onSurfaceVariant` (kebab → camel). Roles M3 lacks:
+  `var(--success)` → `ChatbotExtendedTheme.colors.success`. Never a hex; Never 
+  primitives (`ColorPrimitives`), unless the role doesn't exist. 
+  The theme already resolves dark/light.
+- **Type — exact, but written as px.** Mockup writes raw px + weight
+  (`font:500 22px Roboto`), *not* a role name. The M3 scale is a closed set, so
+  size+weight resolves to exactly one role — **find it in `Type.kt`** by matching
+  size and weight; never write `22.sp` at a call site. Monospace px → `MonoTextStyle`.
+- **Spacing & radius — approximate, px, needs reporting.** Mockup writes raw px
+  (`padding:14px`, `border-radius:18px`) — the designer eyeballed these; the 4dp
+  `Spacing` grid and `ChatbotShapes` are the source, not the px. Snap to the
+  nearest token to proceed (`16`→`Spacing.md`, `12`→`Spacing.sm`, pill/`999`→
+  `CircleShape`, `12`→`ChatbotShapes.card`). Off-grid px (`11`, `14`, `18`) has
+  no exact token — **snap to nearest AND log it**; report every no-exact-match at
+  end of implementation. A human decides whether the mockup drifted or the DS needs a new token; 
+  never silently absorb it.
+- **Sizing props — dropped.** Mockup may pass `Button size="small"`,
+  `fullWidth`, `IconButton size="{{48}}"`. Our components have no `size`/
+  `fullWidth` — ignore them, size via `Modifier` (`fillMaxWidth()`, `heightIn()`).
+- **Component vs composition — read the tag.**
+  `<x-import …BroDesignSystem….IconButton>` = a catalog component → call it, map
+  props. A plain token-styled `<div>` (the chat composer, a settings row) = **not**
+  in the catalog. Do not invent a DS component for it. If DS genuinely lacks the
+  UI, build a component **in the feature module** that needs it, never
+  forced into `:core:ui`. Hoisting to DS is a later, higher-bar call (two+ consumers
+  + a shape that doesn't vary per screen; In that case ask user to update the upstream DS).
+- **Icons/glyphs — ligature → `Glyphs` constant.** Mockup shows a Material Symbols
+  ligature (`<span class="msy">forum</span>`, or an `icon="arrow_back"` prop) →
+  `Icon(Glyphs.X)`. Never pass a bare ligature string — a typo renders nothing and
+  compiles fine, so every glyph goes through a `Glyphs` constant. Glyph not in
+  `Glyphs` yet → add it there.
+
+## Sync with upstream (manual — only when the user invokes this skill for it)
+
+`:core:ui` mirrors the upstream Bro Design System and can drift from it. Re-syncing
+is a deliberate step the user triggers by explicitly invoking this skill — never run
+it as a side effect of building a screen.
+
+1. Using `pull-design` skill → fetch the current tokens and component contracts from the Bro
+   Design System project.
+2. Diff each resolved value against the Kotlin code (`…designsystem/`); change only what actually differs, re-verify the rest.
+3. Update this skill only if accessor names, components, or the design→code mapping
+   changed — not for value-only changes (values live in the code, not here).
+4. Re-record the screenshot goldens and review the image diffs.
+
 ```
 
-- [ ] **Step 2: Migrate spec 002's value tables out**
+- [ ] **Step 2: Cross-link the `design-system` skill from `architecture`**
+
+Edit `.claude/skills/architecture/SKILL.md` §"Building a feature end to end" so screen work routes through this skill and its screenshot tests. Two touch points:
+
+- **Step 5 (Screen composable):** add that composing a screen goes through the `design-system` skill — `:core:ui` tokens + catalog components, the mockup→Compose translation, and the M3 import boundary. It sits alongside the `adaptive` and `edge-to-edge` skills already named in that step.
+- **Step 8 (Tests):** add Compose Preview Screenshot Tests — every public screen/component composable ships `@PreviewTest` previews in dark **and** light, recorded and checked with `updateDebugScreenshotTest` / `validateDebugScreenshotTest` (the infra `:core:ui` sets up in Task 5).
+
+Keep it to a phrase per touch point — a pointer, not a restatement of the `design-system`/`testing-setup` skills.
+
+- [ ] **Step 3: Migrate spec 002's value tables out**
 
 Edit `specs/002-design-system.md` per its own §"Source of truth & where values live": now that `:core:ui` exists, the temporary value tables move to code. Remove:
 
@@ -2594,7 +2631,7 @@ Edit `specs/002-design-system.md` per its own §"Source of truth & where values 
 
 Keep untouched: decisions/rationale, two-tier structure, role-name concept, module rules, icon system, naming rules, component families, screenshot strategy. Also update the paragraph in §"Source of truth & where values live" that declares the tables "temporary in-repo reference" — the migration it describes has now happened, so state where values live instead. Run the `prose-review` skill over the edited spec.
 
-- [ ] **Step 3: Full verification sweep**
+- [ ] **Step 4: Full verification sweep**
 
 Run:
 
@@ -2604,7 +2641,7 @@ Run:
 
 Expected: BUILD SUCCESSFUL — all unit tests, all screenshot validations, whole-tree compile. Then run the full test suite once: `./gradlew testDebugUnitTest`. Expected: green (no regression in `:feature:conversation`'s placeholder test or elsewhere).
 
-- [ ] **Step 4: Wrap up (no commit)**
+- [ ] **Step 5: Wrap up (no commit)**
 
 Report the working tree ready for user review: new `:core:ui` sources + goldens, catalog/properties changes, slimmed spec 002, new skill. The user commits manually.
 

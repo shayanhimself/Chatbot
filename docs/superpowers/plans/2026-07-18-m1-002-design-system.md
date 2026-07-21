@@ -2314,14 +2314,11 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 
 ---
 
-### Task 10: Feedback — `Dialog`, `Snackbar`, `LoadingIndicator`, `ErrorState`
+### Task 10: Feedback — `Dialog`, `Snackbar`
 
 **Files:**
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Dialog.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/Snackbar.kt`
-- Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/LoadingIndicator.kt`
-- Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/ErrorState.kt`
-- Create: `core/ui/src/screenshotTest/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/preview/FeedbackPreviews.kt`
 - Test: `core/ui/src/test/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/component/FeedbackTest.kt`
 
 **Interfaces:**
@@ -2336,13 +2333,9 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 )
 
 @Composable fun Snackbar(snackbarData: SnackbarData, modifier: Modifier = Modifier)  // drop into M3 SnackbarHost
-
-@Composable fun LoadingIndicator(modifier: Modifier = Modifier, size: Dp = 40.dp)
-
-@Composable fun ErrorState(message: String, modifier: Modifier = Modifier, onRetry: (() -> Unit)? = null)
 ```
 
-Generic strings live in `:core:ui` per the architecture skill — `ErrorState`'s retry label is `R.string.core_ui_retry`, already declared in Task 7's `strings.xml`. `Dialog`'s title/text/confirm/dismiss strings stay caller-supplied parameters: they are per-screen copy, so features own them and resolve them from their own `strings.xml` at the call site.
+`Dialog`'s title/text/confirm/dismiss strings stay caller-supplied parameters: they are per-screen copy, so features own them and resolve them from their own `strings.xml` at the call site.
 
 **No `EmptyState` here.** Empty states differ structurally per screen, not just in copy (the conversation screen's is a hero block; a reminders list wants icon + line + CTA; a memories list wants icon + line only). No feature screen exists yet to validate a shared shape against, so a DS component would freeze a guessed layout that callers then fight with nullable slots. Features build their own empty states from `Icon` + typography + `Button`; hoist into `:core:ui` only once two real screens demonstrably share a structure.
 
@@ -2355,10 +2348,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import android.content.Context
-import com.shayanaryan.chatbot.core.ui.R
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -2392,30 +2382,17 @@ class FeedbackTest {
         composeRule.onNodeWithText("Delete").performClick()
         assertTrue(confirmed)
     }
-
-    @Test
-    fun errorStateShowsMessageAndRetries() {
-        var retried = false
-        composeRule.setContent {
-            ChatbotTheme { ErrorState(message = "Something went wrong", onRetry = { retried = true }) }
-        }
-        composeRule.onNodeWithText("Something went wrong").assertIsDisplayed()
-        // `message` is caller-supplied so it stays a literal; the retry label is ours, so resolve it.
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        composeRule.onNodeWithText(context.getString(R.string.core_ui_retry)).performClick()
-        assertTrue(retried)
-    }
 }
 ```
 
-(`LoadingIndicator` and `Snackbar` are thin M3 wrappers with no logic — screenshot previews cover them.)
+(`Snackbar` is a thin M3 wrapper with no logic — no coded test.)
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.FeedbackTest"`
-Expected: FAIL — unresolved `Dialog` / `ErrorState` in `component` package.
+Expected: FAIL — unresolved `Dialog` in `component` package.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `Dialog.kt`:
 
@@ -2481,123 +2458,16 @@ fun Snackbar(
 }
 ```
 
-`LoadingIndicator.kt`:
-
-```kotlin
-package com.shayanaryan.chatbot.core.ui.designsystem.component
-
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-
-@Composable
-fun LoadingIndicator(
-    modifier: Modifier = Modifier,
-    size: Dp = 40.dp,
-) {
-    CircularProgressIndicator(modifier = modifier.size(size))
-}
-```
-
-`ErrorState.kt`:
-
-```kotlin
-package com.shayanaryan.chatbot.core.ui.designsystem.component
-
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import com.shayanaryan.chatbot.core.ui.R
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-
-@Composable
-fun ErrorState(
-    message: String,
-    modifier: Modifier = Modifier,
-    onRetry: (() -> Unit)? = null,
-) {
-    Column(
-        modifier.fillMaxWidth().padding(Spacing.xxl),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(Glyphs.ERROR, contentDescription = null, size = 48.dp, filled = true, tint = MaterialTheme.colorScheme.error)
-        Spacer(Modifier.height(Spacing.md))
-        Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-        if (onRetry != null) {
-            Spacer(Modifier.height(Spacing.md))
-            Button(text = stringResource(R.string.core_ui_retry), onClick = onRetry, variant = ButtonVariant.Tonal)
-        }
-    }
-}
-```
-
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.FeedbackTest"`
-Expected: PASS (2 tests).
+Expected: PASS (1 test).
 
-- [ ] **Step 5: Previews + screenshots**
+- [x] **Step 5: No screenshot goldens for this family**
 
-`FeedbackPreviews.kt` — `LoadingIndicator`, `ErrorState` (with retry); dark + light pair, same gallery pattern. `Dialog` and `Snackbar` render in overlay windows the preview tool can't capture from a plain composable — preview their content by rendering the M3 pieces inline is out of scope; cover Dialog via the semantics test above and a manual check in later feature work:
+Both `Dialog` and `Snackbar` render in overlay windows the preview tool can't capture from a plain composable, so there is no `FeedbackPreviews.kt`. `Dialog` is covered by the semantics test above and a manual check in later feature work; `Snackbar` is a passthrough M3 wrapper.
 
-```kotlin
-package com.shayanaryan.chatbot.core.ui.designsystem.preview
-
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.android.tools.screenshot.PreviewTest
-import com.shayanaryan.chatbot.core.ui.designsystem.component.ErrorState
-import com.shayanaryan.chatbot.core.ui.designsystem.component.LoadingIndicator
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-
-@Composable
-private fun FeedbackGallery() {
-    Surface {
-        Column(Modifier.padding(Spacing.md)) {
-            LoadingIndicator()
-            ErrorState(message = "Couldn't reach Claude", onRetry = {})
-        }
-    }
-}
-
-@PreviewTest
-@Preview(name = "feedback-dark")
-@Composable
-private fun FeedbackGalleryDarkPreview() {
-    ChatbotTheme(darkTheme = true) { FeedbackGallery() }
-}
-
-@PreviewTest
-@Preview(name = "feedback-light")
-@Composable
-private fun FeedbackGalleryLightPreview() {
-    ChatbotTheme(darkTheme = false) { FeedbackGallery() }
-}
-```
-
-Run: `./gradlew :core:ui:updateDebugScreenshotTest :core:ui:validateDebugScreenshotTest`
-Expected: BUILD SUCCESSFUL.
-
-- [ ] **Step 6: Format and wrap up (no commit)**
+- [x] **Step 6: Format and wrap up (no commit)**
 
 Run: `./gradlew :core:ui:spotlessApply :core:ui:spotlessCheck :core:ui:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL. Leave in tree.

@@ -150,26 +150,27 @@ private fun buttonContent(
     loading: Boolean,
     leadingGlyph: String?,
     trailingGlyph: String?,
-): @Composable RowScope.() -> Unit = {
-    if (leadingGlyph != null) {
-        Icon(leadingGlyph, contentDescription = null, size = 18.dp)
-        Spacer(Modifier.width(Spacing.xs))
+): @Composable RowScope.() -> Unit =
+    {
+        if (leadingGlyph != null) {
+            Icon(leadingGlyph, contentDescription = null, size = 18.dp)
+            Spacer(Modifier.width(Spacing.xs))
+        }
+        Text(text)
+        // The spinner occupies the trailing slot, replacing any trailing glyph while it spins.
+        if (loading) {
+            Spacer(Modifier.width(Spacing.xs))
+            M3CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                color = LocalContentColor.current,
+                strokeWidth = 2.dp,
+                trackColor = LocalContentColor.current.copy(alpha = 0.25f),
+            )
+        } else if (trailingGlyph != null) {
+            Spacer(Modifier.width(Spacing.xs))
+            Icon(trailingGlyph, contentDescription = null, size = 18.dp)
+        }
     }
-    Text(text)
-    // The spinner occupies the trailing slot, replacing any trailing glyph while it spins.
-    if (loading) {
-        Spacer(Modifier.width(Spacing.xs))
-        M3CircularProgressIndicator(
-            modifier = Modifier.size(18.dp),
-            color = LocalContentColor.current,
-            strokeWidth = 2.dp,
-            trackColor = LocalContentColor.current.copy(alpha = 0.25f),
-        )
-    } else if (trailingGlyph != null) {
-        Spacer(Modifier.width(Spacing.xs))
-        Icon(trailingGlyph, contentDescription = null, size = 18.dp)
-    }
-}
 
 @Preview
 @Composable

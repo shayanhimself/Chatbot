@@ -2339,7 +2339,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 
 **No `EmptyState` here.** Empty states differ structurally per screen, not just in copy (the conversation screen's is a hero block; a reminders list wants icon + line + CTA; a memories list wants icon + line only). No feature screen exists yet to validate a shared shape against, so a DS component would freeze a guessed layout that callers then fight with nullable slots. Features build their own empty states from `Icon` + typography + `Button`; hoist into `:core:ui` only once two real screens demonstrably share a structure.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```kotlin
 package com.shayanaryan.chatbot.core.ui.designsystem.component
@@ -2387,7 +2387,7 @@ class FeedbackTest {
 
 (`Snackbar` is a thin M3 wrapper with no logic — no coded test.)
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.FeedbackTest"`
 Expected: FAIL — unresolved `Dialog` in `component` package.
@@ -2458,7 +2458,7 @@ fun Snackbar(
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `./gradlew :core:ui:testDebugUnitTest --tests "com.shayanaryan.chatbot.core.ui.designsystem.component.FeedbackTest"`
 Expected: PASS (1 test).

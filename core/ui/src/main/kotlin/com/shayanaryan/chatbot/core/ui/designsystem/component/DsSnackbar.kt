@@ -14,7 +14,7 @@ import androidx.compose.material3.Snackbar as M3Snackbar
  * Design-system snackbar. Drop it into an M3 `SnackbarHost`:
  */
 @Composable
-fun Snackbar(
+fun DsSnackbar(
     snackbarData: SnackbarData,
     modifier: Modifier = Modifier,
 ) {
@@ -41,7 +41,7 @@ private val PreviewSnackbarData =
 private fun SnackbarPreview() {
     ChatbotTheme(darkTheme = true) {
         Surface {
-            Snackbar(snackbarData = PreviewSnackbarData)
+            DsSnackbar(snackbarData = PreviewSnackbarData)
         }
     }
 }

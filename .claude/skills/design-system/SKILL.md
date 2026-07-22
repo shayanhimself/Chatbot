@@ -30,12 +30,12 @@ Material 3.
    `Spacing` scale — never a raw `.dp`.
 3. Edge-to-edge is applied at app level (see the `edge-to-edge` skill) — consume
    system insets via `Scaffold`/`WindowInsets`, don't hardcode status/nav padding.
-4. Compose from the component + icon package. For any component the
-   catalog wraps, import ours (`…core.ui.designsystem.component`), never the M3
-   original — they share names, and one `Button` per file avoids the collision. M3
-   primitives the catalog does *not* wrap are used directly from M3/foundation. If the catalog lacks
-   a component you need more than once, wrap it in the feature module — not inline,
-   not forced into `:core:ui`.
+4. Compose from the catalog: the `Ds*` components in `…core.ui.designsystem.component`
+   (`DsButton`, `DsTextField`, …) and `DsIcon` from `…designsystem.icon`. Anything the
+   catalog does *not* wrap comes straight from `androidx.compose.material3` / foundation —
+   the `Ds` prefix keeps the two unambiguous, so both live in one file with no import
+   aliasing. If the catalog lacks a component you need more than once, wrap it in the
+   feature module — not inline, not forced into `:core:ui`.
 
 ## Tokens & components — look them up in the code
 
@@ -45,9 +45,9 @@ variants and values live in the file):
 - theme (`…designsystem/theme/`): `MaterialTheme.colorScheme` roles + `ChatbotExtendedTheme.colors`;
   `MaterialTheme.typography` + `MonoTextStyle`; `ChatbotShapes`; `Spacing`;
   `Elevation`; `Motion`.
-- component (`…designsystem/component/`): `Button`, `IconButton`, `Card`, `Badge`, `TextField`, `Switch`,
-  `Chip`, `Dialog`, `Snackbar`.
-- icon (`…designsystem/icon/`): `Icon`, `Glyphs`.
+- component (`…designsystem/component/`): `DsButton`, `DsIconButton`, `DsCard`, `DsBadge`, `DsTextField`,
+  `DsSwitch`, `DsChip`, `DsDialog`, `DsSnackbar`.
+- icon (`…designsystem/icon/`): `DsIcon`, `Glyphs`.
 
 How they're accessed:
 
@@ -111,7 +111,7 @@ frame.
   + a shape that doesn't vary per screen; In that case ask user to update the upstream DS).
 - **Icons/glyphs — ligature → `Glyphs` constant.** Mockup shows a Material Symbols
   ligature (`<span class="msy">forum</span>`, or an `icon="arrow_back"` prop) →
-  `Icon(Glyphs.X)`. Never pass a bare ligature string — a typo renders nothing and
+  `DsIcon(Glyphs.X)`. Never pass a bare ligature string — a typo renders nothing and
   compiles fine, so every glyph goes through a `Glyphs` constant. Glyph not in
   `Glyphs` yet → add it there.
 

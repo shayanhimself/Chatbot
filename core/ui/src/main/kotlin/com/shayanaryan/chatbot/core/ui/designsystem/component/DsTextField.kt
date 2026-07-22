@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.shayanaryan.chatbot.core.ui.designsystem.icon.DsIcon
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.MonoTextStyle
@@ -40,7 +40,7 @@ enum class TextFieldVariant { Outlined, Filled }
  * @param visualTransformation e.g. password masking for an API key.
  */
 @Composable
-fun TextField(
+fun DsTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -65,7 +65,7 @@ fun TextField(
     val supportingComposable: (@Composable () -> Unit)? = supportingText?.let { { Text(it) } }
     val leadingComposable: (@Composable () -> Unit)? =
         leadingGlyph?.let {
-            { Icon(it, contentDescription = null, size = 20.dp) }
+            { DsIcon(it, contentDescription = null, size = 20.dp) }
         }
     val trailingComposable: (@Composable () -> Unit)? =
         trailingGlyph?.let { glyph ->
@@ -73,9 +73,9 @@ fun TextField(
                 if (onTrailingClick != null) {
                     M3IconButton(
                         onClick = onTrailingClick,
-                    ) { Icon(glyph, contentDescription = null, size = 20.dp) }
+                    ) { DsIcon(glyph, contentDescription = null, size = 20.dp) }
                 } else {
-                    Icon(glyph, contentDescription = null, size = 20.dp)
+                    DsIcon(glyph, contentDescription = null, size = 20.dp)
                 }
             }
         }
@@ -132,22 +132,22 @@ private fun TextFieldPreview() {
                 modifier = Modifier.padding(Spacing.md),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
-                TextField(value = "", onValueChange = {}, label = "Label")
-                TextField(
+                DsTextField(value = "", onValueChange = {}, label = "Label")
+                DsTextField(
                     value = "sk-ant-api03-xxxx",
                     onValueChange = {},
                     label = "API key",
                     mono = true,
                     variant = TextFieldVariant.Filled,
                 )
-                TextField(
+                DsTextField(
                     value = "bad",
                     onValueChange = {},
                     label = "Key",
                     isError = true,
                     supportingText = "Invalid key",
                 )
-                TextField(
+                DsTextField(
                     value = "clearable",
                     onValueChange = {},
                     label = "Search",
@@ -157,7 +157,7 @@ private fun TextFieldPreview() {
                     trailingGlyph = Glyphs.CLOSE,
                     onTrailingClick = {},
                 )
-                TextField(
+                DsTextField(
                     value = "read only",
                     onValueChange = {},
                     label = "Status",

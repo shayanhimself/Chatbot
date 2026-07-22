@@ -18,7 +18,7 @@ import androidx.compose.material3.Switch as M3Switch
  * @param onCheckedChange invoked with the new state on toggle.
  */
 @Composable
-fun Switch(
+fun DsSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -41,11 +41,11 @@ private fun SwitchPreview() {
                 modifier = Modifier.padding(Spacing.md),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
             ) {
-                Switch(
+                DsSwitch(
                     checked = true,
                     onCheckedChange = {},
                 )
-                Switch(checked = false, onCheckedChange = {})
+                DsSwitch(checked = false, onCheckedChange = {})
             }
         }
     }

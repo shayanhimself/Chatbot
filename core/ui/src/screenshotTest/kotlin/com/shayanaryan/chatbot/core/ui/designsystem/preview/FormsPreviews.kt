@@ -9,10 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
-import com.shayanaryan.chatbot.core.ui.designsystem.component.Chip
 import com.shayanaryan.chatbot.core.ui.designsystem.component.ChipVariant
-import com.shayanaryan.chatbot.core.ui.designsystem.component.Switch
-import com.shayanaryan.chatbot.core.ui.designsystem.component.TextField
+import com.shayanaryan.chatbot.core.ui.designsystem.component.DsChip
+import com.shayanaryan.chatbot.core.ui.designsystem.component.DsSwitch
+import com.shayanaryan.chatbot.core.ui.designsystem.component.DsTextField
 import com.shayanaryan.chatbot.core.ui.designsystem.component.TextFieldVariant
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
@@ -25,12 +25,12 @@ private fun FormsGallery() {
             modifier = Modifier.padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
-            TextField(value = "", onValueChange = {}, label = "Label")
-            TextField(value = "sk-ant-api03-xxxx", onValueChange = {
+            DsTextField(value = "", onValueChange = {}, label = "Label")
+            DsTextField(value = "sk-ant-api03-xxxx", onValueChange = {
             }, label = "API key", mono = true, variant = TextFieldVariant.Filled)
-            TextField(value = "bad", onValueChange = {
+            DsTextField(value = "bad", onValueChange = {
             }, label = "Key", isError = true, supportingText = "Invalid key")
-            TextField(
+            DsTextField(
                 value = "clearable",
                 onValueChange = {},
                 label = "Search",
@@ -40,19 +40,19 @@ private fun FormsGallery() {
                 trailingGlyph = Glyphs.CLOSE,
                 onTrailingClick = {},
             )
-            TextField(
+            DsTextField(
                 value = "read only",
                 onValueChange = {},
                 label = "Status",
                 trailingGlyph = Glyphs.ERROR,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                Switch(checked = true, onCheckedChange = {})
-                Switch(checked = false, onCheckedChange = {})
+                DsSwitch(checked = true, onCheckedChange = {})
+                DsSwitch(checked = false, onCheckedChange = {})
             }
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
                 ChipVariant.entries.forEach { variant ->
-                    Chip(
+                    DsChip(
                         label = variant.name,
                         onClick = {},
                         variant = variant,

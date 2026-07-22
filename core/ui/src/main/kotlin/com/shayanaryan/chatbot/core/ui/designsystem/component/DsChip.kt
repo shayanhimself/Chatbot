@@ -17,8 +17,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.R
+import com.shayanaryan.chatbot.core.ui.designsystem.icon.DsIcon
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
@@ -32,7 +32,7 @@ enum class ChipVariant {
     /** A contextual action; stateless. */
     Assist,
 
-    /** A toggleable filter reflecting [Chip]'s `selected` state. */
+    /** A toggleable filter reflecting [DsChip]'s `selected` state. */
     Filter,
 
     /** A piece of user-entered content; dismissible via `onDismiss`. */
@@ -55,7 +55,7 @@ enum class ChipVariant {
  * @param onDismiss when non-null on an input chip, shows a trailing dismiss button.
  */
 @Composable
-fun Chip(
+fun DsChip(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -69,7 +69,7 @@ fun Chip(
     val labelComposable: @Composable () -> Unit = { Text(label) }
     val leadingComposable: (@Composable () -> Unit)? =
         leadingGlyph?.let {
-            { Icon(it, contentDescription = null, size = 18.dp) }
+            { DsIcon(it, contentDescription = null, size = 18.dp) }
         }
     when (variant) {
         ChipVariant.Assist -> {
@@ -125,7 +125,7 @@ fun Chip(
 }
 
 /**
- * Trailing dismiss affordance for an input chip. A bare clickable [Icon] rather than an M3
+ * Trailing dismiss affordance for an input chip. A bare clickable [DsIcon] rather than an M3
  * `IconButton`: the button's 48dp minimum interactive size does not fit the 32dp chip and would
  * inflate the trailing slot. The click target is therefore the glyph itself; the content
  * description keeps the affordance accessible.
@@ -145,7 +145,7 @@ private fun DismissButton(
                     this.role = Role.Button
                 },
     ) {
-        Icon(Glyphs.CLOSE, contentDescription = null, size = 18.dp)
+        DsIcon(Glyphs.CLOSE, contentDescription = null, size = 18.dp)
     }
 }
 
@@ -159,7 +159,7 @@ private fun ChipPreview() {
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
             ) {
                 ChipVariant.entries.forEach { variant ->
-                    Chip(
+                    DsChip(
                         label = variant.name,
                         onClick = {},
                         variant = variant,

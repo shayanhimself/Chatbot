@@ -15,8 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
+import com.shayanaryan.chatbot.core.ui.designsystem.icon.DsIcon
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Motion
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
@@ -38,7 +38,7 @@ enum class IconButtonVariant { Standard, Filled, Tonal, Outlined }
  * @param selected renders the glyph filled (and, for the standard variant, tinted primary).
  */
 @Composable
-fun IconButton(
+fun DsIconButton(
     glyph: String,
     contentDescription: String,
     onClick: () -> Unit,
@@ -71,7 +71,7 @@ fun IconButton(
                 // selected: glyph fills and tints primary.
                 val tint =
                     if (selected) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                Icon(
+                DsIcon(
                     glyph,
                     contentDescription = contentDescription,
                     filled = selected,
@@ -87,7 +87,7 @@ fun IconButton(
                 enabled = enabled,
                 interactionSource = interactionSource,
             ) {
-                Icon(glyph, contentDescription = contentDescription, filled = selected)
+                DsIcon(glyph, contentDescription = contentDescription, filled = selected)
             }
         }
 
@@ -98,7 +98,7 @@ fun IconButton(
                 enabled = enabled,
                 interactionSource = interactionSource,
             ) {
-                Icon(glyph, contentDescription = contentDescription, filled = selected)
+                DsIcon(glyph, contentDescription = contentDescription, filled = selected)
             }
         }
 
@@ -109,7 +109,7 @@ fun IconButton(
                 enabled = enabled,
                 interactionSource = interactionSource,
             ) {
-                Icon(glyph, contentDescription = contentDescription, filled = selected)
+                DsIcon(glyph, contentDescription = contentDescription, filled = selected)
             }
         }
     }
@@ -121,14 +121,14 @@ private fun IconButtonPreview() {
     ChatbotTheme(darkTheme = true) {
         Surface {
             Row(Modifier.padding(Spacing.md)) {
-                IconButton(
+                DsIconButton(
                     glyph = Glyphs.CLOSE,
                     contentDescription = "Selected",
                     onClick = {},
                     selected = true,
                 )
                 IconButtonVariant.entries.forEach { variant ->
-                    IconButton(
+                    DsIconButton(
                         glyph = Glyphs.CLOSE,
                         contentDescription = variant.name,
                         onClick = {},

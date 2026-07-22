@@ -26,8 +26,8 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.R
+import com.shayanaryan.chatbot.core.ui.designsystem.icon.DsIcon
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Motion
@@ -53,7 +53,7 @@ enum class ButtonVariant { Filled, Tonal, Outlined, Text, Elevated }
  * @param trailingGlyph optional [com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs] constant after the label; hidden while [loading].
  */
 @Composable
-fun Button(
+fun DsButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -153,7 +153,7 @@ private fun buttonContent(
 ): @Composable RowScope.() -> Unit =
     {
         if (leadingGlyph != null) {
-            Icon(leadingGlyph, contentDescription = null, size = 18.dp)
+            DsIcon(leadingGlyph, contentDescription = null, size = 18.dp)
             Spacer(Modifier.width(Spacing.xs))
         }
         Text(text)
@@ -168,7 +168,7 @@ private fun buttonContent(
             )
         } else if (trailingGlyph != null) {
             Spacer(Modifier.width(Spacing.xs))
-            Icon(trailingGlyph, contentDescription = null, size = 18.dp)
+            DsIcon(trailingGlyph, contentDescription = null, size = 18.dp)
         }
     }
 
@@ -182,15 +182,15 @@ private fun ButtonPreview() {
                 verticalArrangement = Arrangement.spacedBy(Spacing.xs),
             ) {
                 ButtonVariant.entries.forEach { variant ->
-                    Button(
+                    DsButton(
                         text = variant.name,
                         onClick = {},
                         variant = variant,
                         leadingGlyph = Glyphs.CLOSE,
                     )
                 }
-                Button(text = "Disabled", onClick = {}, enabled = false)
-                Button(text = "Loading", onClick = {}, loading = true)
+                DsButton(text = "Disabled", onClick = {}, enabled = false)
+                DsButton(text = "Loading", onClick = {}, loading = true)
             }
         }
     }

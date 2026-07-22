@@ -8,9 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
-import com.shayanaryan.chatbot.core.ui.designsystem.component.Button
 import com.shayanaryan.chatbot.core.ui.designsystem.component.ButtonVariant
-import com.shayanaryan.chatbot.core.ui.designsystem.component.IconButton
+import com.shayanaryan.chatbot.core.ui.designsystem.component.DsButton
+import com.shayanaryan.chatbot.core.ui.designsystem.component.DsIconButton
 import com.shayanaryan.chatbot.core.ui.designsystem.component.IconButtonVariant
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
@@ -21,26 +21,26 @@ private fun ButtonGallery() {
     Surface {
         Column(Modifier.padding(Spacing.md)) {
             ButtonVariant.entries.forEach { variant ->
-                Button(
+                DsButton(
                     text = variant.name,
                     onClick = {},
                     variant = variant,
                     leadingGlyph = Glyphs.CLOSE,
                 )
             }
-            Button(text = "Continue", onClick = {}, trailingGlyph = Glyphs.ARROW_FORWARD)
-            Button(text = "Disabled", onClick = {}, enabled = false)
+            DsButton(text = "Continue", onClick = {}, trailingGlyph = Glyphs.ARROW_FORWARD)
+            DsButton(text = "Disabled", onClick = {}, enabled = false)
             // Loading sits beside disabled on purpose — the golden is what proves they look different.
-            Button(text = "Loading", onClick = {}, loading = true)
+            DsButton(text = "Loading", onClick = {}, loading = true)
             Row {
-                IconButton(
+                DsIconButton(
                     glyph = Glyphs.CLOSE,
                     contentDescription = "Selected",
                     onClick = {},
                     selected = true,
                 )
                 IconButtonVariant.entries.forEach { variant ->
-                    IconButton(
+                    DsIconButton(
                         glyph = Glyphs.CLOSE,
                         contentDescription = variant.name,
                         onClick = {},

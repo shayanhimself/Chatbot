@@ -29,7 +29,7 @@ enum class CardVariant { Filled, Outlined, Elevated }
  * @param content card body, laid out in a [ColumnScope].
  */
 @Composable
-fun Card(
+fun DsCard(
     modifier: Modifier = Modifier,
     variant: CardVariant = CardVariant.Filled,
     onClick: (() -> Unit)? = null,
@@ -83,7 +83,7 @@ private fun CardPreview() {
                 verticalArrangement = Arrangement.spacedBy(Spacing.xs),
             ) {
                 CardVariant.entries.forEach { variant ->
-                    Card(variant = variant) {
+                    DsCard(variant = variant) {
                         Text(variant.name, Modifier.padding(Spacing.md))
                     }
                 }

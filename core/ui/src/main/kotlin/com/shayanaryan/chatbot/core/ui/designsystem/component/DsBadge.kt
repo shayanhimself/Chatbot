@@ -29,7 +29,7 @@ enum class BadgeTone { Primary, Error, Success, Neutral }
  * @param text badge label; `null` renders a dot instead.
  */
 @Composable
-fun Badge(
+fun DsBadge(
     modifier: Modifier = Modifier,
     tone: BadgeTone = BadgeTone.Error,
     text: String? = null,
@@ -66,9 +66,9 @@ private fun BadgePreview() {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 BadgeTone.entries.forEach { tone ->
-                    Badge(tone = tone, text = "3")
+                    DsBadge(tone = tone, text = "3")
                 }
-                Badge()
+                DsBadge()
             }
         }
     }

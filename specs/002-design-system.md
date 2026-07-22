@@ -73,9 +73,9 @@ Every ligature the app renders is a constant on `Glyphs` so no call site spells 
 
 All components are stateless and presentational — state in via parameters, events out via lambdas — so feature modules own state and these stay screenshot-testable. Grouped as in the source project:
 
-- **core** — `Button`, `IconButton`, `Icon`, `Card`, `Badge`. `Button` carries a `loading` state distinct from disabled: full colour and label kept, trailing slot becomes a spinner, click swallowed.
-- **forms** — `TextField`, `Switch`, `Chip`.
-- **feedback** — `Dialog`, `Snackbar`.
+- **core** — `DsButton`, `DsIconButton`, `DsIcon`, `DsCard`, `DsBadge`. `DsButton` carries a `loading` state distinct from disabled: full colour and label kept, trailing slot becomes a spinner, click swallowed.
+- **forms** — `DsTextField`, `DsSwitch`, `DsChip`.
+- **feedback** — `DsDialog`, `DsSnackbar`.
 
 **Strings.** No component holds a user-visible literal. Text a user reads or TalkBack speaks resolves from `:core:ui`'s `strings.xml`, and the module declares only strings that are generic by nature — a loading state description, a retry label, a dismiss description, the wordmark. Per-screen copy is a component parameter: the feature owns the words and resolves them from its own resources at the call site, which is what keeps `:core:ui` free of product vocabulary. Material Symbols ligature names are glyph identifiers rather than text, so they stay in code — but only in `Glyphs`, never at a call site: a mistyped ligature renders nothing and no compiler catches it.
 
@@ -86,7 +86,7 @@ All components are stateless and presentational — state in via parameters, eve
 
 The design system remains the source of truth for their *appearance* regardless: bubble shapes (`ChatbotShapes.bubbleUser`/`bubbleAssistant`) and the streaming-caret duration are tokens defined here and consumed there. Appearance SSOT is the token vocabulary, not every composition built from it.
 
-**Naming.** Components keep the familiar Material 3 names (`Button`, `Icon`, `Card`, …) even though they collide with the `androidx.compose.material3` composables. This is safe under one boundary rule: **feature modules import components only from `:core:ui`, never `androidx.compose.material3` directly** — so each feature file has exactly one `Button` (ours) in scope. Only the wrapper files inside `:core:ui` see both names, and they alias the M3 original (e.g. `import androidx.compose.material3.Button as M3Button`). The rule is enforced by convention (and, where practical, lint) and recorded in the `architecture` / `design-system` skills.
+**Naming.** Catalog components carry a `Ds` prefix (`DsButton`, `DsIcon`, `DsCard`, …). Feature modules legitimately use both the catalog and `androidx.compose.material3` directly — the latter for M3 components the catalog does not wrap — so an un-prefixed `Button` would leave a reader unsure whether it is ours or M3's. The prefix makes provenance obvious at every call site and lets both coexist in one file with no import aliasing. Inside `:core:ui`, a wrapper still aliases the M3 original it delegates to (e.g. `import androidx.compose.material3.Button as M3Button`). Recorded in the `architecture` / `design-system` skills.
 
 ## Screenshot testing
 

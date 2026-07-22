@@ -54,7 +54,7 @@ private const val AXIS_OPTICAL_SIZE = "opsz"
  */
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun Icon(
+fun DsIcon(
     glyph: String,
     contentDescription: String?,
     modifier: Modifier = Modifier,
@@ -104,7 +104,7 @@ fun Icon(
 @Composable
 private fun IconPreview() {
     ChatbotTheme {
-        Icon(
+        DsIcon(
             glyph = Glyphs.BRAND,
             contentDescription = null,
             filled = true,

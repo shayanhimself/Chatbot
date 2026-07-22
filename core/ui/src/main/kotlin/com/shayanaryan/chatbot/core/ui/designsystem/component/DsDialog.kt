@@ -5,8 +5,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.shayanaryan.chatbot.core.ui.designsystem.icon.DsIcon
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.icon.Icon
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotShapes
 import androidx.compose.material3.AlertDialog as M3AlertDialog
 
@@ -23,7 +23,7 @@ import androidx.compose.material3.AlertDialog as M3AlertDialog
  * @param onDismiss invoked on dismiss-button tap; defaults to [onDismissRequest].
  */
 @Composable
-fun Dialog(
+fun DsDialog(
     onDismissRequest: () -> Unit,
     title: String,
     confirmText: String,
@@ -41,7 +41,7 @@ fun Dialog(
         icon =
             glyph?.let {
                 {
-                    Icon(
+                    DsIcon(
                         it,
                         contentDescription = null,
                         size = 24.dp,
@@ -52,7 +52,7 @@ fun Dialog(
         title = { Text(title) },
         text = text?.let { { Text(it) } },
         confirmButton = {
-            Button(
+            DsButton(
                 text = confirmText,
                 onClick = onConfirm,
                 variant = ButtonVariant.Text,
@@ -61,7 +61,7 @@ fun Dialog(
         dismissButton =
             if (dismissText != null) {
                 {
-                    Button(
+                    DsButton(
                         text = dismissText,
                         onClick = onDismiss ?: onDismissRequest,
                         variant = ButtonVariant.Text,

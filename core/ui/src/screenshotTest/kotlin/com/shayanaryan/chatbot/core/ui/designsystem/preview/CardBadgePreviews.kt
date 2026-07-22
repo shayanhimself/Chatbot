@@ -9,10 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
-import com.shayanaryan.chatbot.core.ui.designsystem.component.Badge
 import com.shayanaryan.chatbot.core.ui.designsystem.component.BadgeTone
-import com.shayanaryan.chatbot.core.ui.designsystem.component.Card
 import com.shayanaryan.chatbot.core.ui.designsystem.component.CardVariant
+import com.shayanaryan.chatbot.core.ui.designsystem.component.DsBadge
+import com.shayanaryan.chatbot.core.ui.designsystem.component.DsCard
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 
@@ -21,16 +21,16 @@ private fun CardBadgeGallery() {
     Surface {
         Column(Modifier.padding(Spacing.md)) {
             CardVariant.entries.forEach { variant ->
-                Card(variant = variant, modifier = Modifier.padding(top = Spacing.xs)) {
+                DsCard(variant = variant, modifier = Modifier.padding(top = Spacing.xs)) {
                     Text(variant.name, Modifier.padding(Spacing.md))
                 }
             }
             Row(Modifier.padding(top = Spacing.xs)) {
                 BadgeTone.entries.forEach { tone ->
-                    Badge(tone = tone, text = "3", modifier = Modifier.padding(end = Spacing.xxs))
+                    DsBadge(tone = tone, text = "3", modifier = Modifier.padding(end = Spacing.xxs))
                 }
                 // Render a dot badge
-                Badge()
+                DsBadge()
             }
         }
     }

@@ -118,14 +118,18 @@ Order matters: data layer first, UI last. TDD at every step.
 4. **ViewModel + UiState** (`:feature:*`): define `XUiState`, produce it with the
    `stateIn` recipe, handle events as methods.
    → [references/ui-layer.md](references/ui-layer.md)
-5. **Screen composable**: stateless, takes `uiState` + event lambdas. Adaptive
-   from day one → `adaptive` skill; insets → `edge-to-edge` skill.
+5. **Screen composable**: stateless, takes `uiState` + event lambdas. Compose from
+   `:core:ui` tokens + catalog components, translate the mockup → `design-system` skill.
+   Adaptive from day one → `adaptive` skill; insets → `edge-to-edge` skill.
 6. **Navigation**: typed key + `entryProvider` entry in the `:app` graph, deep
    link if the spec requires → `navigation-3` skill.
 7. **Hilt wiring**: provide shared classes from a Hilt module in the feature
    (or `:app` if cross-feature).
 8. **Tests**: ViewModel unit tests (fakes, assert on `StateFlow.value`), DAO
-   tests (in-memory Room), Compose UI tests → `testing-setup` skill.
+   tests (in-memory Room), Compose UI tests → `testing-setup` skill. Every public
+   screen/component composable also ships `@PreviewTest` previews in dark **and**
+   light, recorded/checked with `updateDebugScreenshotTest` /
+   `validateDebugScreenshotTest` (infra set up in `:core:ui`).
 9. **Journeys**: run the spec's journey XMLs via the `android` CLI.
 
 ## References

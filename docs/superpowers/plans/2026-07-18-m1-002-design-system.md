@@ -2485,7 +2485,7 @@ Expected: BUILD SUCCESSFUL. Leave in tree.
 
 This task is documentation — no unit test. Its "test" is the prose-review skill plus a final full-module verification.
 
-- [ ] **Step 1: Write `.claude/skills/design-system/SKILL.md`**
+- [x] **Step 1: Write `.claude/skills/design-system/SKILL.md`**
 
 Content requirements (from spec 002 §Companion skill; keep it concise, it grows in later milestones). The skill is what a later milestone loads to *build a screen*. It does **not** restate token/component names or carry when-to-use guidance — the code is the SSOT for names/values, and the design decides which role/component each element uses. It must instead carry: a short **screen recipe**, pointers to look tokens/components up **in the code**, and the **design→Compose translation layer** (mockup and code don't share vocabulary — type/spacing are raw px, sizing props were dropped, off-grid px needs drift-reporting, a token-styled `<div>` is feature-composed). Verify every path against the actual `:core:ui` code before writing. Draft:
 
@@ -2612,7 +2612,7 @@ it as a side effect of building a screen.
 
 ```
 
-- [ ] **Step 2: Cross-link the `design-system` skill from `architecture`**
+- [x] **Step 2: Cross-link the `design-system` skill from `architecture`**
 
 Edit `.claude/skills/architecture/SKILL.md` §"Building a feature end to end" so screen work routes through this skill and its screenshot tests. Two touch points:
 
@@ -2621,7 +2621,7 @@ Edit `.claude/skills/architecture/SKILL.md` §"Building a feature end to end" so
 
 Keep it to a phrase per touch point — a pointer, not a restatement of the `design-system`/`testing-setup` skills.
 
-- [ ] **Step 3: Migrate spec 002's value tables out**
+- [x] **Step 3: Migrate spec 002's value tables out**
 
 Edit `specs/002-design-system.md` per its own §"Source of truth & where values live": now that `:core:ui` exists, the temporary value tables move to code. Remove:
 
@@ -2631,7 +2631,7 @@ Edit `specs/002-design-system.md` per its own §"Source of truth & where values 
 
 Keep untouched: decisions/rationale, two-tier structure, role-name concept, module rules, icon system, naming rules, component families, screenshot strategy. Also update the paragraph in §"Source of truth & where values live" that declares the tables "temporary in-repo reference" — the migration it describes has now happened, so state where values live instead. Run the `prose-review` skill over the edited spec.
 
-- [ ] **Step 4: Full verification sweep**
+- [x] **Step 4: Full verification sweep**
 
 Run:
 
@@ -2641,13 +2641,13 @@ Run:
 
 Expected: BUILD SUCCESSFUL — all unit tests, all screenshot validations, whole-tree compile. Then run the full test suite once: `./gradlew testDebugUnitTest`. Expected: green (no regression in `:feature:conversation`'s placeholder test or elsewhere).
 
-- [ ] **Step 5: Wrap up (no commit)**
+- [x] **Step 5: Wrap up (no commit)**
 
 Report the working tree ready for user review: new `:core:ui` sources + goldens, catalog/properties changes, slimmed spec 002, new skill. The user commits manually.
 
 ---
 
-## Self-Review (done at plan-writing time)
+ (done at plan-writing time)
 
 - **Spec coverage:** module/deps → T1; two-tier color + both schemes + scrims → T1; extended colors + state layers → T3; typography 15 roles + mono → T2; shapes (incl. bubble tails) → T3; spacing/gutter/touch target → T3; elevation + motion (easings, durations, press scales, caret 1s) → T3, exercised in T7; theme entry, no dynamic color → T4; icon font bundled in-APK + axes + ligatures → T6; brand wordmark string + no-logo rule (no `BrandMark` component; models carry no glyph) → T6; naming boundary + M3 aliasing → global + T7 code; component catalog: core → T7/T8, forms → T9, feedback → T10; stateless rule → signatures throughout; screenshot testing dark+light per component → T5 + each task; Roborazzi fallback → T5; companion skill → T11; value migration out of spec → T11.
 - **Scope boundary:** chat components (`MessageBubble`, `ConversationListItem`, `ModelPicker`) and `EmptyState` are deliberately *not* in `:core:ui` — see spec 002 §Component catalog. The chat trio has a single consumer (`:feature:conversation`) and domain-shaped props, so it is built there under spec 005. Empty states differ structurally per screen and have no validated shared shape yet. The tokens they consume (bubble shapes, caret duration) are still built here, in T3/T6; models carry no glyph, so there is none to build.

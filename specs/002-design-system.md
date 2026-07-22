@@ -12,10 +12,10 @@ One home per fact:
 
 - **Claude Design ("Bro Design System")** — upstream SSOT for the visual design. Everything below mirrors it and can drift; re-sync with the `pull-design` skill.
 - **`:core:ui` Kotlin token files** — the in-project home for exact values (hex, sp, primitive names), once built: one typed definition, consumed by the code.
-- **`design-system` skill** — owns *usage* (token accessors, when-to-use, naming boundary rule, flat-fills / no-gradient constraints) and the manual **sync procedure** (`pull-design` → diff → update code + usage → stamp date). It points to the token files for current values; it does not duplicate them.
+- **`design-system` skill** — owns *usage* (how to find token accessors and catalog components in the code, the design→Compose translation, naming boundary rule) and the manual **sync procedure** (`pull-design` → diff → update code + usage → stamp date). It points to the token files for current values; it does not duplicate them, and the design — not the skill — decides which role/component each element uses.
 - **This spec** — owns the durable *what/why*: decisions and rationale, the two-tier color structure, role names, component families, screenshot strategy, naming rule. It does not own volatile values.
 
-The exact value tables in this spec (primitive hexes, role values, type metrics) are a **temporary in-repo reference for the M1 implementation plan**. When `:core:ui` is built, those values migrate into the Kotlin token files and the `design-system` skill's usage guidance and are **removed from this spec** — structure and rationale stay here, values live in code. Downstream copies carry a `last synced from Bro DS, <date>` provenance line so staleness is visible.
+Exact values live in the `:core:ui` Kotlin token files, not here — this spec keeps only structure and rationale and points to the code for each family. Downstream copies carry a `last synced from Bro DS, <date>` provenance line so staleness is visible.
 
 ## Module
 
@@ -27,102 +27,27 @@ The exact value tables in this spec (primitive hexes, role values, type metrics)
 
 Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — semantic/extended colors, motion, the mono text style, named component shapes — live in `:core:ui`, split by whether their value depends on runtime state.
 
-A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. `ExtendedColors` is the only one: the `ChatbotTheme` composable installs it, and it is read through the `ChatbotExtendedTheme.colors` accessor. Everything else is constant and read directly — `Spacing.md`, `Elevation.level2`, `ChatbotShapes.bubbleUser`, `Motion.durationMediumMillis`, `MonoTextStyle` — with no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
+A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. `ExtendedColors` is the only one: the `ChatbotTheme` composable installs it, and it is read through the `ChatbotExtendedTheme.colors` accessor. Everything else is constant and read directly — the `Spacing`, `Elevation`, `ChatbotShapes` and `Motion` sets and `MonoTextStyle` — with no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
 
 ### Color
 
-The source organizes color in two tiers, and the Android layer mirrors it: a **primitive palette** (every literal value, named once by hue + tone) and two **semantic `ColorScheme`s** (dark default + light) whose roles each reference a primitive. Components read only roles.
-
-**Primitives**
-
-| Ramp | Tones (name `#hex`) |
-|---|---|
-| Orange | `orange-90` #ffdcc2 · `orange-57` #ffa257 · `orange-50` #ff9239 · `orange-40` #ed6900 · `orange-30` #b84e00 · `orange-20` #7a3300 · `orange-12` #431c00 · `orange-10` #401a00 |
-| Yellow | `yellow-90` #ffe494 · `yellow-35` #8a6600 · `yellow-20` #4a3600 · `yellow-15` #2a1e00 |
-| Warm neutral | `warm-95` #ffdcc2 · `warm-85` #e4c0a4 · `warm-50` #7a5733 · `warm-30` #5a4029 · `warm-22` #422a15 · `warm-18` #2a1800 |
-| Navy | `navy-06` #12161f · `navy-10` #1a2130 · `navy-14` #212a3b · `navy-17` #263043 · `navy-22` #2e394d · `navy-26` #354158 · `navy-40` #55617a · `navy-60` #8791a6 · `navy-80` #c3cbd9 · `navy-95` #e7effe |
-| Sand (light) | `sand-100` #ffffff · `sand-98` #fbf9f7 · `sand-96` #f5f2ee · `sand-94` #efece7 · `sand-92` #e9e5df · `sand-90` #e3dfd8 · `sand-70` #d5c8ba · `sand-52` #837567 · `sand-32` #4f4539 · `sand-20` #313029 · `sand-11` #1c1b19 |
-| Green | `green-50` #4ecb7b · `green-44` #1f7a44 · `green-88` #b7f0c8 · `green-20` #0f4d2a · `green-08` #00210f |
-| Red | `red-70` #ffb3b3 · `red-50` #ff6b6b · `red-44` #ba1a1a · `red-90` #ffdad6 · `red-20` #5c1a1a · `red-12` #430e0e · `red-05` #410002 |
-| Amber | `amber-50` #ffce54 · `amber-35` #8a5a00 |
-| Other | `white` #ffffff · `scrim-dark` rgba(6,9,14,0.72) · `scrim-light` rgba(28,27,25,0.40) |
-
-**Roles** — each cell names the primitive that scheme resolves to:
-
-| M3 role | Dark (default) | Light |
-|---|---|---|
-| primary | orange-50 | orange-40 |
-| onPrimary | orange-12 | white |
-| primaryContainer | orange-20 | orange-90 |
-| onPrimaryContainer | orange-90 | orange-10 |
-| secondary | warm-85 | warm-50 |
-| onSecondary | warm-22 | white |
-| secondaryContainer | warm-30 | warm-95 |
-| onSecondaryContainer | warm-95 | warm-18 |
-| tertiary | yellow-90 | yellow-35 |
-| onTertiary | yellow-20 | white |
-| tertiaryContainer | yellow-20 | yellow-90 |
-| onTertiaryContainer | yellow-90 | yellow-15 |
-| background / surface | navy-10 | sand-98 |
-| surfaceContainerLowest | navy-06 | sand-100 |
-| surfaceContainerLow | navy-14 | sand-96 |
-| surfaceContainer | navy-17 | sand-94 |
-| surfaceContainerHigh | navy-22 | sand-92 |
-| surfaceContainerHighest | navy-26 | sand-90 |
-| onSurface | navy-95 | sand-11 |
-| onSurfaceVariant | navy-80 | sand-32 |
-| outline | navy-40 | sand-52 |
-| outlineVariant | navy-22 | sand-70 |
-| error | red-50 | red-44 |
-| onError | red-12 | white |
-| errorContainer | red-20 | red-90 |
-| onErrorContainer | red-70 | red-05 |
-| scrim | scrim-dark | scrim-light |
-| inverseSurface | navy-95 | sand-20 |
-| inverseOnSurface | navy-14 | sand-96 |
-
-Both schemes fully specify every role — the light scope darkens `tertiary`, `error`, and the semantic hues for legibility on light surfaces rather than reusing the dark tones.
-
-**Extended colors** (`ChatbotExtendedTheme.colors`, no M3 slot):
-
-| Token | Dark | Light |
-|---|---|---|
-| success / onSuccess / successContainer | green-50 / green-08 / green-20 | green-44 / white / green-88 |
-| warning | amber-50 | amber-35 |
-| primaryHover / primaryPressed | orange-57 / orange-40 | orange-30 / orange-20 |
-
-**State-layer opacities:** hover `0.08`, focus `0.10`, pressed `0.12`.
+The source organizes color in two tiers, and the Android layer mirrors it: a **primitive palette** (every literal value, named once by hue + tone) and two **semantic `ColorScheme`s** (dark default + light) whose roles each reference a primitive. Components read only roles. Both schemes fully specify every role — the light scope darkens hues for legibility on light surfaces rather than reusing the dark tones. Semantic colors M3 has no slot for are an extended set, read via `ChatbotExtendedTheme.colors`.
 
 ### Typography
 
-Full 15-role M3 scale on **Roboto**, exact metrics from the source (size / line-height / letter-spacing). Weights: Display & Headline 400; Title & Label 500; Body 400; `bold` 700 available.
+Full 15-role M3 scale on **Roboto**, with per-role weights from the source.
 
-| Role | Size / line | Role | Size / line |
-|---|---|---|---|
-| displayLarge | 57 / 64 | titleMedium | 16 / 24 (+0.15) |
-| displayMedium | 45 / 52 | titleSmall | 14 / 20 (+0.1) |
-| displaySmall | 36 / 44 | bodyLarge | 16 / 24 (+0.5) |
-| headlineLarge | 32 / 40 | bodyMedium | 14 / 20 (+0.25) |
-| headlineMedium | 28 / 36 | bodySmall | 12 / 16 (+0.4) |
-| headlineSmall | 24 / 32 | labelLarge | 14 / 20 (+0.1) |
-| titleLarge | 22 / 28 | labelMedium | 12 / 16 (+0.5) |
-| | | labelSmall | 11 / 16 (+0.5) |
-
-A monospace style (`MonoTextStyle`, 14sp, alongside the M3 scale in `Type.kt`) is used for API keys, model ids, and code — the one text style outside the M3 scale. It resolves to the device monospace via `FontFamily.Monospace`; bundling a Roboto Mono asset is deferred until fidelity demands it.
+A monospace style (`MonoTextStyle`) — API keys, model ids, code — is the one text style outside the M3 scale. It resolves to the device monospace via `FontFamily.Monospace`; bundling a Roboto Mono asset is deferred until fidelity demands it.
 
 ### Shape
 
-M3 `Shapes`: xs 4 · sm 8 · md 12 · lg 16 · xl 28. Named component shapes on `ChatbotShapes`: `button`/`chip` = pill, `card`/`input`/`dialog` resolve to the M3 `medium`/`extraSmall`/`extraLarge` rather than restating the radius (so a named shape cannot drift from the M3 role that M3 components read internally), `bubble` = 20 with one squared tail corner (bottom-end for the user, bottom-start for the assistant).
-
-### Spacing
-
-4dp grid on `Spacing`: 0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64. Default screen gutter 16dp.
+Named component shapes (`ChatbotShapes`) layer over the M3 `Shapes` ramp: pill buttons and chips, plus chat bubbles. A named shape that also exists on the M3 scale resolves to it rather than restating a radius, so it cannot drift from the M3 role that M3 components read internally. A bubble is rounded except for one squared tail corner — bottom-end for the user, bottom-start for the assistant.
 
 ### Elevation & motion
 
-Dark elevation is conveyed by tonal surface color; shadow (`Elevation`, levels 1–5) is reserved for FAB, menus, dialogs, and the fire-time heads-up notification. Cards default to flat filled surfaces. The shadow ramp is identical in both schemes — depth in dark comes from the tonal `surfaceContainer*` roles, not from different shadow values.
+Dark elevation is conveyed by tonal surface color; shadow (`Elevation`) is reserved for FAB, menus, dialogs, and the fire-time heads-up notification. Cards default to flat filled surfaces. The shadow ramp is identical in both schemes — depth in dark comes from the tonal `surfaceContainer*` roles, not from different shadow values.
 
-Motion (`Motion`): standard easing `cubic-bezier(0.2,0,0,1)`, emphasized easing `cubic-bezier(0.05,0.7,0.1,1)` (plus decelerate/accelerate variants); durations short 150 / medium 250 / long 400 ms. Press scales the target down (button 0.97, icon button 0.90) and, on filled surfaces, shifts to the pressed color; hover applies an 8% state layer. Streaming caret blinks at 1s. No infinite decorative loops. No glass/backdrop blur; `scrim` dims behind dialogs.
+Motion (`Motion`): a set of easings and durations. Press scales the target down and, on filled surfaces, shifts to the pressed color; hover applies a state layer. Streaming caret blinks at a fixed interval. No infinite decorative loops. No glass/backdrop blur; `scrim` dims behind dialogs.
 
 Honouring the system reduce-motion setting is out of scope. Compose does not apply the platform animator scale to these durations automatically, so it would be deliberate work; if it is ever specced, `Motion` becomes a CompositionLocal again so durations can be zeroed in one place rather than checked in every animated component.
 
@@ -136,7 +61,7 @@ Selects the dark or light `ColorScheme`, installs `MaterialTheme(colorScheme, ty
 
 ## Icon system
 
-`Icon` wraps **Material Symbols Rounded**, shipped as a **variable-font asset in `:core:ui`** (the source loads it from the Google Fonts CDN; the app bundles it in-APK so chrome renders offline). Glyphs are referenced by ligature name; variable axes `FILL` (0 at rest → 1 when selected/active), `wght` (default 400), `GRAD`, and optical size are settable per use. No PNG/SVG icon assets; emoji are never UI icons. The entire icon set is that one bundled font file — no per-icon drawables; subsetting the font to only used glyphs is a deferred APK-size optimization.
+`Icon` wraps **Material Symbols Rounded**, shipped as a **variable-font asset in `:core:ui`** (the source loads it from the Google Fonts CDN; the app bundles it in-APK so chrome renders offline). Glyphs are referenced by ligature name; variable axes `FILL` (rest → active), `wght`, `GRAD`, and optical size are settable per use. No PNG/SVG icon assets; emoji are never UI icons. The entire icon set is that one bundled font file — no per-icon drawables; subsetting the font to only used glyphs is a deferred APK-size optimization.
 
 Every ligature the app renders is a constant on `Glyphs` so no call site spells one out. Feature modules extend it as their screens need glyphs. Models carry no glyph: a model is identified by name only, never an icon.
 
@@ -148,8 +73,8 @@ Every ligature the app renders is a constant on `Glyphs` so no call site spells 
 
 All components are stateless and presentational — state in via parameters, events out via lambdas — so feature modules own state and these stay screenshot-testable. Grouped as in the source project:
 
-- **core** — `Button` (filled / tonal / outlined / text / elevated; a `loading` state distinct from disabled — full colour and label kept, trailing slot becomes a spinner, click swallowed), `IconButton` (standard / filled / tonal / outlined), `Icon`, `Card` (filled / outlined / elevated), `Badge`.
-- **forms** — `TextField` (outlined / filled, floating label, focus border thickens to 2px accent), `Switch`, `Chip` (assist / filter / input / suggestion).
+- **core** — `Button`, `IconButton`, `Icon`, `Card`, `Badge`. `Button` carries a `loading` state distinct from disabled: full colour and label kept, trailing slot becomes a spinner, click swallowed.
+- **forms** — `TextField`, `Switch`, `Chip`.
 - **feedback** — `Dialog`, `Snackbar`.
 
 **Strings.** No component holds a user-visible literal. Text a user reads or TalkBack speaks resolves from `:core:ui`'s `strings.xml`, and the module declares only strings that are generic by nature — a loading state description, a retry label, a dismiss description, the wordmark. Per-screen copy is a component parameter: the feature owns the words and resolves them from its own resources at the call site, which is what keeps `:core:ui` free of product vocabulary. Material Symbols ligature names are glyph identifiers rather than text, so they stay in code — but only in `Glyphs`, never at a call site: a mistyped ligature renders nothing and no compiler catches it.
@@ -169,4 +94,4 @@ Compose Preview Screenshot Testing (`com.android.compose.screenshot` plugin, `@P
 
 ## Companion skill
 
-A project skill at `.claude/skills/design-system/SKILL.md` documents, for later feature work: token accessors and names, the component list with when-to-use guidance, the mono-for-keys/ids/code rule, the no-invented-logo rule, and the flat-fills / no-gradients / sparing-shadow constraints. It grows as the catalog grows in later milestones.
+A project skill at `.claude/skills/design-system/SKILL.md` is what later feature work loads to build a screen: a short screen recipe, pointers to look tokens and catalog components up **in the code** (the code is the SSOT for names and values), the design→Compose translation layer, the M3-import boundary rule, and the manual upstream-sync procedure. Which role/component each element uses is decided by the design, not restated in the skill. It grows as the catalog grows in later milestones.

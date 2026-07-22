@@ -22,8 +22,8 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 private fun FormsGallery() {
     Surface {
         Column(
-            modifier = Modifier.padding(Spacing.md),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            modifier = Modifier.padding(Spacing.s4),
+            verticalArrangement = Arrangement.spacedBy(Spacing.s4),
         ) {
             DsTextField(value = "", onValueChange = {}, label = "Label")
             DsTextField(value = "sk-ant-api03-xxxx", onValueChange = {
@@ -46,11 +46,11 @@ private fun FormsGallery() {
                 label = "Status",
                 trailingGlyph = Glyphs.ERROR,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 DsSwitch(checked = true, onCheckedChange = {})
                 DsSwitch(checked = false, onCheckedChange = {})
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s1)) {
                 ChipVariant.entries.forEach { variant ->
                     DsChip(
                         label = variant.name,

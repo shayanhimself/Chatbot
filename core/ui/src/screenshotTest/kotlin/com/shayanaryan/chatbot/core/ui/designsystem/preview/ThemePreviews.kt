@@ -21,19 +21,19 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 @Composable
 private fun ThemeSwatch() {
     Surface {
-        Column(Modifier.padding(Spacing.md)) {
+        Column(Modifier.padding(Spacing.s4)) {
             Text("Display", style = MaterialTheme.typography.displaySmall)
             Text("Title", style = MaterialTheme.typography.titleMedium)
             Text("Body", style = MaterialTheme.typography.bodyMedium)
             Text("api-key-0000", style = MonoTextStyle)
             Box(
                 Modifier
-                    .size(Spacing.x4l)
+                    .size(Spacing.s12)
                     .background(MaterialTheme.colorScheme.primary, ChatbotShapes.card),
             )
             Box(
                 Modifier
-                    .size(Spacing.x4l)
+                    .size(Spacing.s12)
                     .background(ChatbotExtendedTheme.colors.success, ChatbotShapes.card),
             )
         }

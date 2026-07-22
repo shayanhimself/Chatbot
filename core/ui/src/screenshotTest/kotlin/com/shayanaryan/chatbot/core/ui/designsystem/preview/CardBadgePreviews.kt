@@ -19,15 +19,15 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 @Composable
 private fun CardBadgeGallery() {
     Surface {
-        Column(Modifier.padding(Spacing.md)) {
+        Column(Modifier.padding(Spacing.s4)) {
             CardVariant.entries.forEach { variant ->
-                DsCard(variant = variant, modifier = Modifier.padding(top = Spacing.xs)) {
-                    Text(variant.name, Modifier.padding(Spacing.md))
+                DsCard(variant = variant, modifier = Modifier.padding(top = Spacing.s2)) {
+                    Text(variant.name, Modifier.padding(Spacing.s4))
                 }
             }
-            Row(Modifier.padding(top = Spacing.xs)) {
+            Row(Modifier.padding(top = Spacing.s2)) {
                 BadgeTone.entries.forEach { tone ->
-                    DsBadge(tone = tone, text = "3", modifier = Modifier.padding(end = Spacing.xxs))
+                    DsBadge(tone = tone, text = "3", modifier = Modifier.padding(end = Spacing.s1))
                 }
                 // Render a dot badge
                 DsBadge()

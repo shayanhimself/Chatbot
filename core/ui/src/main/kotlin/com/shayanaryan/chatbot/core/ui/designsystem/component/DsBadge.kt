@@ -61,8 +61,8 @@ private fun BadgePreview() {
     ChatbotTheme(darkTheme = true) {
         Surface {
             Row(
-                modifier = Modifier.padding(Spacing.md),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                modifier = Modifier.padding(Spacing.s4),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 BadgeTone.entries.forEach { tone ->

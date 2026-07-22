@@ -38,8 +38,8 @@ private fun SwitchPreview() {
     ChatbotTheme(darkTheme = true) {
         Surface {
             Row(
-                modifier = Modifier.padding(Spacing.md),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                modifier = Modifier.padding(Spacing.s4),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
             ) {
                 DsSwitch(
                     checked = true,

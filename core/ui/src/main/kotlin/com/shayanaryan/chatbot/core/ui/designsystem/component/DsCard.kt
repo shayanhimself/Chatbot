@@ -79,12 +79,12 @@ private fun CardPreview() {
     ChatbotTheme(darkTheme = true) {
         Surface {
             Column(
-                modifier = Modifier.padding(Spacing.md),
-                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                modifier = Modifier.padding(Spacing.s4),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s2),
             ) {
                 CardVariant.entries.forEach { variant ->
                     DsCard(variant = variant) {
-                        Text(variant.name, Modifier.padding(Spacing.md))
+                        Text(variant.name, Modifier.padding(Spacing.s4))
                     }
                 }
             }

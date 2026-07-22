@@ -16,7 +16,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 @Composable
 private fun IconRow() {
     Surface {
-        Row(Modifier.padding(Spacing.md)) {
+        Row(Modifier.padding(Spacing.s4)) {
             DsIcon(Glyphs.CLOSE, contentDescription = null)
             DsIcon(Glyphs.ERROR, contentDescription = null, filled = true)
             DsIcon(Glyphs.ARROW_FORWARD, contentDescription = null, weight = 600)

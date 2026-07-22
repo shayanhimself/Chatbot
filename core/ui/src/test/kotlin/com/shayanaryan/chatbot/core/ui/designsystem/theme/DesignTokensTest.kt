@@ -9,17 +9,18 @@ import org.junit.Test
 class DesignTokensTest {
     @Test
     fun spacingFollowsFourDpGrid() {
-        assertEquals(0.dp, Spacing.none)
-        assertEquals(4.dp, Spacing.xxs)
-        assertEquals(8.dp, Spacing.xs)
-        assertEquals(12.dp, Spacing.sm)
-        assertEquals(16.dp, Spacing.md)
-        assertEquals(20.dp, Spacing.lg)
-        assertEquals(24.dp, Spacing.xl)
-        assertEquals(32.dp, Spacing.xxl)
-        assertEquals(40.dp, Spacing.x3l)
-        assertEquals(48.dp, Spacing.x4l)
-        assertEquals(64.dp, Spacing.x5l)
+        assertEquals(0.dp, Spacing.s0)
+        assertEquals(2.dp, Spacing.s0_5)
+        assertEquals(4.dp, Spacing.s1)
+        assertEquals(8.dp, Spacing.s2)
+        assertEquals(12.dp, Spacing.s3)
+        assertEquals(16.dp, Spacing.s4)
+        assertEquals(20.dp, Spacing.s5)
+        assertEquals(24.dp, Spacing.s6)
+        assertEquals(32.dp, Spacing.s8)
+        assertEquals(40.dp, Spacing.s10)
+        assertEquals(48.dp, Spacing.s12)
+        assertEquals(64.dp, Spacing.s16)
         assertEquals(16.dp, Spacing.gutter)
     }
 

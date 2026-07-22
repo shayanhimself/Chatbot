@@ -155,8 +155,8 @@ private fun ChipPreview() {
     ChatbotTheme(darkTheme = true) {
         Surface {
             Row(
-                modifier = Modifier.padding(Spacing.md),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
+                modifier = Modifier.padding(Spacing.s4),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s1),
             ) {
                 ChipVariant.entries.forEach { variant ->
                     DsChip(

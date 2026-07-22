@@ -19,7 +19,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 @Composable
 private fun ButtonGallery() {
     Surface {
-        Column(Modifier.padding(Spacing.md)) {
+        Column(Modifier.padding(Spacing.s4)) {
             ButtonVariant.entries.forEach { variant ->
                 DsButton(
                     text = variant.name,

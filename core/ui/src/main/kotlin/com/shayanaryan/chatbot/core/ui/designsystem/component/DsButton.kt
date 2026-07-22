@@ -154,12 +154,12 @@ private fun buttonContent(
     {
         if (leadingGlyph != null) {
             DsIcon(leadingGlyph, contentDescription = null, size = 18.dp)
-            Spacer(Modifier.width(Spacing.xs))
+            Spacer(Modifier.width(Spacing.s2))
         }
         Text(text)
         // The spinner occupies the trailing slot, replacing any trailing glyph while it spins.
         if (loading) {
-            Spacer(Modifier.width(Spacing.xs))
+            Spacer(Modifier.width(Spacing.s2))
             M3CircularProgressIndicator(
                 modifier = Modifier.size(18.dp),
                 color = LocalContentColor.current,
@@ -167,7 +167,7 @@ private fun buttonContent(
                 trackColor = LocalContentColor.current.copy(alpha = 0.25f),
             )
         } else if (trailingGlyph != null) {
-            Spacer(Modifier.width(Spacing.xs))
+            Spacer(Modifier.width(Spacing.s2))
             DsIcon(trailingGlyph, contentDescription = null, size = 18.dp)
         }
     }
@@ -178,8 +178,8 @@ private fun ButtonPreview() {
     ChatbotTheme(darkTheme = true) {
         Surface {
             Column(
-                modifier = Modifier.padding(Spacing.md),
-                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                modifier = Modifier.padding(Spacing.s4),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s2),
             ) {
                 ButtonVariant.entries.forEach { variant ->
                     DsButton(

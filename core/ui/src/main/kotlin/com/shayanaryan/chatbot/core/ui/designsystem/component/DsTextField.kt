@@ -129,8 +129,8 @@ private fun TextFieldPreview() {
     ChatbotTheme(darkTheme = true) {
         Surface {
             Column(
-                modifier = Modifier.padding(Spacing.md),
-                verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                modifier = Modifier.padding(Spacing.s4),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s4),
             ) {
                 DsTextField(value = "", onValueChange = {}, label = "Label")
                 DsTextField(

@@ -120,7 +120,7 @@ fun DsIconButton(
 private fun IconButtonPreview() {
     ChatbotTheme(darkTheme = true) {
         Surface {
-            Row(Modifier.padding(Spacing.md)) {
+            Row(Modifier.padding(Spacing.s4)) {
                 DsIconButton(
                     glyph = Glyphs.CLOSE,
                     contentDescription = "Selected",

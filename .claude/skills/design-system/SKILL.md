@@ -91,7 +91,7 @@ frame.
   padding / margin / gaps between things — *not* component size. Mockup writes raw
   px (`padding:14px`, `border-radius:18px`) — the designer eyeballed these; The dp value in
   `Spacing` grid and `ChatbotShapes` are the source, not the px. Snap to the
-  nearest token to proceed (`16`→`Spacing.md`, `12`→`Spacing.sm`, pill/`999`→
+  nearest token to proceed (`16`→`Spacing.s4`, `12`→`Spacing.s3`, pill/`999`→
   `CircleShape`, `12`→`ChatbotShapes.card`). Off-grid px (`11`, `14`, `18`) has
   no exact token — **snap to nearest AND log it**; report every no-exact-match at
   end of implementation. A human decides whether the mockup drifted or the DS needs a new token;

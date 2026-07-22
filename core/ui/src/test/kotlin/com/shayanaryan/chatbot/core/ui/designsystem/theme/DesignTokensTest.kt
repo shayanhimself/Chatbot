@@ -26,11 +26,11 @@ class DesignTokensTest {
 
     @Test
     fun componentShapesMatchSpec() {
-        assertEquals(CircleShape, ChatbotShapes.button)
-        assertEquals(CircleShape, ChatbotShapes.chip)
-        assertEquals(RoundedCornerShape(12.dp), ChatbotShapes.card)
-        assertEquals(RoundedCornerShape(4.dp), ChatbotShapes.input)
-        assertEquals(RoundedCornerShape(28.dp), ChatbotShapes.dialog)
+        assertEquals(CircleShape, ComponentShapes.button)
+        assertEquals(CircleShape, ComponentShapes.chip)
+        assertEquals(RoundedCornerShape(12.dp), ComponentShapes.card)
+        assertEquals(RoundedCornerShape(4.dp), ComponentShapes.input)
+        assertEquals(RoundedCornerShape(28.dp), ComponentShapes.dialog)
         assertEquals(
             RoundedCornerShape(
                 topStart = 20.dp,
@@ -38,7 +38,7 @@ class DesignTokensTest {
                 bottomEnd = 4.dp,
                 bottomStart = 20.dp,
             ),
-            ChatbotShapes.bubbleUser,
+            ComponentShapes.bubbleUser,
         )
         assertEquals(
             RoundedCornerShape(
@@ -47,7 +47,7 @@ class DesignTokensTest {
                 bottomEnd = 20.dp,
                 bottomStart = 4.dp,
             ),
-            ChatbotShapes.bubbleAssistant,
+            ComponentShapes.bubbleAssistant,
         )
     }
 

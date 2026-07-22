@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.R
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.DsIcon
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotShapes
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Motion
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
@@ -82,7 +82,7 @@ fun DsButton(
             }.semantics { if (loading) stateDescription = loadingDescription }
 
     val action = if (loading) ({}) else onClick
-    val shape = ChatbotShapes.button
+    val shape = ComponentShapes.button
     val content = buttonContent(text, loading, leadingGlyph, trailingGlyph)
     when (variant) {
         ButtonVariant.Filled -> {

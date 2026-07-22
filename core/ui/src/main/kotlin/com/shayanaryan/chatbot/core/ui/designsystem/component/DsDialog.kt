@@ -7,11 +7,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.DsIcon
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotShapes
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import androidx.compose.material3.AlertDialog as M3AlertDialog
 
 /**
- * Design-system alert dialog on [ChatbotShapes.dialog], wrapping M3 `AlertDialog`.
+ * Design-system alert dialog, wrapping M3 `AlertDialog`.
  *
  * @param onDismissRequest invoked on scrim tap / back press.
  * @param title dialog headline; caller-supplied copy.
@@ -37,7 +37,7 @@ fun DsDialog(
     M3AlertDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
-        shape = ChatbotShapes.dialog,
+        shape = ComponentShapes.dialog,
         icon =
             glyph?.let {
                 {

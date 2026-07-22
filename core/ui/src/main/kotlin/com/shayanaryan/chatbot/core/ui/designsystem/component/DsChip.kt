@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.R
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.DsIcon
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotShapes
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import androidx.compose.material3.AssistChip as M3AssistChip
@@ -43,10 +43,7 @@ enum class ChipVariant {
 }
 
 /**
- * Design-system chip wrapping the four M3 chip variants on the pill [ChatbotShapes.chip].
- *
- * [selected] applies to the toggleable variants (filter / input). [onDismiss], when non-null on an
- * input chip, renders a trailing close button labelled from the generic `core_ui_dismiss` string.
+ * Design-system chip wrapping the four M3 chip variants.
  *
  * @param label chip text; caller-supplied copy.
  * @param variant assist (default) / filter / input / suggestion.
@@ -65,7 +62,7 @@ fun DsChip(
     onDismiss: (() -> Unit)? = null,
     enabled: Boolean = true,
 ) {
-    val shape = ChatbotShapes.chip
+    val shape = ComponentShapes.chip
     val labelComposable: @Composable () -> Unit = { Text(label) }
     val leadingComposable: (@Composable () -> Unit)? =
         leadingGlyph?.let {

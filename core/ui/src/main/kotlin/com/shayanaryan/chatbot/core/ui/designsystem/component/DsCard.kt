@@ -9,7 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotShapes
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import androidx.compose.material3.Card as M3Card
@@ -19,10 +19,7 @@ import androidx.compose.material3.OutlinedCard as M3OutlinedCard
 enum class CardVariant { Filled, Outlined, Elevated }
 
 /**
- * Design-system card wrapping the three M3 card variants on [ChatbotShapes.card].
- *
- * Flat filled surfaces by default; `Elevated` is the only shadowed variant. A non-null [onClick]
- * makes the card interactive.
+ * Design-system card wrapping the three M3 card variants.
  *
  * @param variant one of filled (default) / outlined / elevated.
  * @param onClick invoked on click; non-null turns the card into a clickable surface.
@@ -35,7 +32,7 @@ fun DsCard(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = ChatbotShapes.card
+    val shape = ComponentShapes.card
     when (variant) {
         CardVariant.Filled -> {
             if (onClick != null) {

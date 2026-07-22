@@ -43,7 +43,7 @@ Inventory, so you know what exists to grep for (exact members,
 variants and values live in the file):
 
 - theme (`…designsystem/theme/`): `MaterialTheme.colorScheme` roles + `ChatbotExtendedTheme.colors`;
-  `MaterialTheme.typography` + `MonoTextStyle`; `ChatbotShapes`; `Spacing`;
+  `MaterialTheme.typography` + `MonoTextStyle`; `ComponentShapes`; `Spacing`;
   `Elevation`; `Motion`.
 - component (`…designsystem/component/`): `DsButton`, `DsIconButton`, `DsCard`, `DsBadge`, `DsTextField`,
   `DsSwitch`, `DsChip`, `DsDialog`, `DsSnackbar`.
@@ -55,7 +55,7 @@ How they're accessed:
 - Scheme-dependent tokens M3 has no slot for: `ChatbotExtendedTheme.colors` — the
   only CompositionLocal-backed set.
 - Everything else is a plain constant, read directly — no theme lookup, usable
-  outside composition (`Spacing`, `Elevation`, `ChatbotShapes`, `Motion`, `MonoTextStyle`).
+  outside composition (`Spacing`, `Elevation`, `ComponentShapes`, `Motion`, `MonoTextStyle`).
 - Touch targets: `Modifier.minimumInteractiveComponentSize()`, not a spacing value.
 
 ## Which token / component to use = the design decides
@@ -69,8 +69,7 @@ specifies into the looked-up code token/component.
 
 Screen mockups come from the *Bro designs* project (`pull-design`). The markup
 already names the DS component, color role and type for each element — translate,
-don't reinvent. But the axes translate differently, and two of them need a
-human call.
+don't reinvent.
 
 A mockup may wrap the screen in a **phone frame** (device bezel, status-bar clock,
 battery/signal glyphs, a home indicator) purely to show how it looks on a phone.
@@ -87,15 +86,16 @@ frame.
   (`font:500 22px Roboto`), *not* a role name. The M3 scale is a closed set, so
   size+weight resolves to exactly one role — **find it in `Type.kt`** by matching
   size and weight; never write `22.sp` at a call site. Monospace px → `MonoTextStyle`.
-- **Spacing & radius — approximate, px, needs reporting.** `Spacing` is for
-  padding / margin / gaps between things — *not* component size. Mockup writes raw
-  px (`padding:14px`, `border-radius:18px`) — the designer eyeballed these; The dp value in
-  `Spacing` grid and `ChatbotShapes` are the source, not the px. Snap to the
-  nearest token to proceed (`16`→`Spacing.s4`, `12`→`Spacing.s3`, pill/`999`→
-  `CircleShape`, `12`→`ChatbotShapes.card`). Off-grid px (`11`, `14`, `18`) has
-  no exact token — **snap to nearest AND log it**; report every no-exact-match at
-  end of implementation. A human decides whether the mockup drifted or the DS needs a new token;
-  never silently absorb it.
+- **Spacing & radius — token role or raw px; check which.** `Spacing` is for padding /
+  margin / gaps, *not* component size.
+  - **Token role — exact, 1:1.** Spacing: `var(--space-4)` → `Spacing.s4`.
+    Radius, is either: component-scoped (`--radius-full`
+    → `CircleShape`, `--radius-card` → `ComponentShapes.card`),
+    or the numeric scale on a plain surface (`--radius-N`
+    → `RoundedCornerShape(RadiusPrimitives.radiusN)`; slotted values `1/2/3/4/7` may use
+    `MaterialTheme.shapes.*` instead).
+  - **Raw px — snap AND log**. Snap to nearest (`16`→`Spacing.s4`, pill/`999`→`CircleShape`); report every off-grid px
+    (`11`, `14`, `18`) at the end — a human decides drift vs. new token, never silently absorb.
 - **Explicit size — px is dp, use `.dp` directly.** A fixed width/height/icon size
   (`width:40px`, `size:24px`) is *not* spacing. 1 px in design = 1 dp in Android, so write it as a plain `.dp`.
   `Spacing` is padding/margin/gaps only.

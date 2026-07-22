@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotExtendedTheme
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotShapes
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.MonoTextStyle
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
@@ -29,12 +29,12 @@ private fun ThemeSwatch() {
             Box(
                 Modifier
                     .size(Spacing.s12)
-                    .background(MaterialTheme.colorScheme.primary, ChatbotShapes.card),
+                    .background(MaterialTheme.colorScheme.primary, ComponentShapes.card),
             )
             Box(
                 Modifier
                     .size(Spacing.s12)
-                    .background(ChatbotExtendedTheme.colors.success, ChatbotShapes.card),
+                    .background(ChatbotExtendedTheme.colors.success, ComponentShapes.card),
             )
         }
     }

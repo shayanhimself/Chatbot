@@ -27,7 +27,7 @@ Exact values live in the `:core:ui` Kotlin token files, not here — this spec k
 
 Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — semantic/extended colors, motion, the mono text style, named component shapes — live in `:core:ui`, split by whether their value depends on runtime state.
 
-A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. `ExtendedColors` is the only one: the `ChatbotTheme` composable installs it, and it is read through the `ChatbotExtendedTheme.colors` accessor. Everything else is constant and read directly — the `Spacing`, `Elevation`, `ChatbotShapes` and `Motion` sets and `MonoTextStyle` — with no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
+A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. `ExtendedColors` is the only one: the `ChatbotTheme` composable installs it, and it is read through the `ChatbotExtendedTheme.colors` accessor. Everything else is constant and read directly — the `Spacing`, `Elevation`, `ComponentShapes` and `Motion` sets and `MonoTextStyle` — with no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
 
 ### Color
 
@@ -41,7 +41,11 @@ A monospace style (`MonoTextStyle`) — API keys, model ids, code — is the one
 
 ### Shape
 
-Named component shapes (`ChatbotShapes`) layer over the M3 `Shapes` ramp: pill buttons and chips, plus chat bubbles. A named shape that also exists on the M3 scale resolves to it rather than restating a radius, so it cannot drift from the M3 role that M3 components read internally. A bubble is rounded except for one squared tail corner — bottom-end for the user, bottom-start for the assistant.
+Corner radii follow the primitive→semantic tiering:
+
+- **`RadiusPrimitives`** — the raw radius ramp, mirrored 1:1 from the upstream `--radius-*` tokens (numeric scale, `N = px/4`). **Public and call-site-facing** — this is where the tiering diverges from color: the mockups use the numeric radius scale directly on plain surfaces (the 20dp logo tiles), exactly as they use the `Spacing` scale, so a feature builds its own `RoundedCornerShape` from the matching primitive for any radius no M3 slot or `ComponentShapes` role already names.
+- **`ChatbotM3Shapes`** — the M3 `Shapes` ramp, built from those primitives and installed into `MaterialTheme(shapes = …)`. It pins the five public M3 slots to our radii, so every built-in M3 component that reads its default corner from the theme draws our values, not the library's.
+- **`ComponentShapes`** — named per-component roles, read directly at call sites. Each maps to its upstream component-scoped token, and so **resolves to a `RadiusPrimitives` value**. Two reasons: it mirrors the upstream structure exactly (a component role points at a primitive — `--radius-card: var(--radius-3)`), and it can reach off-slot radii the public M3 `Shapes` cannot name (the chat bubbles' 20dp corner has no slot). `button` is the pill `--radius-full`.
 
 ### Elevation & motion
 
@@ -84,7 +88,7 @@ All components are stateless and presentational — state in via parameters, eve
 - **Chat surfaces** — `MessageBubble`, `ConversationListItem`, `ModelPicker`. Single consumer (`:feature:conversation`), and their props are domain-shaped (message role, tool chips, model identity), which `:core:ui` cannot see. Hosting them here would mean duplicating those concepts as DS-local enums and mapping to them at every call site. They are built in the feature module under spec 005.
 - **Empty states** — structurally different per screen, not merely different in copy: the conversation screen wants a hero block, a list screen wants icon + line + optional CTA. A shared component would freeze a guessed layout before any screen exists to validate it. Features build their own; hoist only once two screens demonstrably share a structure.
 
-The design system remains the source of truth for their *appearance* regardless: bubble shapes (`ChatbotShapes.bubbleUser`/`bubbleAssistant`) and the streaming-caret duration are tokens defined here and consumed there. Appearance SSOT is the token vocabulary, not every composition built from it.
+The design system remains the source of truth for their *appearance* regardless: bubble shapes (`ComponentShapes.bubbleUser`/`bubbleAssistant`) and the streaming-caret duration are tokens defined here and consumed there. Appearance SSOT is the token vocabulary, not every composition built from it.
 
 **Naming.** Catalog components carry a `Ds` prefix (`DsButton`, `DsIcon`, `DsCard`, …). Feature modules legitimately use both the catalog and `androidx.compose.material3` directly — the latter for M3 components the catalog does not wrap — so an un-prefixed `Button` would leave a reader unsure whether it is ours or M3's. The prefix makes provenance obvious at every call site and lets both coexist in one file with no import aliasing. Inside `:core:ui`, a wrapper still aliases the M3 original it delegates to (e.g. `import androidx.compose.material3.Button as M3Button`). Recorded in the `architecture` / `design-system` skills.
 

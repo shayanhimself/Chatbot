@@ -14,7 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.DsIcon
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotShapes
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.MonoTextStyle
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
@@ -97,7 +97,7 @@ fun DsTextField(
                 keyboardOptions = keyboardOptions,
                 singleLine = singleLine,
                 minLines = minLines,
-                shape = ChatbotShapes.input,
+                shape = ComponentShapes.input,
             )
         }
 

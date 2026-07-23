@@ -20,9 +20,9 @@ We use **`android` CLI** for project creation, SDK/emulator management, running 
 - **KDoc where it earns its place.** When a function or class — or any of its arguments — isn't self-explanatory from its name and signature, add a KDoc block: one line on what it does, plus `@param`/`@return` for the non-obvious parts. **Interfaces and contracts always get KDoc**.
 - **Public composables ship colocated previews.** Every `public @Composable` gets at least one plain `@Preview` in its own file, one per distinct visual state, each wrapped in `ChatbotTheme`.
 
-## Spec files
+## Writing — specs, docs, comments
 
-Spec files describe the *current* system. When writing or updating them:
 - Don't repeat yourself.
 - No history / run events. State what the system *does*, not what happened once or what was decided when.
-- Be concise. Don't over-explain.
+- Don't over-explain. Say it once, at the shortest length that's still clear.
+- One example only where the rule is genuinely ambiguous without it. Usually zero.

@@ -60,7 +60,7 @@ fun interface ApiKeyProvider { suspend fun apiKey(): String }
 
 `ClaudeChatEngine(client: HttpClient, keyProvider: ApiKeyProvider)` is the one concrete engine. The `ChatEngine` interface is retained despite the single implementation for test fakes and a future iOS on-device engine (per `001`).
 
-**Request.** `POST https://api.anthropic.com/v1/messages`. Headers: `x-api-key` (from `keyProvider.apiKey()` per request — never held or logged), `anthropic-version: 2023-06-01`, `content-type: application/json`, `accept: text/event-stream`. Body: `{ model, max_tokens, system?, stream: true, messages: [{ role, content: [{ type: "text", text }] }] }`. The `thinking` parameter is omitted.
+**Request.** `POST https://api.anthropic.com/v1/messages`. Headers: `x-api-key` (from `keyProvider.apiKey()` per request — never held or logged), `anthropic-version: 2023-06-01`, `content-type: application/json`, `accept: text/event-stream`. Body: `{ model, max_tokens, system?, stream: true, thinking: { type: "disabled" }, messages: [{ role, content: [{ type: "text", text }] }] }`. `thinking` is sent explicitly as `{"type": "disabled"}`, not omitted — on the default model (`Sonnet`) an absent `thinking` field turns on adaptive thinking, billing thinking tokens on the user's key and stalling the first visible token for a feature nobody chose. Sending `disabled` makes "no thinking" true across all three picker models. Turning thinking on is a deliberate future-spec decision.
 
 **SSE.** Hand-rolled per `001` (no Ktor SSE plugin) — one parse path that extends to `input_json_delta` in 008. The response body is read as a stream, not buffered: `preparePost(...).execute { }` returns before the body is read, and `bodyAsChannel().readUTF8Line()` pulls frames as they arrive. Dispatch on the `data` JSON `type`:
 
@@ -78,7 +78,7 @@ fun interface ApiKeyProvider { suspend fun apiKey(): String }
 
 ```
 // commonMain — client, config, and impl are all internal
-internal fun HttpClientConfig<*>.installChatDefaults() { /* ContentNegotiation(json), HttpTimeout */ }
+internal fun HttpClientConfig<*>.installChatDefaults() { /* HttpTimeout only */ }
 internal expect fun createChatHttpClient(): HttpClient
 internal class ClaudeChatEngine(...) : ChatEngine
 
@@ -91,7 +91,9 @@ internal actual fun createChatHttpClient(): HttpClient = HttpClient(OkHttp) { in
 
 `HttpTimeout`: `requestTimeoutMillis = null` (the stream is long-lived), `connectTimeoutMillis = 15_000`, `socketTimeoutMillis = 60_000`. A future iosMain `actual` uses `HttpClient(Darwin)` with the same config — which is why the client factory is `:shared`, not `:app`. `ktor-client-core` is the multiplatform API used everywhere; only the engine artifact (`ktor-client-okhttp`) is androidMain.
 
-`:app` contributes one Hilt binding — `@Provides fun chatEngine(keyProvider) = createChatEngine(keyProvider)` — and the `ApiKeyProvider` binding. It never references `HttpClient`. `:app` is irreducible only because Hilt cannot enter `:shared` and because `ApiKeyProvider`'s real implementation is assembled by Hilt from androidMain crypto (006).
+No `ContentNegotiation` plugin. The engine hand-rolls SSE and never calls `body<T>()`; the only thing ContentNegotiation would do is serialize the request body, which one `chatJson.encodeToString` call already does with the same `Json` instance the SSE parser needs. It would also append an `Accept: application/json` header alongside the explicit `accept: text/event-stream`. So `installChatDefaults()` installs `HttpTimeout` only, dropping `ktor-client-content-negotiation` and `ktor-serialization-kotlinx-json`.
+
+`:app` contributes one Hilt binding — `@Provides fun chatEngine(keyProvider) = createChatEngine(keyProvider)`. It ships no `ApiKeyProvider` binding, since no production `ApiKeyProvider` implementation exists in this spec (005 provides a debug stub, 006 the real one); that binding lands with its implementation. It never references `HttpClient`. `:app` is irreducible only because Hilt cannot enter `:shared` and because `ApiKeyProvider`'s real implementation is assembled by Hilt from androidMain crypto (006).
 
 `ApiKeyProvider` is defined here as an interface only; no production implementation ships in this spec.
 
@@ -119,4 +121,4 @@ This engine is deliberately incomplete. Later specs own the pieces that plug int
 | ViewModel and chat UI | 005 | Collects the `Flow`, folds `Delta` / `Completed` / `Failed` into `UiState`, renders streaming text and the in-conversation model picker. |
 | iosMain `createChatHttpClient()` | future | `HttpClient(Darwin)` `actual`; the commonMain engine and SSE parse are unchanged. |
 | Retry / backoff policy | future | A caller-level policy over `RateLimited` / `Overloaded`; the engine surfaces the typed error and does not retry. |
-| `thinking` configuration | future | Adaptive-thinking request parameter and streaming of `thinking` blocks; currently omitted and skipped. |
+

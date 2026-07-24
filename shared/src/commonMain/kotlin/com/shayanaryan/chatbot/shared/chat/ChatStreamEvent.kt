@@ -3,6 +3,10 @@ package com.shayanaryan.chatbot.shared.chat
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * One event in a streamed assistant turn. A stream emits zero or more [Delta]s and then exactly
+ * one terminal event — [Completed] on success, [Failed] on any API or domain error.
+ */
 sealed interface ChatStreamEvent {
     data class Delta(
         val text: String,

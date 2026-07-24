@@ -27,7 +27,7 @@ class DesignTokensTest {
     @Test
     fun `component shapes match spec`() {
         assertEquals(CircleShape, ComponentShapes.button)
-        assertEquals(CircleShape, ComponentShapes.chip)
+        assertEquals(RoundedCornerShape(8.dp), ComponentShapes.chip)
         assertEquals(RoundedCornerShape(12.dp), ComponentShapes.card)
         assertEquals(RoundedCornerShape(4.dp), ComponentShapes.input)
         assertEquals(RoundedCornerShape(28.dp), ComponentShapes.dialog)

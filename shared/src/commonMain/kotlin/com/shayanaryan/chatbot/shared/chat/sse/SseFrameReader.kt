@@ -10,6 +10,9 @@ import io.ktor.utils.io.readLine
  * The channel is consumed as it arrives — never buffered whole — so deltas surface the moment
  * the server writes them. A blank line ends the current frame; comment lines (starting `:`) are
  * ignored, as are frames that carry no data. Returns when the channel closes.
+ *
+ * Parsing the raw channel rather than using Ktor's SSE plugin keeps the engine testable on
+ * `MockEngine`.
  */
 internal suspend fun ByteReadChannel.forEachSseFrame(onFrame: suspend (SseFrame) -> Unit) {
     val builder = SseFrameBuilder()

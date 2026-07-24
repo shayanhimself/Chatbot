@@ -13,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotExtendedTheme
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.MonoTextStyle
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 

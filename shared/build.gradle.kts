@@ -11,7 +11,12 @@ kotlin {
         namespace = "com.shayanaryan.chatbot.shared"
         compileSdk = 37
         minSdk = 31
-        withHostTestBuilder {}.configure {} // enables commonTest on JVM
+        // enables commonTest on JVM; returnDefaultValues stops android.jar stubs
+        // (e.g. android.util.Log, touched by OkHttp's platform detection) from
+        // throwing "not mocked" on the host test classpath.
+        withHostTestBuilder {}.configure {
+            isReturnDefaultValues = true
+        }
     }
 
     sourceSets {

@@ -52,6 +52,8 @@ sealed interface ChatError {                    // no user-facing text (architec
 fun interface ApiKeyProvider { suspend fun apiKey(): String }
 ```
 
+`maxTokens` defaults to `DEFAULT_MAX_TOKENS` (8192) — long enough for a detailed chat turn, short enough that a runaway response stays cheap on the user's own key.
+
 `ContentBlock` is a list rather than a bare `String` so 008 can add `ToolUse` / `ToolResult` without reshaping `ChatMessage`. Only `Text` exists in this spec.
 
 `ChatError` carries no strings a user reads; feature ViewModels map each case to a string resource. `RateLimited` and `Overloaded` expose enough for a caller retry policy — the engine itself does not retry.
@@ -69,6 +71,7 @@ fun interface ApiKeyProvider { suspend fun apiKey(): String }
 - `message_delta` — capture `stop_reason` and cumulative output usage.
 - `message_stop` — emit `Completed`.
 - SSE `event: error` — emit `Failed`, then end.
+- `event: ping` and any unrecognized `type` are ignored; a stream that closes without `message_stop` is a truncation and maps to `Unexpected`.
 
 **Errors.** A non-2xx status before streaming maps to a `ChatError` (the `retry-after` header populates `RateLimited`). Lost connectivity maps to `Network`; a byte-gap stall (`socketTimeout`) to `Timeout`; a malformed frame or JSON to `Unexpected`.
 

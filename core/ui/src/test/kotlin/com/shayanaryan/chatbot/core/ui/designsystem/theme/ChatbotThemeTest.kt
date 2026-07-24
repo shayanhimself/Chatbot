@@ -15,7 +15,7 @@ class ChatbotThemeTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun darkThemeInstallsDarkSchemeAndExtendedColors() {
+    fun `dark theme installs dark scheme and extended colors`() {
         var primary = Color.Unspecified
         var success = Color.Unspecified
         composeRule.setContent {
@@ -29,7 +29,7 @@ class ChatbotThemeTest {
     }
 
     @Test
-    fun lightThemeSwitchesSchemesAndExtendedColors() {
+    fun `light theme switches schemes and extended colors`() {
         var primary = Color.Unspecified
         var success = Color.Unspecified
         composeRule.setContent {

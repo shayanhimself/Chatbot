@@ -5,7 +5,7 @@ import org.junit.Test
 
 class ColorSchemeTest {
     @Test
-    fun darkSchemePrimaryRolesResolveToOrangePrimitives() {
+    fun `dark scheme primary roles resolve to orange primitives`() {
         assertEquals(ColorPrimitives.Orange50, DarkColorScheme.primary)
         assertEquals(ColorPrimitives.Orange12, DarkColorScheme.onPrimary)
         assertEquals(ColorPrimitives.Orange20, DarkColorScheme.primaryContainer)
@@ -13,7 +13,7 @@ class ColorSchemeTest {
     }
 
     @Test
-    fun darkSchemeSurfaceStackIsNavy() {
+    fun `dark scheme surface stack is navy`() {
         assertEquals(ColorPrimitives.Navy10, DarkColorScheme.background)
         assertEquals(ColorPrimitives.Navy10, DarkColorScheme.surface)
         assertEquals(ColorPrimitives.Navy06, DarkColorScheme.surfaceContainerLowest)
@@ -28,7 +28,7 @@ class ColorSchemeTest {
     }
 
     @Test
-    fun darkSchemeErrorInverseAndScrim() {
+    fun `dark scheme error inverse and scrim`() {
         assertEquals(ColorPrimitives.Red50, DarkColorScheme.error)
         assertEquals(ColorPrimitives.Red12, DarkColorScheme.onError)
         assertEquals(ColorPrimitives.Red20, DarkColorScheme.errorContainer)
@@ -41,7 +41,7 @@ class ColorSchemeTest {
     }
 
     @Test
-    fun lightSchemeDarkensHuesForLegibility() {
+    fun `light scheme darkens hues for legibility`() {
         assertEquals(ColorPrimitives.Orange40, LightColorScheme.primary)
         assertEquals(ColorPrimitives.White, LightColorScheme.onPrimary)
         assertEquals(ColorPrimitives.Orange90, LightColorScheme.primaryContainer)

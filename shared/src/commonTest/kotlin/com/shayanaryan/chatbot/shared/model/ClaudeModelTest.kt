@@ -5,12 +5,12 @@ import kotlin.test.assertEquals
 
 class ClaudeModelTest {
     @Test
-    fun defaultModelIsSonnet() {
+    fun `default model is sonnet`() {
         assertEquals("claude-sonnet-5", ClaudeModel.Default.id)
     }
 
     @Test
-    fun allModelsHaveDistinctIds() {
+    fun `all models have distinct ids`() {
         val ids = ClaudeModel.entries.map { it.id }
         assertEquals(ids.distinct(), ids)
     }

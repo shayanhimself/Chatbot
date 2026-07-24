@@ -14,7 +14,7 @@ class SseFrameReaderTest {
     }
 
     @Test
-    fun splits_a_recorded_stream_into_frames() =
+    fun `splits a recorded stream into frames`() =
         runTest {
             val frames = framesOf(SseFixtures.HAPPY_PATH)
 
@@ -25,7 +25,7 @@ class SseFrameReaderTest {
         }
 
     @Test
-    fun strips_exactly_one_space_after_the_field_colon() =
+    fun `strips exactly one space after the field colon`() =
         runTest {
             val frames = framesOf("event: ping\ndata: {\"type\": \"ping\"}\n\n")
 
@@ -34,7 +34,7 @@ class SseFrameReaderTest {
         }
 
     @Test
-    fun joins_multi_line_data_with_newlines() =
+    fun `joins multi line data with newlines`() =
         runTest {
             val frames = framesOf("data: one\ndata: two\n\n")
 
@@ -42,7 +42,7 @@ class SseFrameReaderTest {
         }
 
     @Test
-    fun ignores_comment_lines() =
+    fun `ignores comment lines`() =
         runTest {
             val frames = framesOf(": keep-alive\ndata: payload\n\n")
 
@@ -50,7 +50,7 @@ class SseFrameReaderTest {
         }
 
     @Test
-    fun emits_a_trailing_frame_that_was_never_blank_terminated() =
+    fun `emits a trailing frame that was never blank terminated`() =
         runTest {
             val frames = framesOf("event: message_stop\ndata: {}")
 
@@ -58,13 +58,13 @@ class SseFrameReaderTest {
         }
 
     @Test
-    fun skips_frames_carrying_no_data() =
+    fun `skips frames carrying no data`() =
         runTest {
             assertEquals(listOf("real"), framesOf("event: ping\n\ndata: real\n\n").map { it.data })
         }
 
     @Test
-    fun handles_crlf_line_endings() =
+    fun `handles crlf line endings`() =
         runTest {
             val frames = framesOf("event: ping\r\ndata: payload\r\n\r\n")
 

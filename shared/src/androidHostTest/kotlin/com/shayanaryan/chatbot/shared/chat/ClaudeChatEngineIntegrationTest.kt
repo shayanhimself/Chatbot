@@ -29,7 +29,7 @@ class ClaudeChatEngineIntegrationTest {
     }
 
     @Test
-    fun streams_a_real_turn_end_to_end() =
+    fun `streams a real turn end to end`() =
         runTest(timeout = 2.minutes) {
             val key = devKey()
             if (key == null) {
@@ -62,7 +62,7 @@ class ClaudeChatEngineIntegrationTest {
         }
 
     @Test
-    fun a_bad_key_maps_to_authentication() =
+    fun `a bad key maps to authentication`() =
         runTest(timeout = 2.minutes) {
             if (devKey() == null) {
                 println("SKIPPED: no dev key in ANTHROPIC_API_KEY or local.properties.")

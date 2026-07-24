@@ -14,7 +14,7 @@ class ConversationScreenTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun showsConversationPlaceholder() {
+    fun `shows conversation placeholder`() {
         composeRule.setContent {
             ConversationScreen()
         }

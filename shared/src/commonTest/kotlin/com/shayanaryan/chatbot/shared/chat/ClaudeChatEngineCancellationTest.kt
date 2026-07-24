@@ -12,7 +12,7 @@ class ClaudeChatEngineCancellationTest {
         ChatRequest(messages = listOf(ChatMessage(Role.User, listOf(ContentBlock.Text("hi")))))
 
     @Test
-    fun cancelling_mid_stream_emits_no_terminal_event() =
+    fun `cancelling mid stream emits no terminal event`() =
         runTest {
             val engine = testChatEngine { respondSse(SseFixtures.HAPPY_PATH) }
 
@@ -23,7 +23,7 @@ class ClaudeChatEngineCancellationTest {
         }
 
     @Test
-    fun the_flow_is_cold_and_restarts_per_collection() =
+    fun `the flow is cold and restarts per collection`() =
         runTest {
             var calls = 0
             val engine =
@@ -42,7 +42,7 @@ class ClaudeChatEngineCancellationTest {
         }
 
     @Test
-    fun the_factory_builds_an_engine() {
+    fun `the factory builds an engine`() {
         val engine = createChatEngine { "sk-ant-test" }
 
         assertIs<ChatEngine>(engine)

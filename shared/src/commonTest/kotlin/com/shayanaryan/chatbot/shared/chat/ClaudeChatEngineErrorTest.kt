@@ -26,14 +26,14 @@ class ClaudeChatEngineErrorTest {
     }
 
     @Test
-    fun maps_authentication_statuses() =
+    fun `maps authentication statuses`() =
         runTest {
             assertEquals(ChatError.Authentication, errorFor(401))
             assertEquals(ChatError.Authentication, errorFor(403))
         }
 
     @Test
-    fun maps_client_server_and_overload_statuses() =
+    fun `maps client server and overload statuses`() =
         runTest {
             assertEquals(ChatError.InvalidRequest, errorFor(400))
             assertEquals(ChatError.InvalidRequest, errorFor(404))
@@ -43,14 +43,14 @@ class ClaudeChatEngineErrorTest {
         }
 
     @Test
-    fun maps_timeout_statuses() =
+    fun `maps timeout statuses`() =
         runTest {
             assertEquals(ChatError.Timeout, errorFor(408))
             assertEquals(ChatError.Timeout, errorFor(504))
         }
 
     @Test
-    fun parses_retry_after_on_a_rate_limit() =
+    fun `parses retry after on a rate limit`() =
         runTest {
             val events =
                 testChatEngine {
@@ -68,13 +68,13 @@ class ClaudeChatEngineErrorTest {
         }
 
     @Test
-    fun rate_limit_without_a_usable_header_carries_no_hint() =
+    fun `rate limit without a usable header carries no hint`() =
         runTest {
             assertEquals(ChatError.RateLimited(null), errorFor(429))
         }
 
     @Test
-    fun a_mid_stream_error_event_terminates_the_flow() =
+    fun `a mid stream error event terminates the flow`() =
         runTest {
             val events =
                 testChatEngine { respondSse(SseFixtures.MID_STREAM_ERROR) }.stream(request).toList()
@@ -85,7 +85,7 @@ class ClaudeChatEngineErrorTest {
         }
 
     @Test
-    fun stops_at_the_first_terminal_and_ignores_trailing_frames() =
+    fun `stops at the first terminal and ignores trailing frames`() =
         runTest {
             val trailing =
                 SseFixtures.HAPPY_PATH +
@@ -102,7 +102,7 @@ class ClaudeChatEngineErrorTest {
         }
 
     @Test
-    fun a_malformed_frame_is_unexpected() =
+    fun `a malformed frame is unexpected`() =
         runTest {
             val events =
                 testChatEngine { respondSse(SseFixtures.MALFORMED_JSON) }.stream(request).toList()
@@ -111,7 +111,7 @@ class ClaudeChatEngineErrorTest {
         }
 
     @Test
-    fun a_truncated_stream_is_unexpected() =
+    fun `a truncated stream is unexpected`() =
         runTest {
             val events =
                 testChatEngine { respondSse(SseFixtures.TRUNCATED) }.stream(request).toList()
@@ -121,7 +121,7 @@ class ClaudeChatEngineErrorTest {
         }
 
     @Test
-    fun lost_connectivity_is_a_network_error() =
+    fun `lost connectivity is a network error`() =
         runTest {
             val events =
                 testChatEngine { throw IOException("unreachable") }.stream(request).toList()
@@ -130,7 +130,7 @@ class ClaudeChatEngineErrorTest {
         }
 
     @Test
-    fun a_failing_key_provider_surfaces_as_unexpected() =
+    fun `a failing key provider surfaces as unexpected`() =
         runTest {
             val engine =
                 testChatEngine(
@@ -143,7 +143,7 @@ class ClaudeChatEngineErrorTest {
         }
 
     @Test
-    fun a_byte_gap_stall_is_a_timeout() =
+    fun `a byte gap stall is a timeout`() =
         runTest {
             val events =
                 testChatEngine {

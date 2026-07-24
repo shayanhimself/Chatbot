@@ -8,7 +8,7 @@ import org.junit.Test
 
 class DesignTokensTest {
     @Test
-    fun spacingFollowsFourDpGrid() {
+    fun `spacing follows four dp grid`() {
         assertEquals(0.dp, Spacing.s0)
         assertEquals(2.dp, Spacing.s0_5)
         assertEquals(4.dp, Spacing.s1)
@@ -25,7 +25,7 @@ class DesignTokensTest {
     }
 
     @Test
-    fun componentShapesMatchSpec() {
+    fun `component shapes match spec`() {
         assertEquals(CircleShape, ComponentShapes.button)
         assertEquals(CircleShape, ComponentShapes.chip)
         assertEquals(RoundedCornerShape(12.dp), ComponentShapes.card)
@@ -52,7 +52,7 @@ class DesignTokensTest {
     }
 
     @Test
-    fun motionDurationsScalesAndStateLayers() {
+    fun `motion durations scales and state layers`() {
         assertEquals(150, Motion.durationShortMillis)
         assertEquals(250, Motion.durationMediumMillis)
         assertEquals(400, Motion.durationLongMillis)
@@ -65,7 +65,7 @@ class DesignTokensTest {
     }
 
     @Test
-    fun elevationLevelsAreM3Dps() {
+    fun `elevation levels are m3 dps`() {
         assertEquals(1.dp, Elevation.level1)
         assertEquals(3.dp, Elevation.level2)
         assertEquals(6.dp, Elevation.level3)
@@ -74,7 +74,7 @@ class DesignTokensTest {
     }
 
     @Test
-    fun extendedColorsResolvePerScheme() {
+    fun `extended colors resolve per scheme`() {
         assertEquals(ColorPrimitives.Green50, DarkExtendedColors.success)
         assertEquals(ColorPrimitives.Green08, DarkExtendedColors.onSuccess)
         assertEquals(ColorPrimitives.Green20, DarkExtendedColors.successContainer)

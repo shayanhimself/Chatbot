@@ -8,7 +8,7 @@ import org.junit.Test
 
 class TypographyTest {
     @Test
-    fun displayAndHeadlineAreRegularWeight() {
+    fun `display and headline are regular weight`() {
         assertEquals(57.sp, ChatbotTypography.displayLarge.fontSize)
         assertEquals(64.sp, ChatbotTypography.displayLarge.lineHeight)
         assertEquals(FontWeight.Normal, ChatbotTypography.displayLarge.fontWeight)
@@ -18,7 +18,7 @@ class TypographyTest {
     }
 
     @Test
-    fun titleAndLabelAreMediumWeight() {
+    fun `title and label are medium weight`() {
         assertEquals(22.sp, ChatbotTypography.titleLarge.fontSize)
         assertEquals(FontWeight.Medium, ChatbotTypography.titleLarge.fontWeight)
         assertEquals(16.sp, ChatbotTypography.titleMedium.fontSize)
@@ -30,7 +30,7 @@ class TypographyTest {
     }
 
     @Test
-    fun bodyMetricsMatchSpec() {
+    fun `body metrics match spec`() {
         assertEquals(16.sp, ChatbotTypography.bodyLarge.fontSize)
         assertEquals(24.sp, ChatbotTypography.bodyLarge.lineHeight)
         assertEquals(0.5.sp, ChatbotTypography.bodyLarge.letterSpacing)
@@ -41,7 +41,7 @@ class TypographyTest {
     }
 
     @Test
-    fun monoStyleIsMonospaceFourteenSp() {
+    fun `mono style is monospace fourteen sp`() {
         assertEquals(FontFamily.Monospace, MonoTextStyle.fontFamily)
         assertEquals(14.sp, MonoTextStyle.fontSize)
         assertEquals(20.sp, MonoTextStyle.lineHeight)

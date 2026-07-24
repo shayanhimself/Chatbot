@@ -14,7 +14,7 @@ class ClaudeChatEngineStreamTest {
         testChatEngine { respondSse(fixture) }.stream(request).toList()
 
     @Test
-    fun emits_one_delta_per_text_delta_then_completes() =
+    fun `emits one delta per text delta then completes`() =
         runTest {
             val events = eventsFor(SseFixtures.HAPPY_PATH)
 
@@ -34,7 +34,7 @@ class ClaudeChatEngineStreamTest {
         }
 
     @Test
-    fun maps_a_refusal_stop_reason() =
+    fun `maps a refusal stop reason`() =
         runTest {
             val completed =
                 assertIs<ChatStreamEvent.Completed>(eventsFor(SseFixtures.REFUSAL).last())
@@ -43,7 +43,7 @@ class ClaudeChatEngineStreamTest {
         }
 
     @Test
-    fun maps_an_unrecognised_stop_reason_to_unknown() =
+    fun `maps an unrecognised stop reason to unknown`() =
         runTest {
             val fixture =
                 SseFixtures.HAPPY_PATH.replace(
@@ -56,7 +56,7 @@ class ClaudeChatEngineStreamTest {
         }
 
     @Test
-    fun ignores_thinking_deltas_and_non_delta_frames() =
+    fun `ignores thinking deltas and non delta frames`() =
         runTest {
             val events = eventsFor(SseFixtures.THINKING_ONLY_DELTA)
 
@@ -68,7 +68,7 @@ class ClaudeChatEngineStreamTest {
         }
 
     @Test
-    fun emits_exactly_one_terminal_event() =
+    fun `emits exactly one terminal event`() =
         runTest {
             val events = eventsFor(SseFixtures.HAPPY_PATH)
 
@@ -80,7 +80,7 @@ class ClaudeChatEngineStreamTest {
         }
 
     @Test
-    fun reports_zero_usage_when_the_server_omits_it() =
+    fun `reports zero usage when the server omits it`() =
         runTest {
             val fixture =
                 """

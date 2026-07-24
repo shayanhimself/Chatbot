@@ -41,7 +41,7 @@ class ClaudeChatEngineRequestTest {
         )
 
     @Test
-    fun posts_to_the_messages_endpoint_with_the_required_headers() =
+    fun `posts to the messages endpoint with the required headers`() =
         runTest {
             engine().stream(request).toList()
 
@@ -55,7 +55,7 @@ class ClaudeChatEngineRequestTest {
         }
 
     @Test
-    fun asks_the_key_provider_for_a_fresh_key_on_every_call() =
+    fun `asks the key provider for a fresh key on every call`() =
         runTest {
             var calls = 0
             val counting =
@@ -78,7 +78,7 @@ class ClaudeChatEngineRequestTest {
         }
 
     @Test
-    fun serialises_the_body_in_the_wire_shape() =
+    fun `serialises the body in the wire shape`() =
         runTest {
             engine().stream(request).toList()
 
@@ -104,7 +104,7 @@ class ClaudeChatEngineRequestTest {
         }
 
     @Test
-    fun omits_system_entirely_when_absent() =
+    fun `omits system entirely when absent`() =
         runTest {
             engine().stream(request.copy(system = null)).toList()
 
@@ -112,7 +112,7 @@ class ClaudeChatEngineRequestTest {
         }
 
     @Test
-    fun disables_thinking() =
+    fun `disables thinking`() =
         runTest {
             engine().stream(request).toList()
 

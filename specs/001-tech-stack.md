@@ -61,7 +61,7 @@ This spec is the canonical record of the project's current technology choices. A
 | Reboot persistence | `BOOT_COMPLETED` receiver re-registers alarms from Room | Alarms don't survive reboot |
 | Notifications | `POST_NOTIFICATIONS` runtime permission (API 33+); androidx core-ktx `NotificationCompat` | |
 | Background jobs | `androidx.work` (WorkManager) — pin version at scaffold | |
-| Time in shared code | `kotlinx-datetime` in commonMain | Reminder domain models stay KMP-pure |
+| Time in shared code | `kotlin.time.Instant` / `kotlin.time.Clock` for timestamps and injected clocks; `kotlinx-datetime` in commonMain for calendar types and time zones | Instant and Clock are standard-library types on the pinned Kotlin and need no opt-in, so kotlinx-datetime is carried only for what the standard library lacks — which reminders need. Domain models stay KMP-pure either way |
 
 ## AI engine
 

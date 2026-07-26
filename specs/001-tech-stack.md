@@ -46,7 +46,7 @@ This spec is the canonical record of the project's current technology choices. A
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Chat history | Room 2.8.x | Structured/relational local data |
+| Chat history | Room 2.8.x, KMP mode in `:shared` commonMain: `androidx.sqlite:sqlite-bundled` + `BundledSQLiteDriver`, `androidx.room` Gradle plugin for schema export, KSP wired per target | Structured/relational local data. Bundled SQLite is compiled from source, so behavior is identical across Android versions and future iOS |
 | Settings | DataStore Preferences 1.1.x | Small key-value data |
 | Claude API key at rest | Android Keystore (hardware-backed master key) → Tink AEAD → ciphertext in DataStore | **EncryptedSharedPreferences is deprecated (do not use).** Plaintext key only in memory, never logged |
 | Reminders & memories | Room tables | Local-only, no server; reminders re-registered from Room after reboot |

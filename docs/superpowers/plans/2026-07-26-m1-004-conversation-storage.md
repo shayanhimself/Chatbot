@@ -941,7 +941,7 @@ Every query the repository will lean on, each with a test. The `status = 'Comple
 - Consumes: `ConversationDao`, `MessageDao`, `ConversationEntity`, `MessageEntity` (Task 2); `runDatabaseTest` (Task 2).
 - Produces: no new production symbols — this task proves the ones Task 2 declared.
 
-- [ ] **Step 1: Write the conversation DAO tests**
+- [x] **Step 1: Write the conversation DAO tests**
 
 Create `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/conversation/local/ConversationDaoTest.kt`:
 
@@ -1071,7 +1071,7 @@ class ConversationDaoTest {
 }
 ```
 
-- [ ] **Step 2: Write the message DAO tests**
+- [x] **Step 2: Write the message DAO tests**
 
 Create `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/conversation/local/MessageDaoTest.kt`:
 
@@ -1198,14 +1198,14 @@ class MessageDaoTest {
 }
 ```
 
-- [ ] **Step 3: Run the DAO tests**
+- [x] **Step 3: Run the DAO tests**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*DaoTest*'`
 Expected: `BUILD SUCCESSFUL`, 11 tests passing across the two classes.
 
 If any query fails to compile, Room reports the SQL error at build time with the offending method name — fix the query, not the test.
 
-- [ ] **Step 4: Format and report**
+- [x] **Step 4: Format and report**
 
 Run: `./gradlew :shared:spotlessApply && ./gradlew :shared:testAndroidHostTest && ./gradlew spotlessCheck`
 Expected: `BUILD SUCCESSFUL`.

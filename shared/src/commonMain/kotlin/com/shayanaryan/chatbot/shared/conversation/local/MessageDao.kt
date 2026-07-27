@@ -4,10 +4,8 @@ import androidx.room.Dao
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
-
 @Dao
 internal interface MessageDao {
-
     /**
      * Message reads. Ordering is by `id`, not `createdAt`: autoincrement is monotonic, so it is
      * insertion order without ties. Timestamps are for display.

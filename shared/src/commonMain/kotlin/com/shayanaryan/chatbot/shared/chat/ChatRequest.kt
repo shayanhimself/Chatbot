@@ -1,6 +1,8 @@
 package com.shayanaryan.chatbot.shared.chat
 
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * Output-token ceiling applied when a caller has no reason to choose its own. Sized for a chat
@@ -26,8 +28,13 @@ enum class Role { User, Assistant }
 /**
  * A single piece of a message. Modelled as a list on [ChatMessage] rather than a bare string so
  * additional block types can be added without reshaping the message type.
+ *
+ * `@Serializable` because blocks are stored as JSON text.
  */
+@Serializable
 sealed interface ContentBlock {
+    @Serializable
+    @SerialName("text")
     data class Text(
         val text: String,
     ) : ContentBlock

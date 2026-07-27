@@ -116,7 +116,7 @@ Everything the storage layer needs before a single Room type exists: the catalog
 - Consumes: `com.shayanaryan.chatbot.shared.chat.ContentBlock` (existing sealed interface with one `Text(text: String)` subtype).
 - Produces: `internal val storageJson: Json` in `com.shayanaryan.chatbot.shared.database`; `ContentBlock` and `ContentBlock.Text` become `@Serializable`, serializing as `{"type":"text","text":"…"}`.
 
-- [ ] **Step 1: Write the failing codec test**
+- [x] **Step 1: Write the failing codec test**
 
 Create `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/database/StorageJsonTest.kt`:
 
@@ -157,12 +157,12 @@ class StorageJsonTest {
 }
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*StorageJsonTest*'`
 Expected: compilation failure — `Unresolved reference: storageJson`.
 
-- [ ] **Step 3: Make `ContentBlock` serializable**
+- [x] **Step 3: Make `ContentBlock` serializable**
 
 Edit `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/chat/ChatRequest.kt`. Add the two imports at the top of the import block:
 
@@ -191,7 +191,7 @@ sealed interface ContentBlock {
 }
 ```
 
-- [ ] **Step 4: Write the codec**
+- [x] **Step 4: Write the codec**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/database/StorageJson.kt`:
 
@@ -214,12 +214,12 @@ internal val storageJson =
     }
 ```
 
-- [ ] **Step 5: Run the codec test to verify it passes**
+- [x] **Step 5: Run the codec test to verify it passes**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*StorageJsonTest*'`
 Expected: `BUILD SUCCESSFUL`, 3 tests passing.
 
-- [ ] **Step 6: Add the catalog entries**
+- [x] **Step 6: Add the catalog entries**
 
 In `gradle/libs.versions.toml`, add under `[versions]` (next to `room`):
 
@@ -241,7 +241,7 @@ androidx-room = { id = "androidx.room", version.ref = "room" }
 
 `2.6.2` is the version `room-runtime:2.8.4` itself declares for `androidx.sqlite:sqlite` and `sqlite-framework`. `sqlite-bundled` 2.7.0 exists but would drag the sqlite core above what Room declares.
 
-- [ ] **Step 7: Rewrite `shared/build.gradle.kts`**
+- [x] **Step 7: Rewrite `shared/build.gradle.kts`**
 
 Replace the whole file with:
 
@@ -325,7 +325,7 @@ tasks.withType<Test>().configureEach {
 }
 ```
 
-- [ ] **Step 8: Pin the Robolectric SDK**
+- [x] **Step 8: Pin the Robolectric SDK**
 
 Create `shared/src/androidHostTest/resources/robolectric.properties`:
 
@@ -335,12 +335,12 @@ sdk=36
 
 Robolectric 4.16.1 tops out at SDK 36 and would otherwise default to `targetSdk` 37, which it cannot run. Note the path: `androidHostTest/resources`, not the `src/test/resources` the non-KMP modules use.
 
-- [ ] **Step 9: Verify the whole module still builds and every existing test still passes**
+- [x] **Step 9: Verify the whole module still builds and every existing test still passes**
 
 Run: `./gradlew :shared:testAndroidHostTest`
 Expected: `BUILD SUCCESSFUL`. The 003 chat suite plus the three new codec tests are green. The Room plugin and KSP are now applied but have nothing to process yet.
 
-- [ ] **Step 10: Format and report**
+- [x] **Step 10: Format and report**
 
 Run: `./gradlew :shared:spotlessApply && ./gradlew spotlessCheck`
 Expected: `BUILD SUCCESSFUL`.

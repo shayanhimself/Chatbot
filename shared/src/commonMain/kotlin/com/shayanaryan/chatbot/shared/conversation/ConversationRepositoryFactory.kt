@@ -10,7 +10,8 @@ import kotlin.time.Clock
  * database as an opaque handle.
  *
  * @param externalScope where a turn runs. It must outlive any screen, since a reply is persisted
- *   whether anything is still collecting it.
+ *   whether anything is still collecting it, and it must be supervised — turns are siblings, so
+ *   under a regular job one that throws would take every later turn down with it.
  * @param clock injected so tests can assert exact timestamps.
  */
 fun createConversationRepository(

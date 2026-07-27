@@ -92,6 +92,7 @@ internal class DefaultConversationRepository(
                             ),
                     )
                 } else {
+                    requireExists(conversationId)
                     requireIdle(conversationId)
                     conversationDao.appendMessage(
                         message =
@@ -124,9 +125,12 @@ internal class DefaultConversationRepository(
     }
 
     override suspend fun delete(conversationId: Long) {
-        turns.value[conversationId]?.job?.cancelAndJoin()
+        val turn = turns.value[conversationId]
+        turn?.job?.cancelAndJoin()
         conversationDao.delete(conversationId)
-        mutex.withLock { turns.update { it - conversationId } }
+        if (turn != null) {
+            clearTurn(conversationId, turn.state)
+        }
     }
 
     /**
@@ -144,6 +148,17 @@ internal class DefaultConversationRepository(
         status = MessageStatus.Complete,
         createdAt = createdAt,
     )
+
+    /**
+     * A screen left open on a conversation the user has since deleted can still ask to send into
+     * it. Rejecting here turns that into the documented failure rather than a foreign-key
+     * constraint thrown from inside the insert.
+     */
+    private suspend fun requireExists(conversationId: Long) {
+        requireNotNull(conversationDao.findById(conversationId)) {
+            "conversation $conversationId does not exist"
+        }
+    }
 
     /**
      * A turn is live while its job is running and its state still says so: testing the job
@@ -178,7 +193,9 @@ internal class DefaultConversationRepository(
     }
 
     /**
-     * Drops this turn's entry, and only this one — a later turn may already have replaced it.
+     * Drops this turn's entry, and only this one — a later turn may already have replaced it, and
+     * dropping that one would leave it running with nothing tracking it.
+     *
      */
     private suspend fun clearTurn(
         conversationId: Long,

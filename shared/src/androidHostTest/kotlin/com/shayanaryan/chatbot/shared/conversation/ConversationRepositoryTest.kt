@@ -23,6 +23,7 @@ import org.robolectric.RobolectricTestRunner
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -125,6 +126,28 @@ class ConversationRepositoryTest {
             val unknownId = 1_000L
 
             assertEquals(TurnState.Idle, repository.getTurnFlow(unknownId).first())
+        }
+
+    @Test
+    fun `sending to a conversation that does not exist is rejected`() =
+        runDatabaseTest { database ->
+            val scope = turnScope()
+            val repository = repository(database, scope)
+            val unknownId = 1_000L
+
+            assertFailsWith<IllegalArgumentException> { repository.send(unknownId, "hello") }
+        }
+
+    @Test
+    fun `sending to a deleted conversation is rejected`() =
+        runDatabaseTest { database ->
+            val scope = turnScope()
+            val repository = repository(database, scope)
+            val id = repository.send(null, "hello")
+            advanceUntilIdle()
+            repository.delete(id)
+
+            assertFailsWith<IllegalArgumentException> { repository.send(id, "again") }
         }
 
     @Test

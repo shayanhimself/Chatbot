@@ -70,8 +70,8 @@ shared/src/androidMain/kotlin/com/shayanaryan/chatbot/shared/database/
 
 shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/
   FakeClock.kt                            fixed-instant kotlin.time.Clock
-  chat/ManualChatEngine.kt                channel-backed engine a test drives event by event
-  chat/ManualChatEngineTest.kt
+  chat/FakeManualChatEngine.kt                channel-backed engine a test drives event by event
+  chat/FakeManualChatEngineTest.kt
   database/StorageJsonTest.kt
   database/ChatbotConvertersTest.kt
   conversation/FakeConversationRepository.kt
@@ -1708,19 +1708,20 @@ Report: the contract and its fake are in; the fake is the dependency the convers
 
 ### Task 5: A chat engine a test drives event by event
 
-003's `FakeChatEngine` emits a fixed list eagerly on collection, which cannot express "assert while the stream is open". Three of the repository tests need exactly that. This adds a second double beside it and leaves `FakeChatEngine` untouched — its contract is documented by its own spec.
+003's `FakeScriptedChatEngine` emits a fixed list eagerly on collection, which cannot express "assert while the stream is open". Three of the repository tests need exactly that. This adds a second double beside it; the scripted one keeps the behaviour its own spec documents, and the pair is named for how events arrive — scripted up front, or fed by hand.
 
 **Files:**
-- Create: `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/ManualChatEngine.kt`
-- Test: `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/ManualChatEngineTest.kt`
+- Create: `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/FakeManualChatEngine.kt`
+- Test: `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/FakeManualChatEngineTest.kt`
+- Already applied: 003's `FakeChatEngine` was renamed to `FakeScriptedChatEngine` (file and class, behaviour untouched) so the two doubles read as a pair; `specs/003-chat-engine.md` names the new one.
 
 **Interfaces:**
 - Consumes: `ChatEngine`, `ChatRequest`, `ChatStreamEvent`, `StopReason`, `TokenUsage` (003).
-- Produces: `class ManualChatEngine : ChatEngine` with `suspend fun awaitStream()`, `suspend fun send(event: ChatStreamEvent)`, `fun close()`, and `val requests: List<ChatRequest>`.
+- Produces: `class FakeManualChatEngine : ChatEngine` with `suspend fun awaitStream()`, `suspend fun send(event: ChatStreamEvent)`, `fun close()`, and `val requests: List<ChatRequest>`.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/ManualChatEngineTest.kt`:
+Create `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/FakeManualChatEngineTest.kt`:
 
 ```kotlin
 package com.shayanaryan.chatbot.shared.chat
@@ -1733,14 +1734,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class ManualChatEngineTest {
+class FakeManualChatEngineTest {
     private val request =
         ChatRequest(messages = listOf(ChatMessage(Role.User, listOf(ContentBlock.Text("hi")))))
 
     @Test
     fun `holds the stream open until it is closed`() =
         runTest {
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val collected = mutableListOf<ChatStreamEvent>()
             val collector = launch { engine.stream(request).toList(collected) }
 
@@ -1761,7 +1762,7 @@ class ManualChatEngineTest {
     @Test
     fun `records the request it was asked to stream`() =
         runTest {
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val collector = launch { engine.stream(request).toList() }
 
             engine.awaitStream()
@@ -1774,7 +1775,7 @@ class ManualChatEngineTest {
     @Test
     fun `serves a second stream after the first is closed`() =
         runTest {
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val first = mutableListOf<ChatStreamEvent>()
             val firstCollector = launch { engine.stream(request).toList(first) }
             engine.awaitStream()
@@ -1798,12 +1799,12 @@ class ManualChatEngineTest {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `./gradlew :shared:testAndroidHostTest --tests '*ManualChatEngineTest*'`
-Expected: compilation failure — `Unresolved reference: ManualChatEngine`.
+Run: `./gradlew :shared:testAndroidHostTest --tests '*FakeManualChatEngineTest*'`
+Expected: compilation failure — `Unresolved reference: FakeManualChatEngine`.
 
 - [ ] **Step 3: Write the engine**
 
-Create `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/ManualChatEngine.kt`:
+Create `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/FakeManualChatEngine.kt`:
 
 ```kotlin
 package com.shayanaryan.chatbot.shared.chat
@@ -1824,7 +1825,7 @@ import kotlinx.coroutines.flow.flow
  *
  * @property requests every request this engine was asked to stream, in call order.
  */
-class ManualChatEngine : ChatEngine {
+class FakeManualChatEngine : ChatEngine {
     private val recorded = mutableListOf<ChatRequest>()
     private val opened = Channel<Channel<ChatStreamEvent>>(Channel.UNLIMITED)
     private var current: Channel<ChatStreamEvent>? = null
@@ -1858,7 +1859,7 @@ class ManualChatEngine : ChatEngine {
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `./gradlew :shared:testAndroidHostTest --tests '*ManualChatEngineTest*'`
+Run: `./gradlew :shared:testAndroidHostTest --tests '*FakeManualChatEngineTest*'`
 Expected: `BUILD SUCCESSFUL`, 3 tests passing.
 
 - [ ] **Step 5: Format and report**
@@ -1866,7 +1867,7 @@ Expected: `BUILD SUCCESSFUL`, 3 tests passing.
 Run: `./gradlew :shared:spotlessApply && ./gradlew :shared:testAndroidHostTest && ./gradlew spotlessCheck`
 Expected: `BUILD SUCCESSFUL`.
 
-Report: `ManualChatEngine` is available; `FakeChatEngine` is unchanged.
+Report: `FakeManualChatEngine` is available; `FakeScriptedChatEngine`'s behaviour is unchanged.
 
 ---
 
@@ -1881,7 +1882,7 @@ The real implementation against a real database, with no turn machinery exercise
 - Test: `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/conversation/ConversationRepositoryTest.kt`
 
 **Interfaces:**
-- Consumes: `ConversationDao`, `MessageDao`, entities (Task 2); `ConversationRepository`, `TurnState`, `MAX_TITLE_LENGTH` (Task 4); `FakeClock` (Task 4); `FakeChatEngine` (003); `runDatabaseTest` (Task 2).
+- Consumes: `ConversationDao`, `MessageDao`, entities (Task 2); `ConversationRepository`, `TurnState`, `MAX_TITLE_LENGTH` (Task 4); `FakeClock` (Task 4); `FakeScriptedChatEngine` (003); `runDatabaseTest` (Task 2).
 - Produces: `internal class DefaultConversationRepository(engine, conversationDao, messageDao, externalScope, clock)`; `fun createConversationRepository(database, engine, externalScope, clock = Clock.System): ConversationRepository`; `internal fun ConversationEntity.toDomain()`, `internal fun MessageEntity.toDomain()`, `internal fun MessageEntity.toChatMessage()`.
 
 - [ ] **Step 1: Write the failing test**
@@ -1894,7 +1895,7 @@ package com.shayanaryan.chatbot.shared.conversation
 import com.shayanaryan.chatbot.shared.FakeClock
 import com.shayanaryan.chatbot.shared.chat.ChatStreamEvent
 import com.shayanaryan.chatbot.shared.chat.ContentBlock
-import com.shayanaryan.chatbot.shared.chat.FakeChatEngine
+import com.shayanaryan.chatbot.shared.chat.FakeScriptedChatEngine
 import com.shayanaryan.chatbot.shared.chat.Role
 import com.shayanaryan.chatbot.shared.chat.StopReason
 import com.shayanaryan.chatbot.shared.chat.TokenUsage
@@ -1928,7 +1929,7 @@ class ConversationRepositoryTest {
     ): ConversationRepository =
         createConversationRepository(
             database = database,
-            engine = FakeChatEngine(
+            engine = FakeScriptedChatEngine(
                 events = listOf(ChatStreamEvent.Completed(StopReason.EndTurn, TokenUsage(1, 1))),
             ),
             externalScope = scope,
@@ -2312,7 +2313,7 @@ The heart of the spec: streaming a reply in a scope that outlives its collector,
 - Test: `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/conversation/ConversationTurnTest.kt`
 
 **Interfaces:**
-- Consumes: everything from Task 6; `ManualChatEngine` (Task 5).
+- Consumes: everything from Task 6; `FakeManualChatEngine` (Task 5).
 - Produces: the real `runTurn` — `ChatStreamEvent.Delta` grows `TurnState.Streaming`, `Completed` persists a `Complete` assistant row then emits `Idle`, `Failed` persists a `Failed` assistant row then emits `TurnState.Failed(error)`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -2326,7 +2327,7 @@ import com.shayanaryan.chatbot.shared.FakeClock
 import com.shayanaryan.chatbot.shared.chat.ChatError
 import com.shayanaryan.chatbot.shared.chat.ChatStreamEvent
 import com.shayanaryan.chatbot.shared.chat.ContentBlock
-import com.shayanaryan.chatbot.shared.chat.ManualChatEngine
+import com.shayanaryan.chatbot.shared.chat.FakeManualChatEngine
 import com.shayanaryan.chatbot.shared.chat.Role
 import com.shayanaryan.chatbot.shared.chat.StopReason
 import com.shayanaryan.chatbot.shared.chat.TokenUsage
@@ -2364,7 +2365,7 @@ class ConversationTurnTest {
     @Test
     fun `deltas accumulate on the turn and the reply lands as a complete message`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2394,7 +2395,7 @@ class ConversationTurnTest {
     @Test
     fun `the reply row exists before the turn reports idle`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2423,7 +2424,7 @@ class ConversationTurnTest {
     @Test
     fun `bumping updatedAt on the reply reorders the conversation list`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val clock = FakeClock(Instant.fromEpochMilliseconds(1_000))
             val repository = createConversationRepository(database, engine, turnScope, clock)
@@ -2456,7 +2457,7 @@ class ConversationTurnTest {
     @Test
     fun `a failed stream persists the partial reply and keeps the error readable`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2481,7 +2482,7 @@ class ConversationTurnTest {
     @Test
     fun `a failed reply is left out of the next turn's history`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2510,7 +2511,7 @@ class ConversationTurnTest {
     @Test
     fun `the turn uses the conversation's own model, not the send default`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2537,7 +2538,7 @@ class ConversationTurnTest {
     @Test
     fun `a second send while a turn is in flight is rejected`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2556,7 +2557,7 @@ class ConversationTurnTest {
     @Test
     fun `a collector attaching mid stream sees the text already accumulated`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2577,7 +2578,7 @@ class ConversationTurnTest {
     @Test
     fun `a turn outlives the scope that was collecting it`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2709,7 +2710,7 @@ Expected: `BUILD SUCCESSFUL`, 9 tests passing.
 
 - [ ] **Step 5: Re-run Task 6's suite, which now exercises a real turn**
 
-`ConversationRepositoryTest` builds its repository over `FakeChatEngine`, which emits a single `Completed` eagerly. Task 6 ran those tests against a stubbed turn; they now run a real one, so this confirms the turn body did not change any of the read paths.
+`ConversationRepositoryTest` builds its repository over `FakeScriptedChatEngine`, which emits a single `Completed` eagerly. Task 6 ran those tests against a stubbed turn; they now run a real one, so this confirms the turn body did not change any of the read paths.
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ConversationRepositoryTest*'`
 Expected: `BUILD SUCCESSFUL`, 6 tests passing.
@@ -2746,7 +2747,7 @@ import com.shayanaryan.chatbot.shared.FakeClock
 import com.shayanaryan.chatbot.shared.chat.ChatError
 import com.shayanaryan.chatbot.shared.chat.ChatStreamEvent
 import com.shayanaryan.chatbot.shared.chat.ContentBlock
-import com.shayanaryan.chatbot.shared.chat.ManualChatEngine
+import com.shayanaryan.chatbot.shared.chat.FakeManualChatEngine
 import com.shayanaryan.chatbot.shared.chat.Role
 import com.shayanaryan.chatbot.shared.chat.StopReason
 import com.shayanaryan.chatbot.shared.chat.TokenUsage
@@ -2777,7 +2778,7 @@ class ConversationCancelRetryTest {
     @Test
     fun `cancelling stores the partial reply and returns the turn to idle`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2799,7 +2800,7 @@ class ConversationCancelRetryTest {
     @Test
     fun `cancelling with no turn in flight does nothing`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2818,7 +2819,7 @@ class ConversationCancelRetryTest {
     @Test
     fun `a cancelled reply is left out of the next turn's history`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2846,7 +2847,7 @@ class ConversationCancelRetryTest {
     @Test
     fun `sending is allowed again once a turn is cancelled`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2867,7 +2868,7 @@ class ConversationCancelRetryTest {
     @Test
     fun `retrying drops the failed reply and runs the turn again`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2896,7 +2897,7 @@ class ConversationCancelRetryTest {
     @Test
     fun `retrying drops a cancelled reply too`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2919,7 +2920,7 @@ class ConversationCancelRetryTest {
     @Test
     fun `retrying after a completed turn does nothing`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2940,7 +2941,7 @@ class ConversationCancelRetryTest {
     @Test
     fun `retrying an unknown conversation does nothing`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
@@ -2955,7 +2956,7 @@ class ConversationCancelRetryTest {
     @Test
     fun `deleting during a turn leaves nothing behind`() =
         runDatabaseTest { database ->
-            val engine = ManualChatEngine()
+            val engine = FakeManualChatEngine()
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())

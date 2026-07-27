@@ -104,7 +104,7 @@ No `ContentNegotiation` plugin. The engine hand-rolls SSE and never calls `body<
 
 TDD, fakes not mocks (architecture).
 
-- **`FakeChatEngine`** (commonTest) — emits scripted event lists so later feature specs test against it, never the network.
+- **`FakeScriptedChatEngine`** (commonTest) — emits scripted event lists so later feature specs test against it, never the network.
 - **`ClaudeChatEngine`** — hermetic, via Ktor `MockEngine` feeding fixtures recorded from a real API response (not invented): happy path, `Refusal` stop, each error status → the correct `ChatError`, `retry-after` parsing, malformed SSE → `Unexpected`, a mid-stream `error` event, and cancellation mid-stream. `Json { ignoreUnknownKeys = true }`.
 - **Gated integration test** — hits the real endpoint with a dev key read from the environment or `local.properties`, and is skipped when the key is absent so the default suite stays hermetic and CI-safe. Its captured SSE seeds the fixtures above; this is how the streaming risk is retired before any UI exists.
 

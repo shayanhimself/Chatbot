@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.flow
  * @property events emitted in order on every collection.
  * @property requests every request this engine was asked to stream, in call order.
  */
-class FakeChatEngine(
+class FakeScriptedChatEngine(
     var events: List<ChatStreamEvent> = emptyList(),
 ) : ChatEngine {
     private val recorded = mutableListOf<ChatRequest>()

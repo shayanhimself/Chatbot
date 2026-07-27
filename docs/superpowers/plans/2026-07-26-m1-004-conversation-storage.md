@@ -371,7 +371,7 @@ The Room stack end to end, proven by one smoke test. This is the task that eithe
 - Consumes: `storageJson` (Task 1); `ContentBlock`, `Role` (`…shared.chat`); `ClaudeModel` (`…shared.model`).
 - Produces: `enum class MessageStatus { Complete, Failed, Cancelled }` in `…shared.conversation`; `internal data class ConversationEntity(id, title, model, createdAt, updatedAt)` and `internal data class MessageEntity(id, conversationId, role, content, status, createdAt)` in `…shared.conversation.local`; `internal abstract class ConversationDao` and `internal interface MessageDao`; `abstract class ChatbotDatabase : RoomDatabase()` with `internal abstract fun conversationDao()` / `messageDao()`; `fun createChatbotDatabase(builder, driver, queryContext): ChatbotDatabase`; `fun chatbotDatabaseBuilder(context: Context): RoomDatabase.Builder<ChatbotDatabase>` (androidMain); test helpers `TestScope.testDatabase()` and `runDatabaseTest { database -> … }`.
 
-- [ ] **Step 1: Write the failing converter test**
+- [x] **Step 1: Write the failing converter test**
 
 Create `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/database/ChatbotConvertersTest.kt`:
 
@@ -434,12 +434,12 @@ class ChatbotConvertersTest {
 }
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ChatbotConvertersTest*'`
 Expected: compilation failure — `Unresolved reference: ChatbotConverters`, `Unresolved reference: MessageStatus`.
 
-- [ ] **Step 3: Write the domain-side status enum**
+- [x] **Step 3: Write the domain-side status enum**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/Conversation.kt`:
 
@@ -476,7 +476,7 @@ data class Message(
 enum class MessageStatus { Complete, Failed, Cancelled }
 ```
 
-- [ ] **Step 4: Write the converters**
+- [x] **Step 4: Write the converters**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/database/ChatbotConverters.kt`:
 
@@ -529,14 +529,14 @@ internal class ChatbotConverters {
 }
 ```
 
-- [ ] **Step 5: Run the converter test to verify it passes**
+- [x] **Step 5: Run the converter test to verify it passes**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ChatbotConvertersTest*'`
 Expected: `BUILD SUCCESSFUL`, 7 tests passing.
 
 `MessageStatus.valueOf` throws `IllegalArgumentException` on an unknown name, which is what the rejection test asserts.
 
-- [ ] **Step 6: Write the failing database smoke test**
+- [x] **Step 6: Write the failing database smoke test**
 
 Create `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/database/ChatbotDatabaseTest.kt`:
 
@@ -592,12 +592,12 @@ class ChatbotDatabaseTest {
 }
 ```
 
-- [ ] **Step 7: Run it to verify it fails**
+- [x] **Step 7: Run it to verify it fails**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ChatbotDatabaseTest*'`
 Expected: compilation failure — `Unresolved reference: runDatabaseTest`, `ConversationEntity`, `MessageEntity`.
 
-- [ ] **Step 8: Write the entities**
+- [x] **Step 8: Write the entities**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/local/ConversationEntity.kt`:
 
@@ -657,7 +657,7 @@ internal data class MessageEntity(
 )
 ```
 
-- [ ] **Step 9: Write the DAOs**
+- [x] **Step 9: Write the DAOs**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/local/ConversationDao.kt`:
 
@@ -763,7 +763,7 @@ internal interface MessageDao {
 }
 ```
 
-- [ ] **Step 10: Write the database and its constructor**
+- [x] **Step 10: Write the database and its constructor**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/database/ChatbotDatabase.kt`:
 
@@ -837,7 +837,7 @@ fun createChatbotDatabase(
         .build()
 ```
 
-- [ ] **Step 11: Write the Android builder**
+- [x] **Step 11: Write the Android builder**
 
 Create `shared/src/androidMain/kotlin/com/shayanaryan/chatbot/shared/database/ChatbotDatabaseBuilder.android.kt`:
 
@@ -863,7 +863,7 @@ fun chatbotDatabaseBuilder(context: Context): RoomDatabase.Builder<ChatbotDataba
 }
 ```
 
-- [ ] **Step 12: Write the test database helper**
+- [x] **Step 12: Write the test database helper**
 
 Create `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/database/TestDatabase.kt`:
 
@@ -906,21 +906,21 @@ internal fun runDatabaseTest(body: suspend TestScope.(ChatbotDatabase) -> Unit):
     runTest { body(testDatabase()) }
 ```
 
-- [ ] **Step 13: Run the smoke test to verify it passes**
+- [x] **Step 13: Run the smoke test to verify it passes**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ChatbotDatabaseTest*'`
 Expected: `BUILD SUCCESSFUL`, 1 test passing.
 
 If KSP reports `Cannot figure out how to save this field into database`, a converter is missing from `ChatbotConverters`. If Kotlin complains that `ChatbotDatabase` exposes an internal type through `@Database` or `@TypeConverters`, make `ChatbotConverters` and the two entities public with an internal constructor is *not* the fix — instead record it in your task report and mark just the offending class public, since annotation arguments are not normally subject to the exposed-visibility check.
 
-- [ ] **Step 14: Verify the schema baseline was exported**
+- [x] **Step 14: Verify the schema baseline was exported**
 
 Run: `./gradlew :shared:clean :shared:compileAndroidMain && ls shared/schemas/*/`
 Expected: `1.json` under `shared/schemas/com.shayanaryan.chatbot.shared.database.ChatbotDatabase/`.
 
 `copyRoomSchemas` reports `NO-SOURCE` when `compileAndroidMain` is already up to date, so the clean is what makes this check meaningful. Confirm the file lists both tables, the `CASCADE` foreign key, and `index_messages_conversationId`. It is a committed artefact — do not add it to `.gitignore`.
 
-- [ ] **Step 15: Run the full module suite, format, and report**
+- [x] **Step 15: Run the full module suite, format, and report**
 
 Run: `./gradlew :shared:testAndroidHostTest && ./gradlew :shared:spotlessApply && ./gradlew spotlessCheck`
 Expected: `BUILD SUCCESSFUL`.

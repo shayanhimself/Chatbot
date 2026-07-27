@@ -1229,7 +1229,7 @@ The interface everything above the data layer depends on, plus the in-memory dou
 - Consumes: `Conversation`, `Message`, `MessageStatus` (Task 2); `ChatError`, `ContentBlock`, `Role` (`…shared.chat`); `ClaudeModel`.
 - Produces: `sealed interface TurnState { Idle; Streaming(text: String); Failed(error: ChatError) }`; `interface ConversationRepository` with `getConversationsFlow()`, `getMessagesFlow(Long)`, `getTurnFlow(Long)`, `send(Long?, String, ClaudeModel): Long`, `retry(Long)`, `cancel(Long)`, `setModel(Long, ClaudeModel)`, `delete(Long)`; `internal const val MAX_TITLE_LENGTH = 60`; test-only `FakeClock(instant)` and `FakeConversationRepository` with the driver methods `emitDelta(id, text)`, `completeTurn(id)`, `failTurn(id, error)`.
 
-- [ ] **Step 1: Write the failing fake-repository test**
+- [x] **Step 1: Write the failing fake-repository test**
 
 Create `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/conversation/FakeConversationRepositoryTest.kt`:
 
@@ -1409,12 +1409,12 @@ class FakeConversationRepositoryTest {
 }
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*FakeConversationRepositoryTest*'`
 Expected: compilation failure — `Unresolved reference: FakeConversationRepository`, `TurnState`, `MAX_TITLE_LENGTH`.
 
-- [ ] **Step 3: Write `TurnState`**
+- [x] **Step 3: Write `TurnState`**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/TurnState.kt`:
 
@@ -1449,7 +1449,7 @@ sealed interface TurnState {
 }
 ```
 
-- [ ] **Step 4: Write the repository contract**
+- [x] **Step 4: Write the repository contract**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/ConversationRepository.kt`:
 
@@ -1517,7 +1517,7 @@ interface ConversationRepository {
 }
 ```
 
-- [ ] **Step 5: Write `FakeClock`**
+- [x] **Step 5: Write `FakeClock`**
 
 Create `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/FakeClock.kt`:
 
@@ -1542,7 +1542,7 @@ class FakeClock(
 
 If the compiler asks for an opt-in on `kotlin.time.Clock`, add `@OptIn(ExperimentalTime::class)` to the class and note it in your report — on Kotlin 2.4.10 the call sites compile without one.
 
-- [ ] **Step 6: Write the fake repository**
+- [x] **Step 6: Write the fake repository**
 
 Create `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/conversation/FakeConversationRepository.kt`:
 
@@ -1692,12 +1692,12 @@ class FakeConversationRepository(
 }
 ```
 
-- [ ] **Step 7: Run the fake test to verify it passes**
+- [x] **Step 7: Run the fake test to verify it passes**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*FakeConversationRepositoryTest*'`
 Expected: `BUILD SUCCESSFUL`, 13 tests passing.
 
-- [ ] **Step 8: Format, run the full suite, and report**
+- [x] **Step 8: Format, run the full suite, and report**
 
 Run: `./gradlew :shared:spotlessApply && ./gradlew :shared:testAndroidHostTest && ./gradlew spotlessCheck`
 Expected: `BUILD SUCCESSFUL`.

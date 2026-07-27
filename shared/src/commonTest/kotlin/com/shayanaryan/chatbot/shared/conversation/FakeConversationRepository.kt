@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * In-memory [ConversationRepository] for tests above the data layer.
@@ -21,7 +22,7 @@ import kotlin.time.Clock
  * the screen that started it.
  */
 class FakeConversationRepository(
-    private val clock: Clock = FakeClock(),
+    private val clock: Clock = FakeClock(autoAdvanceBy = 1.milliseconds),
 ) : ConversationRepository {
     private val conversations = MutableStateFlow<List<Conversation>>(emptyList())
     private val messages = MutableStateFlow<Map<Long, List<Message>>>(emptyMap())
@@ -43,6 +44,11 @@ class FakeConversationRepository(
         text: String,
         model: ClaudeModel,
     ): Long {
+        if (conversationId != null) {
+            require(conversations.value.any { it.id == conversationId }) {
+                "conversation $conversationId does not exist"
+            }
+        }
         check(turns.value[conversationId] !is TurnState.Streaming) {
             "conversation $conversationId already has a turn in flight"
         }
@@ -124,7 +130,7 @@ class FakeConversationRepository(
                 createdAt = now,
                 updatedAt = now,
             )
-        conversations.update { listOf(conversation) + it }
+        conversations.update { (it + conversation).mostRecentFirst() }
         messages.update { it + (id to emptyList()) }
         return id
     }
@@ -149,7 +155,16 @@ class FakeConversationRepository(
             all + (conversationId to (all[conversationId].orEmpty() + message))
         }
         conversations.update { list ->
-            list.map { if (it.id == conversationId) it.copy(updatedAt = now) else it }
+            list
+                .map { if (it.id == conversationId) it.copy(updatedAt = now) else it }
+                .mostRecentFirst()
         }
     }
+
+    /**
+     * The order the conversation list query imposes, applied after every write that can change it
+     * rather than left to the order rows happen to be inserted in.
+     */
+    private fun List<Conversation>.mostRecentFirst(): List<Conversation> =
+        sortedByDescending { it.updatedAt }
 }

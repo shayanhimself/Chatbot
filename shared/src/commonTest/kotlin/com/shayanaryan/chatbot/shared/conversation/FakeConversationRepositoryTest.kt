@@ -184,4 +184,49 @@ class FakeConversationRepositoryTest {
                 repository.getConversationsFlow().first().map { it.id },
             )
         }
+
+    @Test
+    fun `sending into an older conversation floats it back to the head`() =
+        runTest {
+            val older = repository.send(null, "one")
+            repository.completeTurn(older)
+            val newer = repository.send(null, "two")
+            repository.completeTurn(newer)
+
+            repository.send(older, "again")
+
+            assertEquals(
+                listOf(older, newer),
+                repository.getConversationsFlow().first().map { it.id },
+            )
+        }
+
+    @Test
+    fun `each write gets a distinct timestamp`() =
+        runTest {
+            val id = repository.send(null, "hello")
+            repository.completeTurn(id)
+
+            val timestamps = repository.getMessagesFlow(id).first().map { it.createdAt }
+
+            assertEquals(timestamps.distinct(), timestamps)
+        }
+
+    @Test
+    fun `sending into a conversation that does not exist is rejected`() =
+        runTest {
+            assertFailsWith<IllegalArgumentException> { repository.send(404L, "hello") }
+
+            assertTrue(repository.getMessagesFlow(404L).first().isEmpty())
+        }
+
+    @Test
+    fun `sending into a deleted conversation is rejected`() =
+        runTest {
+            val id = repository.send(null, "hello")
+            repository.completeTurn(id)
+            repository.delete(id)
+
+            assertFailsWith<IllegalArgumentException> { repository.send(id, "again") }
+        }
 }

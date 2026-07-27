@@ -34,6 +34,8 @@ interface ConversationRepository {
      *   decides, and [setModel] changes it.
      * @return the conversation ID the message landed in.
      * @throws IllegalStateException if that conversation already has a turn in flight.
+     * @throws IllegalArgumentException if [conversationId] names a conversation that does not
+     *   exist, which a screen left open on a deleted conversation can still ask for.
      */
     suspend fun send(
         conversationId: Long?,
@@ -42,13 +44,13 @@ interface ConversationRepository {
     ): Long
 
     /**
-     * Retries and drops a trailing reply that failed or was canceled and runs the turn again. Does nothing
+     * Drops a trailing reply that failed or was cancelled and runs the turn again. Does nothing
      * when the last message is not an unfinished reply.
      */
     suspend fun retry(conversationId: Long)
 
     /**
-     * Stops the turn in flight, keeping whatever text arrived as a canceled message. Returns once
+     * Stops the turn in flight, keeping whatever text arrived as a cancelled message. Returns once
      * that message is stored. Does nothing when no turn is in flight.
      */
     suspend fun cancel(conversationId: Long)

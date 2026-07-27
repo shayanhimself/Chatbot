@@ -48,6 +48,8 @@ internal abstract class ConversationDao {
      * Creates a conversation and its first message together, so an abandoned empty chat can never
      * appear in the list.
      *
+     * @param message its `conversationId` is ignored — the conversation is inserted first and its
+     *   generated id is substituted.
      * @return the new conversation's id.
      */
     @Transaction

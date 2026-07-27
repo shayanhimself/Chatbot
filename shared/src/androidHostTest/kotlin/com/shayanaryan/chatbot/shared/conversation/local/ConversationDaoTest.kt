@@ -28,10 +28,13 @@ class ConversationDaoTest {
             ),
         )
 
+    /**
+     * @param conversationId omitted when the message is handed to a transaction that assigns it.
+     */
     private fun message(
-        conversationId: Long,
         text: String,
         createdAt: Long,
+        conversationId: Long = 0,
     ) = MessageEntity(
         conversationId = conversationId,
         role = Role.User,
@@ -87,7 +90,7 @@ class ConversationDaoTest {
                             createdAt = 5L,
                             updatedAt = 5L,
                         ),
-                    message = message(conversationId = 0, text = "plan a trip", createdAt = 5L),
+                    message = message(text = "plan a trip", createdAt = 5L),
                 )
 
             val messages = database.messageDao().completeForConversation(conversationId)
@@ -105,7 +108,7 @@ class ConversationDaoTest {
             val conversationId = database.newConversation("chat", updatedAt = 10L)
 
             database.conversationDao().appendMessage(
-                message = message(conversationId, "hello", createdAt = 40L),
+                message = message("hello", createdAt = 40L, conversationId = conversationId),
                 updatedAt = 40L,
             )
 
@@ -128,8 +131,8 @@ class ConversationDaoTest {
     fun `deleting a conversation cascades to its messages`() =
         runDatabaseTest { database ->
             val conversationId = database.newConversation("chat", updatedAt = 10L)
-            database.conversationDao().insertMessage(message(conversationId, "hello", 10L))
-            database.conversationDao().insertMessage(message(conversationId, "again", 11L))
+            database.conversationDao().insertMessage(message("hello", 10L, conversationId))
+            database.conversationDao().insertMessage(message("again", 11L, conversationId))
 
             database.conversationDao().delete(conversationId)
 

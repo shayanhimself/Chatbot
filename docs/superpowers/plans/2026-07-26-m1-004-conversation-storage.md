@@ -1885,7 +1885,7 @@ The real implementation against a real database, with no turn machinery exercise
 - Consumes: `ConversationDao`, `MessageDao`, entities (Task 2); `ConversationRepository`, `TurnState`, `MAX_TITLE_LENGTH` (Task 4); `FakeClock` (Task 4); `FakeScriptedChatEngine` (003); `runDatabaseTest` (Task 2).
 - Produces: `internal class DefaultConversationRepository(engine, conversationDao, messageDao, externalScope, clock)`; `fun createConversationRepository(database, engine, externalScope, clock = Clock.System): ConversationRepository`; `internal fun ConversationEntity.toDomain()`, `internal fun MessageEntity.toDomain()`, `internal fun MessageEntity.toChatMessage()`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/conversation/ConversationRepositoryTest.kt`:
 
@@ -2038,12 +2038,12 @@ class ConversationRepositoryTest {
 }
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ConversationRepositoryTest*'`
 Expected: compilation failure — `Unresolved reference: createConversationRepository`.
 
-- [ ] **Step 3: Write the mappers**
+- [x] **Step 3: Write the mappers**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/local/Mappers.kt`:
 
@@ -2078,7 +2078,7 @@ internal fun MessageEntity.toChatMessage(): ChatMessage =
     ChatMessage(role = role, content = content)
 ```
 
-- [ ] **Step 4: Write the repository**
+- [x] **Step 4: Write the repository**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/DefaultConversationRepository.kt`. This is the full file; Task 7 and Task 8 fill in the turn body, so the parts they own are stubbed here in the smallest form that satisfies this task's tests.
 
@@ -2253,7 +2253,7 @@ internal class DefaultConversationRepository(
 }
 ```
 
-- [ ] **Step 5: Write the assembly seam**
+- [x] **Step 5: Write the assembly seam**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/ConversationRepositoryFactory.kt`:
 
@@ -2288,14 +2288,14 @@ fun createConversationRepository(
     )
 ```
 
-- [ ] **Step 6: Run the test to verify it passes**
+- [x] **Step 6: Run the test to verify it passes**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ConversationRepositoryTest*'`
 Expected: `BUILD SUCCESSFUL`, 6 tests passing.
 
 Every assertion here is deliberately about a write the repository makes itself, never about a reply — the turn body is still a stub, so no assistant row exists yet.
 
-- [ ] **Step 7: Format, run the full suite, and report**
+- [x] **Step 7: Format, run the full suite, and report**
 
 Run: `./gradlew :shared:spotlessApply && ./gradlew :shared:testAndroidHostTest && ./gradlew spotlessCheck`
 Expected: `BUILD SUCCESSFUL`.

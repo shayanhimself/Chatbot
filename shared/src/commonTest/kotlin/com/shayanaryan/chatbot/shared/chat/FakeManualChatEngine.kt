@@ -31,9 +31,9 @@ class FakeManualChatEngine : ChatEngine {
      * Rejects a second call while a stream is still live: streams are handed over in the order
      * they were opened, so binding to one while another is running would silently target the
      * wrong collector and leave the test hanging until its timeout.
+     * `isClosedForSend` is delicate because it is a snapshot that can go stale; here it is read
+     * only as a guard, from the single test coroutine that also opens and closes every stream.
      */
-    // isClosedForSend is delicate because it is a snapshot that can go stale; here it is read
-    // only as a guard, from the single test coroutine that also opens and closes every stream.
     @OptIn(DelicateCoroutinesApi::class)
     suspend fun awaitStream() {
         val open = current

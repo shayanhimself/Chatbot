@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class FakeManualChatEngineTest {
@@ -69,5 +70,32 @@ class FakeManualChatEngineTest {
             assertEquals(listOf<ChatStreamEvent>(ChatStreamEvent.Delta("one")), first)
             assertEquals(listOf<ChatStreamEvent>(ChatStreamEvent.Delta("two")), second)
             assertEquals(2, engine.requests.size)
+        }
+
+    @Test
+    fun `refuses to await a second stream while one is still open`() =
+        runTest {
+            val engine = FakeManualChatEngine()
+            val first = launch { engine.stream(request).toList() }
+            engine.awaitStream()
+            val second = launch { engine.stream(request).toList() }
+
+            assertFailsWith<IllegalStateException> { engine.awaitStream() }
+
+            engine.close()
+            first.join()
+            second.cancel()
+        }
+
+    @Test
+    fun `refuses an event once its collector is gone`() =
+        runTest {
+            val engine = FakeManualChatEngine()
+            val collector = launch { engine.stream(request).toList() }
+            engine.awaitStream()
+            collector.cancel()
+            collector.join()
+
+            assertFailsWith<IllegalStateException> { engine.send(ChatStreamEvent.Delta("late")) }
         }
 }

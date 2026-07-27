@@ -8,7 +8,8 @@ import kotlinx.coroutines.flow.flow
  * [ChatEngine] contract, never the network.
  *
  * @property events emitted in order on every collection.
- * @property requests every request this engine was asked to stream, in call order.
+ * @property requests every request this engine was asked to stream, in collection order — a
+ *   request is recorded when a collector arrives, not when [stream] is called.
  */
 class FakeScriptedChatEngine(
     var events: List<ChatStreamEvent> = emptyList(),

@@ -1713,7 +1713,7 @@ Report: the contract and its fake are in; the fake is the dependency the convers
 **Files:**
 - Create: `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/FakeManualChatEngine.kt`
 - Test: `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/FakeManualChatEngineTest.kt`
-- Already applied: 003's `FakeChatEngine` was renamed to `FakeScriptedChatEngine` (file and class, behaviour untouched) so the two doubles read as a pair; `specs/003-chat-engine.md` names the new one.
+- Already applied: 003's `FakeChatEngine` was renamed to `FakeScriptedChatEngine` (file and class, behaviour untouched) so the two doubles read as a pair. `specs/003-chat-engine.md` carries the renamed one; `specs/004-conversation-storage.md` names both.
 
 **Interfaces:**
 - Consumes: `ChatEngine`, `ChatRequest`, `ChatStreamEvent`, `StopReason`, `TokenUsage` (003).

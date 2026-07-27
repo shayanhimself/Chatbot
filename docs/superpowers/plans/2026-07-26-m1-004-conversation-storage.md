@@ -1719,7 +1719,7 @@ Report: the contract and its fake are in; the fake is the dependency the convers
 - Consumes: `ChatEngine`, `ChatRequest`, `ChatStreamEvent`, `StopReason`, `TokenUsage` (003).
 - Produces: `class FakeManualChatEngine : ChatEngine` with `suspend fun awaitStream()`, `suspend fun send(event: ChatStreamEvent)`, `fun close()`, and `val requests: List<ChatRequest>`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/FakeManualChatEngineTest.kt`:
 
@@ -1797,12 +1797,12 @@ class FakeManualChatEngineTest {
 }
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*FakeManualChatEngineTest*'`
 Expected: compilation failure — `Unresolved reference: FakeManualChatEngine`.
 
-- [ ] **Step 3: Write the engine**
+- [x] **Step 3: Write the engine**
 
 Create `shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/FakeManualChatEngine.kt`:
 
@@ -1857,12 +1857,12 @@ class FakeManualChatEngine : ChatEngine {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*FakeManualChatEngineTest*'`
 Expected: `BUILD SUCCESSFUL`, 3 tests passing.
 
-- [ ] **Step 5: Format and report**
+- [x] **Step 5: Format and report**
 
 Run: `./gradlew :shared:spotlessApply && ./gradlew :shared:testAndroidHostTest && ./gradlew spotlessCheck`
 Expected: `BUILD SUCCESSFUL`.

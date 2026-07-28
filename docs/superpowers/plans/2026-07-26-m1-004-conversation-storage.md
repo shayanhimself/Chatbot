@@ -3011,6 +3011,35 @@ In `DefaultConversationRepository.kt`, replace the two stubs with:
 
 `retry` needs no separate liveness guard: while a turn is in flight the last row is the user message, so the role test already makes it a no-op. Deleting the trailing row needs no other undo — the history query never saw it.
 
+Then close the one window `cancel`'s guarantee still leaves open. Task 7's `runTurn` catches `CancellationException` around `collect` only,
+so its terminal writes — the `Complete` and `Failed` inserts and the state updates that follow them — sit outside that guard,
+and `persistReply` is a suspending DAO call. A cancellation landing there propagates out of `runTurn` uncaught:
+no assistant row is written at all, and `TurnState` is left on `Streaming(partial)` for good, since the code that would have set `Idle` never runs.
+`cancelAndJoin` then returns having stored nothing, which is exactly what `cancel` promises not to do. A later `send` is not blocked — `requireIdle` passes on `!job.isActive` — so the damage is a stuck live bubble and a lost reply.
+
+In `runTurn`, wrap the whole post-`collect` tail so a stream that already produced its outcome always records it:
+
+```kotlin
+        val error = failure
+        // Outside the try, so cancellation here would otherwise escape and leave the turn with
+        // no row and a state stuck on Streaming. The stream is already over by this point, so
+        // finishing the write is always the right outcome.
+        withContext(NonCancellable) {
+            if (error == null) {
+                persistReply(conversationId, reply.toString(), MessageStatus.Complete)
+                state.value = TurnState.Idle
+                clearTurn(conversationId, state)
+            } else {
+                // The entry stays so the error is still readable when a collector arrives late;
+                // the next turn on this conversation replaces it.
+                persistReply(conversationId, reply.toString(), MessageStatus.Failed)
+                state.value = TurnState.Failed(error)
+            }
+        }
+```
+
+This one ships without a dedicated test. Hitting the window needs a cancellation delivered between `collect` returning and `persistReply`'s first suspension, and on a single `StandardTestDispatcher` both run inside the same `runCurrent`, with no seam to interleave from the test. Adding a seam only to observe it would put test-only structure in the turn body for a fault the guard makes unreachable. The existing turn and cancel tests cover both outcomes on either side of it.
+
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ConversationCancelRetryTest*'`
@@ -3036,6 +3065,9 @@ The DI registrations `:app` owns, and the spec brought back in line with what sh
 - Create: `app/src/main/kotlin/com/shayanaryan/chatbot/di/ApplicationScope.kt`
 - Create: `app/src/main/kotlin/com/shayanaryan/chatbot/di/CoroutinesModule.kt`
 - Create: `app/src/main/kotlin/com/shayanaryan/chatbot/di/DatabaseModule.kt`
+- Modify: `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/local/Mappers.kt`
+- Modify: `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/DefaultConversationRepository.kt`
+- Test: `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/conversation/ConversationTurnTest.kt`
 - Modify: `specs/004-conversation-storage.md`
 - Modify: `docs/roadmap.md`
 
@@ -3194,23 +3226,27 @@ Edit `specs/004-conversation-storage.md`:
 
 5. In **Turn lifecycle**, in the paragraph beginning "The map holds the latest turn per conversation", replace "so the one-turn guard tests the job rather than the entry's presence" with "so the one-turn guard tests the job and the state rather than the entry's presence — a turn that dies unexpectedly can never block a later send, and neither can one that has gone `Idle` but not yet been cleared".
 
-- [ ] **Step 7: Review the spec edit**
+6. In **Turn lifecycle**, after the paragraph on `cancel` and `retry`, add:
+
+   > A turn that completes without emitting any text still stores its assistant row, but blank text blocks are dropped on the way into a request and a message left with no blocks is dropped whole. The API rejects an empty text block, and a stored one would otherwise be replayed on every later turn, making the conversation permanently un-sendable. Filtering on the read side rather than skipping the write keeps the row for the UI.
+
+- [ ] **Step 8: Review the spec edit**
 
 Run: `git diff specs/004-conversation-storage.md`
-Expected: only the five changes above. The spec must still read as a description of the current system — no history, no "changed from".
+Expected: only the six changes above. The spec must still read as a description of the current system — no history, no "changed from".
 
-- [ ] **Step 8: Mark the roadmap**
+- [ ] **Step 9: Mark the roadmap**
 
 In `docs/roadmap.md`, leave the **Status** table alone (M1 is not finished) but confirm the `004-conversation-storage.md` row in the M1 table still describes what shipped: "Room schema: conversations + messages (reminders/memories tables deferred to their specs)". It also now carries the `ConversationRepository` and the turn lifecycle, so change that cell to:
 
 > Room schema and `ConversationRepository`: conversations + messages, and the turn that streams a reply and persists it (reminders/memories tables deferred to their specs)
 
-- [ ] **Step 9: Run the full gate**
+- [ ] **Step 10: Run the full gate**
 
 Run: `./gradlew :shared:testAndroidHostTest :app:assembleDebug && ./gradlew spotlessApply && ./gradlew spotlessCheck build`
 Expected: `BUILD SUCCESSFUL`, the whole `:shared` suite green and every other module unaffected.
 
-- [ ] **Step 10: Report**
+- [ ] **Step 11: Report**
 
 Leave all changes in the working tree — do not commit. Report: total tests passing, whether `api(libs.androidx.room.runtime)` was enough or androidMain needed it too, whether `DatabaseModule` stayed in `:app`, and the path of the committed schema baseline.
 

@@ -99,10 +99,16 @@ class FakeConversationRepository(
         }
     }
 
-    /** Ends the turn successfully: the reply becomes a complete message. */
+    /**
+     * Ends the turn successfully: the reply becomes a complete message, unless it produced no
+     * text, in which case nothing is stored — an empty complete message is not something the
+     * real repository can produce.
+     */
     fun completeTurn(conversationId: Long) {
         val streaming = turns.value[conversationId] as? TurnState.Streaming ?: return
-        appendMessage(conversationId, Role.Assistant, streaming.text, MessageStatus.Complete)
+        if (streaming.text.isNotBlank()) {
+            appendMessage(conversationId, Role.Assistant, streaming.text, MessageStatus.Complete)
+        }
         turns.update { it - conversationId }
     }
 

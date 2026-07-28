@@ -253,7 +253,10 @@ internal class DefaultConversationRepository(
         }
         val error = failure
         if (error == null) {
-            persistReply(conversationId, reply.toString(), MessageStatus.Complete)
+            // A turn that finished without producing text has nothing to store.
+            if (reply.isNotBlank()) {
+                persistReply(conversationId, reply.toString(), MessageStatus.Complete)
+            }
             state.value = TurnState.Idle
             clearTurn(conversationId, state)
         } else {

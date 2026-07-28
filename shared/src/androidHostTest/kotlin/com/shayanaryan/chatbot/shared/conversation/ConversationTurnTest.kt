@@ -125,14 +125,88 @@ class ConversationTurnTest {
             clock.advanceBy(60.seconds)
             repository.send(first, "again")
             engine.awaitStream()
+            // Moves the clock between the user message and the reply, so the assertion below
+            // can only pass if the reply did the bumping. The reply has to carry text — a turn
+            // that produces none stores no row and so bumps nothing.
+            clock.advanceBy(60.seconds)
+            engine.send(ChatStreamEvent.Delta("here you go"))
+            engine.send(completed())
+            engine.close()
+            advanceUntilIdle()
+
+            val conversations = repository.getConversationsFlow().first()
+            assertEquals(listOf(first, second), conversations.map { it.id })
+            assertEquals(Instant.fromEpochMilliseconds(181_000), conversations.first().updatedAt)
+        }
+
+    @Test
+    fun `a turn that produced no text stores no assistant message`() =
+        runDatabaseTest { database ->
+            val engine = FakeManualChatEngine()
+            val turnScope = turnScope()
+            val repository =
+                createConversationRepository(database, engine, turnScope, FakeClock())
+
+            val id = repository.send(null, "hello")
+            engine.awaitStream()
+            engine.send(completed())
+            engine.close()
+            advanceUntilIdle()
+
+            assertEquals(listOf(Role.User), repository.getMessagesFlow(id).first().map { it.role })
+            assertEquals(TurnState.Idle, repository.getTurnFlow(id).first())
+
+            repository.send(id, "again")
+            engine.awaitStream()
             engine.send(completed())
             engine.close()
             advanceUntilIdle()
 
             assertEquals(
-                listOf(first, second),
-                repository.getConversationsFlow().first().map { it.id },
+                listOf(Role.User, Role.User),
+                engine.requests
+                    .last()
+                    .messages
+                    .map { it.role },
             )
+        }
+
+    @Test
+    fun `a turn that produced only whitespace stores no assistant message`() =
+        runDatabaseTest { database ->
+            val engine = FakeManualChatEngine()
+            val turnScope = turnScope()
+            val repository =
+                createConversationRepository(database, engine, turnScope, FakeClock())
+
+            val id = repository.send(null, "hello")
+            engine.awaitStream()
+            engine.send(ChatStreamEvent.Delta("  \n "))
+            engine.send(completed())
+            engine.close()
+            advanceUntilIdle()
+
+            assertEquals(listOf(Role.User), repository.getMessagesFlow(id).first().map { it.role })
+        }
+
+    @Test
+    fun `a failure before any text still stores a row for retry to find`() =
+        runDatabaseTest { database ->
+            val engine = FakeManualChatEngine()
+            val turnScope = turnScope()
+            val repository =
+                createConversationRepository(database, engine, turnScope, FakeClock())
+
+            val id = repository.send(null, "hello")
+            engine.awaitStream()
+            engine.send(ChatStreamEvent.Failed(ChatError.Network))
+            engine.close()
+            advanceUntilIdle()
+
+            val last = repository.getMessagesFlow(id).first().last()
+            assertEquals(Role.Assistant, last.role)
+            assertEquals(MessageStatus.Failed, last.status)
+            assertEquals("", last.text())
         }
 
     @Test

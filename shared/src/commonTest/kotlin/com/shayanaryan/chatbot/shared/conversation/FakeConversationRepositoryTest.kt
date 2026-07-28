@@ -134,6 +134,7 @@ class FakeConversationRepositoryTest {
     fun `retrying with nothing to retry does nothing`() =
         runTest {
             val id = repository.send(null, "hello")
+            repository.emitDelta(id, "hi there")
             repository.completeTurn(id)
 
             repository.retry(id)

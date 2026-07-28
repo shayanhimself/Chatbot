@@ -26,7 +26,7 @@ First sideload. Streaming chat with the user's own key; no agentic tools yet.
 |---|---|
 | `002-design-system.md` | `:core:ui` M3 theme, core components, previews + screenshot tests, companion `design-system` project skill. Grows in later milestones as screens need components |
 | `003-chat-engine.md` | `ChatEngine` interface, Ktor Claude implementation, SSE streaming. Highest technical risk — built first among features. Tool-use handling deferred to 008 |
-| `004-conversation-storage.md` | Room schema: conversations + messages (reminders/memories tables deferred to their specs) |
+| `004-conversation-storage.md` | Room schema and `ConversationRepository`: conversations + messages, and the turn that streams a reply and persists it (reminders/memories tables deferred to their specs) |
 | `005-conversation-shell.md` | Nav 3 back stack, conversation list + chat screen (streaming UI, composer, in-conversation model picker), adaptive two-pane, deep-link readiness. Runs on a dev-key stub from debug build config (developer's own key, debug builds only — the product stays BYOK-only) |
 | `006-onboarding.md` | First-launch key entry, validation, encrypted storage (Tink + Keystore → DataStore), Nav 3 conditional gate (no key → onboarding). Replaces the dev-key stub |
 

@@ -52,6 +52,8 @@ The codec is the storage layer's own `Json`, not 003's `chatJson`. Sharing one i
 
 Three converters: `ClaudeModel`, the `Role`/`MessageStatus` enums, and the content list. Timestamps are epoch millis in the database and `kotlin.time.Instant` in domain models; a `kotlin.time.Clock` is injected so tests assert exact values.
 
+An unknown stored `ClaudeModel` name decodes to `ClaudeModel.Default` rather than throwing, so a model retired from the picker does not make every conversation row naming it unreadable. `Role` and `MessageStatus` throw instead: those sets are closed and written only by this app, so an unrecognised value is corruption.
+
 **Failed rows store no error detail.** Which `ChatError` occurred lives in `TurnState` until the next turn on that conversation replaces it. A reopened conversation shows only that the turn did not finish.
 
 Two queries carry the feature — the conversation list, and the history sent to Claude:
@@ -141,6 +143,8 @@ The insert completes before `TurnState` returns to `Idle`, so the live bubble is
 
 `cancel` cancels the job and writes the partial text as `Cancelled`. `retry` deletes the trailing `Failed` or `Cancelled` assistant row and re-runs the turn; since the history query never saw that row, nothing else needs undoing. Both are no-ops when there is nothing to cancel or retry.
 
+A turn that completes without emitting any text still stores its assistant row, but blank text blocks are dropped on the way into a request and a message left with no blocks is dropped whole. The API rejects an empty text block, and a stored one would otherwise be replayed on every later turn, making the conversation permanently un-sendable. Filtering on the read side rather than skipping the write keeps the row for the UI.
+
 Turns live in a `MutableStateFlow<Map<Long, Turn>>` — an immutable map behind a `StateFlow` so `getTurnFlow` reads without a lock and observes turns that start after collection begins:
 
 ```
@@ -151,7 +155,7 @@ getTurnFlow(id) = turns
 
 Writes take a `Mutex`. `StateFlow.update` makes one compare-and-set atomic, but the guard spans two operations — test for a live turn, then insert one — and without the lock two concurrent sends both see none and both launch.
 
-**The map holds the latest turn per conversation, live or terminal.** A turn is live while its job is active, so the one-turn guard tests the job rather than the entry's presence — a turn that dies unexpectedly can never block a later send. The entry is cleared when the turn ends `Idle` — that is, once the `Complete` row is in — and a `Failed` entry is kept so `TurnState.Failed(error)` stays readable until the next `send` or `retry` replaces it, or `delete` drops it. Clearing on failure instead would lose the error before any collector saw it: the fallback to `Idle` conflates, so `Failed` need never be delivered at all. `cancel` writes the `Cancelled` row itself, then sets `Idle` and drops the entry, which keeps the rule that a row exists before the live bubble disappears.
+**The map holds the latest turn per conversation, live or terminal.** A turn is live while its job is active, so the one-turn guard tests the job and the state rather than the entry's presence — a turn that dies unexpectedly can never block a later send, and neither can one that has gone `Idle` but not yet been cleared. The entry is cleared when the turn ends `Idle` — that is, once the `Complete` row is in — and a `Failed` entry is kept so `TurnState.Failed(error)` stays readable until the next `send` or `retry` replaces it, or `delete` drops it. Clearing on failure instead would lose the error before any collector saw it: the fallback to `Idle` conflates, so `Failed` need never be delivered at all. `cancel` cancels the job and joins it; the turn coroutine writes the `Cancelled` row on its way out, in a `NonCancellable` block, then sets `Idle` and drops the entry. One writer per turn means no window in which a turn finishes normally between a liveness check and a second insert, and joining keeps the rule that a row exists before the live bubble disappears.
 
 ## Module and DI
 
@@ -163,7 +167,7 @@ Build additions: `androidx.sqlite:sqlite-bundled`, the `androidx.room` Gradle pl
 plugins { alias(libs.plugins.ksp); alias(libs.plugins.androidx.room) }
 
 commonMain.dependencies {
-  implementation(libs.androidx.room.runtime)
+  api(libs.androidx.room.runtime)
   implementation(libs.androidx.sqlite.bundled)
 }
 
@@ -172,7 +176,11 @@ dependencies { add("kspAndroid", libs.androidx.room.compiler) }
 room { schemaDirectory("$projectDir/schemas") }
 ```
 
+`room-runtime` is `api`, not `implementation`: `:app` holds `ChatbotDatabase` as a singleton, so `RoomDatabase` — its supertype — has to be on `:app`'s compile classpath. Room's own Android variant re-exports `androidx.sqlite`, so `sqlite-bundled` stays `implementation`.
+
 KSP configurations are per target and are created after the `kotlin {}` block evaluates, so `add("ksp<Target>", …)` is the only available spelling — there is no typed accessor, and KSP 2 deprecates the catch-all `ksp(…)`. iOS targets add their own lines. The build script carries a comment saying so, since the spelling looks like an oversight otherwise.
+
+The module also sets `-Xexpect-actual-classes`. The database constructor is an `expect object` whose `actual` is generated, and expect/actual classes are still Beta — without the flag every build carries two warnings that nothing in the project can resolve.
 
 ```
 @Database(entities = [ConversationEntity::class, MessageEntity::class], version = 1)

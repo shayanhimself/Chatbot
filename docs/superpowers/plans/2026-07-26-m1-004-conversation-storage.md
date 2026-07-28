@@ -3075,7 +3075,7 @@ The DI registrations `:app` owns, and the spec brought back in line with what sh
 - Consumes: `ChatbotDatabase`, `createChatbotDatabase`, `chatbotDatabaseBuilder` (Task 2); `ConversationRepository`, `createConversationRepository` (Task 6); `ChatEngine` (003, already provided by `ChatModule`).
 - Produces: Hilt bindings for `ChatbotDatabase`, `ConversationRepository`, and an `@ApplicationScope CoroutineScope`, available to feature ViewModels from the next spec onward.
 
-- [ ] **Step 1: Add the coroutines dependency to `:app`**
+- [x] **Step 1: Add the coroutines dependency to `:app`**
 
 `:shared` declares `kotlinx-coroutines-core` as `implementation`, so it is not on `:app`'s compile classpath, and the scope provider names `CoroutineScope`, `SupervisorJob` and `Dispatchers`. In `app/build.gradle.kts`, add to the `dependencies` block under `implementation(libs.androidx.lifecycle.runtime.compose)`:
 
@@ -3083,7 +3083,7 @@ The DI registrations `:app` owns, and the spec brought back in line with what sh
     implementation(libs.kotlinx.coroutines.core)
 ```
 
-- [ ] **Step 2: Write the qualifier**
+- [x] **Step 2: Write the qualifier**
 
 Create `app/src/main/kotlin/com/shayanaryan/chatbot/di/ApplicationScope.kt`:
 
@@ -3102,7 +3102,7 @@ import javax.inject.Qualifier
 annotation class ApplicationScope
 ```
 
-- [ ] **Step 3: Write the scope module**
+- [x] **Step 3: Write the scope module**
 
 Create `app/src/main/kotlin/com/shayanaryan/chatbot/di/CoroutinesModule.kt`:
 
@@ -3135,7 +3135,7 @@ object CoroutinesModule {
 
 No `CoroutineExceptionHandler`. A supervisor job keeps one failed piece of work from taking the others down; it does not swallow throws, and a fault nobody expected should stay visible rather than becoming a silent log line.
 
-- [ ] **Step 4: Write the database module**
+- [x] **Step 4: Write the database module**
 
 Create `app/src/main/kotlin/com/shayanaryan/chatbot/di/DatabaseModule.kt`:
 
@@ -3185,7 +3185,7 @@ object DatabaseModule {
 }
 ```
 
-- [ ] **Step 5: Verify the app still assembles**
+- [x] **Step 5: Verify the app still assembles**
 
 Run: `./gradlew :app:assembleDebug`
 Expected: `BUILD SUCCESSFUL`.
@@ -3195,7 +3195,7 @@ Two things this step is really checking:
 1. **`api(libs.androidx.room.runtime)` is doing its job.** If Kotlin reports `Cannot access class 'androidx.room.RoomDatabase'. Check your module classpath`, the `api` declaration did not propagate through the AGP KMP library plugin. Fall back to adding `api(libs.androidx.room.runtime)` to `androidMain.dependencies` as well, and record it in your task report.
 2. **The missing `ApiKeyProvider` binding is still harmless.** Dagger prunes provider methods nothing reaches, and nothing injects `ConversationRepository` yet. If Dagger instead reports `ApiKeyProvider cannot be provided without an @Provides-annotated method`, delete `DatabaseModule.kt`, note in your report that the storage bindings move to the spec that introduces the dev-key stub, and adjust the spec edit in Step 6 to match.
 
-- [ ] **Step 6: Reconcile the spec with what shipped**
+- [x] **Step 6: Reconcile the spec with what shipped**
 
 Edit `specs/004-conversation-storage.md`:
 
@@ -3230,23 +3230,23 @@ Edit `specs/004-conversation-storage.md`:
 
    > A turn that completes without emitting any text still stores its assistant row, but blank text blocks are dropped on the way into a request and a message left with no blocks is dropped whole. The API rejects an empty text block, and a stored one would otherwise be replayed on every later turn, making the conversation permanently un-sendable. Filtering on the read side rather than skipping the write keeps the row for the UI.
 
-- [ ] **Step 8: Review the spec edit**
+- [x] **Step 8: Review the spec edit**
 
 Run: `git diff specs/004-conversation-storage.md`
 Expected: only the six changes above. The spec must still read as a description of the current system — no history, no "changed from".
 
-- [ ] **Step 9: Mark the roadmap**
+- [x] **Step 9: Mark the roadmap**
 
 In `docs/roadmap.md`, leave the **Status** table alone (M1 is not finished) but confirm the `004-conversation-storage.md` row in the M1 table still describes what shipped: "Room schema: conversations + messages (reminders/memories tables deferred to their specs)". It also now carries the `ConversationRepository` and the turn lifecycle, so change that cell to:
 
 > Room schema and `ConversationRepository`: conversations + messages, and the turn that streams a reply and persists it (reminders/memories tables deferred to their specs)
 
-- [ ] **Step 10: Run the full gate**
+- [x] **Step 10: Run the full gate**
 
 Run: `./gradlew :shared:testAndroidHostTest :app:assembleDebug && ./gradlew spotlessApply && ./gradlew spotlessCheck build`
 Expected: `BUILD SUCCESSFUL`, the whole `:shared` suite green and every other module unaffected.
 
-- [ ] **Step 11: Report**
+- [x] **Step 11: Report**
 
 Leave all changes in the working tree — do not commit. Report: total tests passing, whether `api(libs.androidx.room.runtime)` was enough or androidMain needed it too, whether `DatabaseModule` stayed in `:app`, and the path of the committed schema baseline.
 

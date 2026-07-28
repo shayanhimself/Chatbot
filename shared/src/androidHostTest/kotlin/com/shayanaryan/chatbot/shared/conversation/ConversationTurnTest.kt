@@ -140,7 +140,7 @@ class ConversationTurnTest {
         }
 
     @Test
-    fun `a turn that produced no text stores no assistant message`() =
+    fun `a turn that produced no text stores a row the next turn leaves out`() =
         runDatabaseTest { database ->
             val engine = FakeManualChatEngine()
             val turnScope = turnScope()
@@ -153,7 +153,10 @@ class ConversationTurnTest {
             engine.close()
             advanceUntilIdle()
 
-            assertEquals(listOf(Role.User), repository.getMessagesFlow(id).first().map { it.role })
+            assertEquals(
+                listOf(Role.User, Role.Assistant),
+                repository.getMessagesFlow(id).first().map { it.role },
+            )
             assertEquals(TurnState.Idle, repository.getTurnFlow(id).first())
 
             repository.send(id, "again")
@@ -172,7 +175,7 @@ class ConversationTurnTest {
         }
 
     @Test
-    fun `a turn that produced only whitespace stores no assistant message`() =
+    fun `a turn that produced only whitespace is left out of the next turn's history`() =
         runDatabaseTest { database ->
             val engine = FakeManualChatEngine()
             val turnScope = turnScope()
@@ -186,7 +189,23 @@ class ConversationTurnTest {
             engine.close()
             advanceUntilIdle()
 
-            assertEquals(listOf(Role.User), repository.getMessagesFlow(id).first().map { it.role })
+            repository.send(id, "again")
+            engine.awaitStream()
+            engine.send(completed())
+            engine.close()
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(Role.User, Role.Assistant, Role.User, Role.Assistant),
+                repository.getMessagesFlow(id).first().map { it.role },
+            )
+            assertEquals(
+                listOf(Role.User, Role.User),
+                engine.requests
+                    .last()
+                    .messages
+                    .map { it.role },
+            )
         }
 
     @Test

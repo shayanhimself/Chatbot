@@ -10,7 +10,7 @@ import com.shayanaryan.chatbot.shared.conversation.local.ConversationDao
 import com.shayanaryan.chatbot.shared.conversation.local.ConversationEntity
 import com.shayanaryan.chatbot.shared.conversation.local.MessageDao
 import com.shayanaryan.chatbot.shared.conversation.local.MessageEntity
-import com.shayanaryan.chatbot.shared.conversation.local.toChatMessage
+import com.shayanaryan.chatbot.shared.conversation.local.toChatHistory
 import com.shayanaryan.chatbot.shared.conversation.local.toDomain
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
 import kotlinx.coroutines.CancellationException
@@ -117,11 +117,24 @@ internal class DefaultConversationRepository(
         }
 
     override suspend fun retry(conversationId: Long) {
-        // Filled in with the turn lifecycle.
+        mutex.withLock {
+            val last = messageDao.lastForConversation(conversationId) ?: return@withLock
+            // No separate liveness guard: while a turn is in flight the last row is the user
+            // message, so the role test already makes this a no-op.
+            if (last.role != Role.Assistant || last.status == MessageStatus.Complete) {
+                return@withLock
+            }
+            // Dropping the trailing row needs no other undo — the history query never saw it.
+            messageDao.deleteById(last.id)
+            launchTurn(conversationId)
+        }
     }
 
     override suspend fun cancel(conversationId: Long) {
-        // Filled in with the turn lifecycle.
+        // Not under the lock: the turn's own cancellation path takes it to clear its entry, and
+        // joining while holding it would deadlock. Joining is what guarantees the cancelled
+        // message is stored before this returns.
+        turns.value[conversationId]?.job?.cancelAndJoin()
     }
 
     override suspend fun setModel(
@@ -210,7 +223,7 @@ internal class DefaultConversationRepository(
             clearTurn(conversationId, state)
             return
         }
-        val messages = messageDao.completeForConversation(conversationId).map { it.toChatMessage() }
+        val messages = messageDao.completeForConversation(conversationId).toChatHistory()
         val reply = StringBuilder()
         var failure: ChatError? = null
         try {
@@ -252,18 +265,19 @@ internal class DefaultConversationRepository(
             throw cancellation
         }
         val error = failure
-        if (error == null) {
-            // A turn that finished without producing text has nothing to store.
-            if (reply.isNotBlank()) {
+        // Outside the try-catch, so cancellation here would otherwise escape and leave the turn with no
+        // row and a state stuck on Streaming. The stream is already over by this point.
+        withContext(NonCancellable) {
+            if (error == null) {
                 persistReply(conversationId, reply.toString(), MessageStatus.Complete)
+                state.value = TurnState.Idle
+                clearTurn(conversationId, state)
+            } else {
+                // The entry stays so the error is still readable when a collector arrives late;
+                // the next turn on this conversation replaces it.
+                persistReply(conversationId, reply.toString(), MessageStatus.Failed)
+                state.value = TurnState.Failed(error)
             }
-            state.value = TurnState.Idle
-            clearTurn(conversationId, state)
-        } else {
-            // The entry stays so the error is still readable when a collector arrives late; the
-            // next turn on this conversation replaces it.
-            persistReply(conversationId, reply.toString(), MessageStatus.Failed)
-            state.value = TurnState.Failed(error)
         }
     }
 

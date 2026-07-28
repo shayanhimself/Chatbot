@@ -2740,7 +2740,7 @@ The two operations that reach into a live turn, plus the interaction between `de
 - Consumes: everything from Tasks 6 and 7.
 - Produces: the real `cancel` and `retry` bodies. No signature changes.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/conversation/ConversationCancelRetryTest.kt`:
 
@@ -2980,12 +2980,12 @@ class ConversationCancelRetryTest {
 }
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ConversationCancelRetryTest*'`
 Expected: FAIL — `cancel` and `retry` are no-op stubs, so the cancelled/retried assertions report the wrong message counts, and `sending is allowed again once a turn is cancelled` throws `IllegalStateException`.
 
-- [ ] **Step 3: Implement `cancel` and `retry`**
+- [x] **Step 3: Implement `cancel` and `retry`**
 
 In `DefaultConversationRepository.kt`, replace the two stubs with:
 
@@ -3040,14 +3040,14 @@ In `runTurn`, wrap the whole post-`collect` tail so a stream that already produc
 
 This one ships without a dedicated test. Hitting the window needs a cancellation delivered between `collect` returning and `persistReply`'s first suspension, and on a single `StandardTestDispatcher` both run inside the same `runCurrent`, with no seam to interleave from the test. Adding a seam only to observe it would put test-only structure in the turn body for a fault the guard makes unreachable. The existing turn and cancel tests cover both outcomes on either side of it.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ConversationCancelRetryTest*'`
 Expected: `BUILD SUCCESSFUL`, 9 tests passing.
 
 If `deleting during a turn leaves nothing behind` fails with a foreign-key constraint error, the join in `delete` is not happening before `conversationDao.delete` — check the order in `delete`.
 
-- [ ] **Step 5: Format, run the full suite, and report**
+- [x] **Step 5: Format, run the full suite, and report**
 
 Run: `./gradlew :shared:spotlessApply && ./gradlew :shared:testAndroidHostTest && ./gradlew spotlessCheck`
 Expected: `BUILD SUCCESSFUL`, the whole `:shared` suite green.

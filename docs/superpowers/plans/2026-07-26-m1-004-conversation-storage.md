@@ -2320,7 +2320,7 @@ The heart of the spec: streaming a reply in a scope that outlives its collector,
 
 A turn catches `CancellationException` and nothing else. A throw the `ChatEngine` contract does not describe — storage failing under the turn is the only realistic source — ends the process, since nothing is waiting on the coroutine and the scope carries no handler. Left that way deliberately: the guard costs more structure than the fault is worth, and a crash is at least loud.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/conversation/ConversationTurnTest.kt`:
 
@@ -2611,14 +2611,14 @@ class ConversationTurnTest {
 }
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ConversationTurnTest*'`
 Expected: FAIL. `engine.awaitStream()` hangs or the assertions report `[User]` where `[User, Assistant]` is expected — the stub `runTurn` never opens a stream.
 
 If a test hangs rather than failing, `runTest` times out after 60 s with `After waiting for 1m, the test coroutine is not completing`. That is the expected red for this step.
 
-- [ ] **Step 3: Implement the turn body**
+- [x] **Step 3: Implement the turn body**
 
 In `DefaultConversationRepository.kt`, add these imports:
 
@@ -2707,19 +2707,19 @@ and replace the stub `runTurn` with:
     }
 ```
 
-- [ ] **Step 4: Run the turn tests to verify they pass**
+- [x] **Step 4: Run the turn tests to verify they pass**
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ConversationTurnTest*'`
 Expected: `BUILD SUCCESSFUL`, 9 tests passing.
 
-- [ ] **Step 5: Re-run Task 6's suite, which now exercises a real turn**
+- [x] **Step 5: Re-run Task 6's suite, which now exercises a real turn**
 
 `ConversationRepositoryTest` builds its repository over `FakeScriptedChatEngine`, which emits a single `Completed` eagerly. Task 6 ran those tests against a stubbed turn; they now run a real one, so this confirms the turn body did not change any of the read paths.
 
 Run: `./gradlew :shared:testAndroidHostTest --tests '*ConversationRepositoryTest*'`
 Expected: `BUILD SUCCESSFUL`, 6 tests passing.
 
-- [ ] **Step 6: Format, run the full suite, and report**
+- [x] **Step 6: Format, run the full suite, and report**
 
 Run: `./gradlew :shared:spotlessApply && ./gradlew :shared:testAndroidHostTest && ./gradlew spotlessCheck`
 Expected: `BUILD SUCCESSFUL`.

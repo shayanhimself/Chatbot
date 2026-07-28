@@ -1,18 +1,24 @@
 package com.shayanaryan.chatbot.shared.conversation
 
 import com.shayanaryan.chatbot.shared.chat.ChatEngine
+import com.shayanaryan.chatbot.shared.chat.ChatError
+import com.shayanaryan.chatbot.shared.chat.ChatRequest
+import com.shayanaryan.chatbot.shared.chat.ChatStreamEvent
 import com.shayanaryan.chatbot.shared.chat.ContentBlock
 import com.shayanaryan.chatbot.shared.chat.Role
 import com.shayanaryan.chatbot.shared.conversation.local.ConversationDao
 import com.shayanaryan.chatbot.shared.conversation.local.ConversationEntity
 import com.shayanaryan.chatbot.shared.conversation.local.MessageDao
 import com.shayanaryan.chatbot.shared.conversation.local.MessageEntity
+import com.shayanaryan.chatbot.shared.conversation.local.toChatMessage
 import com.shayanaryan.chatbot.shared.conversation.local.toDomain
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +30,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 
 /**
@@ -184,12 +191,96 @@ internal class DefaultConversationRepository(
         job.start()
     }
 
+    /**
+     * Streams one assistant reply and persists it. Deltas accumulate into [state] so a collector
+     * renders the text as it arrives, and the finished reply is written as a single row — never a
+     * write per token. The row is stored before the turn reports [TurnState.Idle], so the live
+     * bubble is never dropped before the persisted message exists to replace it.
+     *
+     * @param state the turn's own state flow, also the handle used to clear its entry: a later
+     *   turn may already have replaced it.
+     */
     private suspend fun runTurn(
         conversationId: Long,
         state: MutableStateFlow<TurnState>,
     ) {
-        state.value = TurnState.Idle
-        clearTurn(conversationId, state)
+        val conversation = conversationDao.findById(conversationId)
+        if (conversation == null) {
+            state.value = TurnState.Idle
+            clearTurn(conversationId, state)
+            return
+        }
+        val messages = messageDao.completeForConversation(conversationId).map { it.toChatMessage() }
+        val reply = StringBuilder()
+        var failure: ChatError? = null
+        try {
+            engine
+                .stream(
+                    ChatRequest(
+                        messages = messages,
+                        model = conversation.model,
+                    ),
+                ).collect { event ->
+                    when (event) {
+                        is ChatStreamEvent.Delta -> {
+                            reply.append(event.text)
+                            state.value = TurnState.Streaming(reply.toString())
+                        }
+
+                        is ChatStreamEvent.Failed -> {
+                            failure = event.error
+                            // The error is recorded here and applied once the stream ends: a delta
+                            // arriving after would overwrite a failed state, and a cancellation
+                            // landing after an early write would store a second row for this turn.
+                        }
+
+                        is ChatStreamEvent.Completed -> {
+                            // Nothing to record: the reply came from the deltas, and the stop
+                            // reason and usage are not stored. The completed turn is persisted
+                            // below, once the stream ends with no failure.
+                        }
+                    }
+                }
+        } catch (cancellation: CancellationException) {
+            // The turn owns every write, cancellation included, so exactly one assistant row is
+            // ever produced per turn — and it is stored before the caller resumes.
+            withContext(NonCancellable) {
+                persistReply(conversationId, reply.toString(), MessageStatus.Cancelled)
+                state.value = TurnState.Idle
+                clearTurn(conversationId, state)
+            }
+            throw cancellation
+        }
+        val error = failure
+        if (error == null) {
+            persistReply(conversationId, reply.toString(), MessageStatus.Complete)
+            state.value = TurnState.Idle
+            clearTurn(conversationId, state)
+        } else {
+            // The entry stays so the error is still readable when a collector arrives late; the
+            // next turn on this conversation replaces it.
+            persistReply(conversationId, reply.toString(), MessageStatus.Failed)
+            state.value = TurnState.Failed(error)
+        }
+    }
+
+    private suspend fun persistReply(
+        conversationId: Long,
+        text: String,
+        status: MessageStatus,
+    ) {
+        val now = clock.now().toEpochMilliseconds()
+        conversationDao.appendMessage(
+            message =
+                MessageEntity(
+                    conversationId = conversationId,
+                    role = Role.Assistant,
+                    content = listOf(ContentBlock.Text(text)),
+                    status = status,
+                    createdAt = now,
+                ),
+            updatedAt = now,
+        )
     }
 
     /**

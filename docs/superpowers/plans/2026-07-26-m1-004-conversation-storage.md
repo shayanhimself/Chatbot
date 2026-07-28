@@ -2318,7 +2318,7 @@ The heart of the spec: streaming a reply in a scope that outlives its collector,
 - Consumes: everything from Task 6; `FakeManualChatEngine` (Task 5).
 - Produces: the real `runTurn` — `ChatStreamEvent.Delta` grows `TurnState.Streaming`, `Completed` persists a `Complete` assistant row then emits `Idle`, `Failed` persists a `Failed` assistant row then emits `TurnState.Failed(error)`.
 
-**Open question for this task: an unexpected throw inside `runTurn`.** The body below catches `CancellationException` and nothing else, so anything the DAO or the engine raises — a foreign-key constraint from `persistReply` when the conversation was deleted underneath the turn is the reachable one — escapes with two consequences. The entry is left with a dead job and a `state` still saying `Streaming`, so a collector on `getTurnFlow` waits on a spinner that never resolves (`requireIdle` is fine, since it tests the job). And `launch` with no `CoroutineExceptionHandler` in context routes the exception to the thread's default handler, which on Android is a crash — a supervised scope stops siblings from dying, it does not swallow the throw. Decide here rather than later: a `finally` that guarantees `Idle` and `clearTurn` covers the stuck-state half, and a handler on the scope Task 9 provides covers the crash half.
+A turn catches `CancellationException` and nothing else. A throw the `ChatEngine` contract does not describe — storage failing under the turn is the only realistic source — ends the process, since nothing is waiting on the coroutine and the scope carries no handler. Left that way deliberately: the guard costs more structure than the fault is worth, and a crash is at least loud.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -3101,7 +3101,7 @@ object CoroutinesModule {
 }
 ```
 
-If Task 7 resolved its open question by putting a `CoroutineExceptionHandler` here, add it to this context — a supervisor job keeps one failed turn from taking the others down, but an exception with no handler in context still reaches the thread's default handler and ends the process.
+No `CoroutineExceptionHandler`. A supervisor job keeps one failed piece of work from taking the others down; it does not swallow throws, and a fault nobody expected should stay visible rather than becoming a silent log line.
 
 - [ ] **Step 4: Write the database module**
 

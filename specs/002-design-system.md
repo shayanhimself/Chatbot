@@ -2,7 +2,7 @@
 
 The `:core:ui` module: the app's Material 3 design system — theme, design tokens, and a reusable Compose component catalog. Every feature module renders through it; it depends on nothing else in the project.
 
-The single source of truth for the visual design is the **"Bro Design System"** Claude Design project (with screen mockups in the companion **"Bro designs"** project). This spec is a *downstream translation* of that source into Android/Compose terms — it states what `:core:ui` provides and the rules for using it, while raw ramp constants and per-component prop contracts stay in the source. When the design changes upstream, this spec and `:core:ui` are what needs re-syncing; the values here can therefore drift and should be re-verified against the source rather than trusted blindly. Pull the current tokens and designs with the **`pull-design`** skill.
+The single source of truth for the visual design is the **"Chatbot Design System"** Claude Design project (with screen mockups in the companion **"Chatbot designs"** project). This spec is a *downstream translation* of that source into Android/Compose terms — it states what `:core:ui` provides and the rules for using it, while raw ramp constants and per-component prop contracts stay in the source. When the design changes upstream, this spec and `:core:ui` are what needs re-syncing; the values here can therefore drift and should be re-verified against the source rather than trusted blindly. Pull the current tokens and designs with the **`pull-design`** skill.
 
 Dark-first: dark is the default scheme; light is a full opt-in scheme. No Material You / dynamic color — the crafted navy+orange identity ships on every device. No gradients; flat tonal fills only.
 
@@ -10,12 +10,12 @@ Dark-first: dark is the default scheme; light is a full opt-in scheme. No Materi
 
 One home per fact:
 
-- **Claude Design ("Bro Design System")** — upstream SSOT for the visual design. Everything below mirrors it and can drift; re-sync with the `pull-design` skill.
+- **Claude Design ("Chatbot Design System")** — upstream SSOT for the visual design. Everything below mirrors it and can drift; re-sync with the `pull-design` skill.
 - **`:core:ui` Kotlin token files** — the in-project home for exact values (hex, sp, primitive names), once built: one typed definition, consumed by the code.
 - **`design-system` skill** — owns *usage* (how to find token accessors and catalog components in the code, the design→Compose translation, naming boundary rule) and the manual **sync procedure** (`pull-design` → diff → update code + usage → stamp date). It points to the token files for current values; it does not duplicate them, and the design — not the skill — decides which role/component each element uses.
 - **This spec** — owns the durable *what/why*: decisions and rationale, the two-tier color structure, role names, component families, screenshot strategy, naming rule. It does not own volatile values.
 
-Exact values live in the `:core:ui` Kotlin token files, not here — this spec keeps only structure and rationale and points to the code for each family. Downstream copies carry a `last synced from Bro DS, <date>` provenance line so staleness is visible.
+Exact values live in the `:core:ui` Kotlin token files, not here — this spec keeps only structure and rationale and points to the code for each family.
 
 ## Module
 
@@ -71,7 +71,7 @@ Every ligature the app renders is a constant on `Glyphs` so no call site spells 
 
 **Brand.** The lowercase **bro** wordmark string (`core_ui_brand_wordmark`) and the `forum` glyph tile are the reserved brand vocabulary; No standalone logo asset exists (yet).
 
-**Naming.** "Bro" is the **display name only** — launcher label, wordmark, and user-facing copy. Code identifiers — Gradle projects, packages, modules, classes, files, functions — use the neutral project name (`Chatbot` / domain terms) and never "Bro". This is a project-wide convention (also recorded in the `architecture` skill), stated here because 002 owns the brand vocabulary.
+**Naming.** "Buddy" is the **display name only** — launcher label, wordmark, and user-facing copy. Code identifiers — Gradle projects, packages, modules, classes, files, functions — use the neutral project name (`Chatbot` / domain terms) and never "Buddy". This is a project-wide convention (also recorded in the `architecture` skill), stated here because 002 owns the brand vocabulary.
 
 ## Component catalog
 

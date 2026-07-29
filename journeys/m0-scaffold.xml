@@ -5,7 +5,7 @@
    </description>
    <actions>
      <action>
-       Open the "Bro" app
+       Open the "Buddy" app
      </action>
      <action>
        Verify the app is in the foreground and displays the text "Conversation"

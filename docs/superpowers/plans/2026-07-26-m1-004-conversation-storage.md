@@ -24,7 +24,7 @@
 - **No volatile references in code comments or KDoc.** Shipped-code comments must not name spec numbers, task numbers, roadmap items, or future/deferred work ("009 adds…", "a future iOS target"). Comment on what the code does and why it is shaped that way in timeless terms. Sequencing lives in the spec's deferrals table and this plan's prose, never in source.
 - **KDoc on every interface and contract** (`ConversationRepository`, `TurnState`, the public factories, and any non-obvious function) (CLAUDE.md).
 - **Test function names use backtick spaced form** (`` fun `does the thing`() ``).
-- "Bro" is display-name only — never in identifiers. Nothing here is user-facing, so the product name appears nowhere.
+- "Buddy" is display-name only — never in identifiers. Nothing here is user-facing, so the product name appears nowhere.
 - Timestamps: epoch millis (`Long`) in the database, `kotlin.time.Instant` in domain models, via an injected `kotlin.time.Clock`. No opt-in annotation is needed on Kotlin 2.4.10.
 - `MAX_TITLE_LENGTH` is **60**. Messages order by `id`; conversations order by `updatedAt DESC`. The history query filters `status = 'Complete'`.
 - Schema version is **1**; `exportSchema` is on and `shared/schemas/…/1.json` is committed. Destructive fallback is never enabled.

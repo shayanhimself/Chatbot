@@ -1,17 +1,17 @@
 ---
 name: pull-design
-description: Use when you need the Bro visual design and Design System from the Claude Design projects — pulling color/typography/spacing/elevation tokens, component contracts, or the app screen mockups. Triggers on syncing or checking design tokens.
+description: Use when you need the Chatbot visual design and Design System from the Claude Design projects — pulling color/typography/spacing/elevation tokens, component contracts, or the app screen mockups. Triggers on syncing or checking design tokens.
 ---
 
-# Pulling Bro Design from Claude Design
+# Pulling Chatbot Design from Claude Design
 
 ## Overview
 
-The Bro design lives in two claude.ai/design projects, read via the
+The Chatbot design lives in two claude.ai/design projects, read via the
 **DesignSync** tool. Project IDs: `references/projects.md`.
 
-- **Tokens / components** → the *Bro Design System* project (canonical values).
-- **Screen mockups** → the separate *Bro designs* project.
+- **Tokens / components** → the *Chatbot Design System* project (canonical values).
+- **Screen mockups** → the separate *Chatbot designs* project.
 
 Read-only: use only `list_files` and `get_file`. Never push, finalize a plan,
 or write.
@@ -28,7 +28,7 @@ auth error, tell the user to run `/design-login`, then retry.
    assume file names, they change.
 3. `get_file` the paths you need (parallel is fine).
 
-Note: *Bro designs* is a design project, not a design system, so it is absent
+Note: *Chatbot designs* is a design project, not a design system, so it is absent
 from `list_projects` — address it by its ID directly.
 
 ## What the Design System project holds

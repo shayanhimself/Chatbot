@@ -67,7 +67,7 @@ specifies into the looked-up code token/component.
 
 ## Reading a design → Compose
 
-Screen mockups come from the *Bro designs* project (`pull-design`). The markup
+Screen mockups come from the *Chatbot designs* project (`pull-design`). The markup
 already names the DS component, color role and type for each element — translate,
 don't reinvent.
 
@@ -103,7 +103,7 @@ frame.
   `fullWidth`, `IconButton size="{{48}}"`. Our components have no `size`/
   `fullWidth` — ignore them, size via `Modifier` (`fillMaxWidth()`, `heightIn()`).
 - **Component vs composition — read the tag.**
-  `<x-import …BroDesignSystem….IconButton>` = a catalog component → call it, map
+  `<x-import …ChatbotDesignSystem….IconButton>` = a catalog component → call it, map
   props. A plain token-styled `<div>` (the chat composer, a settings row) = **not**
   in the catalog. Do not invent a DS component for it. If DS genuinely lacks the
   UI, build a component **in the feature module** that needs it, never
@@ -117,11 +117,11 @@ frame.
 
 ## Sync with upstream (manual — only when the user invokes this skill for it)
 
-`:core:ui` mirrors the upstream Bro Design System and can drift from it. Re-syncing
+`:core:ui` mirrors the upstream Chatbot Design System and can drift from it. Re-syncing
 is a deliberate step the user triggers by explicitly invoking this skill — never run
 it as a side effect of building a screen.
 
-1. Using `pull-design` skill → fetch the current tokens and component contracts from the Bro
+1. Using `pull-design` skill → fetch the current tokens and component contracts from the Chatbot
    Design System project.
 2. Diff each resolved value against the Kotlin code (`…designsystem/`); change only what actually differs, re-verify the rest.
 3. Update this skill only if accessor names, components, or the design→code mapping

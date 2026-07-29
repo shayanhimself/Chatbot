@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build `:core:ui` — the Bro Material 3 design system: dark-first theme, full token layer, Material Symbols icon system, and the stateless component catalog (core / forms / feedback), all screenshot-tested, plus the companion `design-system` project skill. Chat surfaces are built in `:feature:conversation` under spec 005, not here.
+**Goal:** Build `:core:ui` — the Chatbot Material 3 design system: dark-first theme, full token layer, Material Symbols icon system, and the stateless component catalog (core / forms / feedback), all screenshot-tested, plus the companion `design-system` project skill. Chat surfaces are built in `:feature:conversation` under spec 005, not here.
 
-**Architecture:** Two-tier color (internal primitives → two full `ColorScheme`s); standard tokens through `MaterialTheme`; `ExtendedColors` — the one token set that varies by scheme — through a CompositionLocal read via the `ChatbotExtendedTheme` accessor, while the constant `Spacing`, `Elevation`, `ChatbotShapes`, `Motion` and `MonoTextStyle` sets are plain objects read directly. Components are stateless wrappers over `androidx.compose.material3` (aliased `M3*` inside `:core:ui` only). Spec: `specs/002-design-system.md`. Component prop contracts were pulled from the upstream **Bro Design System** Claude Design project (projectId `c5a6030b-52d3-4ecc-ab51-4460eebdc7df`, via `pull-design` skill) on 2026-07-18 and are baked into the signatures below.
+**Architecture:** Two-tier color (internal primitives → two full `ColorScheme`s); standard tokens through `MaterialTheme`; `ExtendedColors` — the one token set that varies by scheme — through a CompositionLocal read via the `ChatbotExtendedTheme` accessor, while the constant `Spacing`, `Elevation`, `ChatbotShapes`, `Motion` and `MonoTextStyle` sets are plain objects read directly. Components are stateless wrappers over `androidx.compose.material3` (aliased `M3*` inside `:core:ui` only). Spec: `specs/002-design-system.md`. Component prop contracts were pulled from the upstream **Chatbot Design System** Claude Design project (projectId `c5a6030b-52d3-4ecc-ab51-4460eebdc7df`, via `pull-design` skill) on 2026-07-18 and are baked into the signatures below.
 
 **Tech Stack:** Kotlin 2.4.10, Compose BOM 2026.06.01, Material 3 (stable APIs only), Robolectric 4.16.1 (SDK 36, JDK 21 launcher), Compose test rule **v2**, Compose Preview Screenshot Testing plugin `0.0.1-alpha15` (latest on Google Maven as of 2026-07-18; Roborazzi is the documented fallback if it blocks).
 
@@ -13,7 +13,7 @@
 - **Never commit or push** (CLAUDE.md — overrides the superpowers commit steps). Each task ends with tests green and changes left in the working tree; report what's ready.
 - Tick each step's checkbox (`- [ ]` → `- [x]`) in this plan file as you finish and verify it.
 - Execute the plan on the current git branch — no worktree, no new branch.
-- Module: `:core:ui`, package `com.shayanaryan.chatbot.core.ui`. The Bro Design System (theme, icons, catalog, previews) nests under `com.shayanaryan.chatbot.core.ui.designsystem.*`; the `…core.ui` top level stays empty for future non-DS core:ui code. Android library, **not** KMP. Depends only on Compose BOM, Material 3, icon/screenshot tooling — never on `:shared` or feature modules.
+- Module: `:core:ui`, package `com.shayanaryan.chatbot.core.ui`. The Chatbot Design System (theme, icons, catalog, previews) nests under `com.shayanaryan.chatbot.core.ui.designsystem.*`; the `…core.ui` top level stays empty for future non-DS core:ui code. Android library, **not** KMP. Depends only on Compose BOM, Material 3, icon/screenshot tooling — never on `:shared` or feature modules.
 - Dark is the default scheme; light is a full opt-in scheme. **No dynamic color** (no `dynamicColor` parameter), no gradients, flat tonal fills; shadow reserved for FAB/menus/dialogs/heads-up notification.
 - Naming boundary: components keep M3 names (`Button`, `Icon`, `Card`, …). Wrapper files inside `:core:ui` alias the original (`import androidx.compose.material3.Button as M3Button`). Feature modules must import components only from `:core:ui`.
 - All components stateless/presentational: state in via parameters, events out via lambdas.
@@ -26,11 +26,11 @@
 - TDD: red → green → refactor for every step.
 - Formatting is a gate: run `./gradlew :core:ui:spotlessApply` before finishing each task; `spotlessCheck` must pass.
 - Emoji are never UI icons. No PNG/SVG icon assets — the single bundled variable font only.
-- Token values below are copied from `specs/002-design-system.md` (the spec's in-repo M1 reference tables) and the upstream pull on 2026-07-18. Downstream Kotlin files carry a `last synced from Bro DS, 2026-07-18` provenance comment.
+- Token values below are copied from `specs/002-design-system.md` (the spec's in-repo M1 reference tables) and the upstream pull on 2026-07-18.
 
 ## File Structure
 
-All under `core/ui/src/` unless noted. Package root `com.shayanaryan.chatbot.core.ui`; the entire Bro Design System nests under `…core.ui.designsystem` (theme/icon/component/preview). The `…core.ui` top level is intentionally left empty for now — future reusable-but-not-DS core:ui composables (custom modifiers, layout helpers, generic wrappers) land there beside `designsystem`, not inside it. Android resources (font, strings) and the generated `R` class are **not** package-nested — they stay at the module root `core/ui/src/main/res/` and `com.shayanaryan.chatbot.core.ui.R`.
+All under `core/ui/src/` unless noted. Package root `com.shayanaryan.chatbot.core.ui`; the entire Chatbot Design System nests under `…core.ui.designsystem` (theme/icon/component/preview). The `…core.ui` top level is intentionally left empty for now — future reusable-but-not-DS core:ui composables (custom modifiers, layout helpers, generic wrappers) land there beside `designsystem`, not inside it. Android resources (font, strings) and the generated `R` class are **not** package-nested — they stay at the module root `core/ui/src/main/res/` and `com.shayanaryan.chatbot.core.ui.R`.
 
 ```
 main/kotlin/.../core/ui/designsystem/
@@ -215,7 +215,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-// last synced from Bro DS, 2026-07-18
 internal object ColorPrimitives {
     val Orange90 = Color(0xFFFFDCC2)
     val Orange57 = Color(0xFFFFA257)
@@ -457,7 +456,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// last synced from Bro DS, 2026-07-18
 internal val ChatbotTypography =
     Typography(
         displayLarge = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Normal, fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
@@ -657,7 +655,6 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 
-// last synced from Bro DS, 2026-07-18
 internal val ChatbotM3Shapes =
     Shapes(
         extraSmall = RoundedCornerShape(4.dp),
@@ -724,7 +721,6 @@ package com.shayanaryan.chatbot.core.ui.designsystem.theme
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 
-// last synced from Bro DS, 2026-07-18
 object Motion {
     val easingStandard: Easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
     val easingEmphasized: Easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
@@ -762,7 +758,6 @@ class ExtendedColors(
     val primaryPressed: Color,
 )
 
-// last synced from Bro DS, 2026-07-18
 internal val DarkExtendedColors =
     ExtendedColors(
         success = ColorPrimitives.Green50,
@@ -2492,7 +2487,7 @@ Content requirements (from spec 002 §Companion skill; keep it concise, it grows
 ```markdown
 ---
 name: design-system
-description: Use when building or styling any screen or component in this app — choosing colors, text styles, spacing, shapes, icons, or picking a catalog component; also the manual procedure (run only when explicitly invoked) to sync :core:ui with the upstream Bro Design System.
+description: Use when building or styling any screen or component in this app — choosing colors, text styles, spacing, shapes, icons, or picking a catalog component; also the manual procedure (run only when explicitly invoked) to sync :core:ui with the upstream Chatbot Design System.
 metadata:
   keywords:
   - design system
@@ -2559,7 +2554,7 @@ specifies into the looked-up code token/component.
 
 ## Reading a design → Compose
 
-Screen mockups come from the *Bro designs* project (`pull-design`). The markup
+Screen mockups come from the *Chatbot designs* project (`pull-design`). The markup
 already names the DS component, color role and type for each element — translate,
 don't reinvent. But the four axes translate differently, and two of them need a
 human call.
@@ -2585,7 +2580,7 @@ human call.
   `fullWidth`, `IconButton size="{{48}}"`. Our components have no `size`/
   `fullWidth` — ignore them, size via `Modifier` (`fillMaxWidth()`, `heightIn()`).
 - **Component vs composition — read the tag.**
-  `<x-import …BroDesignSystem….IconButton>` = a catalog component → call it, map
+  `<x-import …ChatbotDesignSystem….IconButton>` = a catalog component → call it, map
   props. A plain token-styled `<div>` (the chat composer, a settings row) = **not**
   in the catalog. Do not invent a DS component for it. If DS genuinely lacks the
   UI, build a component **in the feature module** that needs it, never
@@ -2599,11 +2594,11 @@ human call.
 
 ## Sync with upstream (manual — only when the user invokes this skill for it)
 
-`:core:ui` mirrors the upstream Bro Design System and can drift from it. Re-syncing
+`:core:ui` mirrors the upstream Chatbot Design System and can drift from it. Re-syncing
 is a deliberate step the user triggers by explicitly invoking this skill — never run
 it as a side effect of building a screen.
 
-1. Using `pull-design` skill → fetch the current tokens and component contracts from the Bro
+1. Using `pull-design` skill → fetch the current tokens and component contracts from the Chatbot
    Design System project.
 2. Diff each resolved value against the Kotlin code (`…designsystem/`); change only what actually differs, re-verify the rest.
 3. Update this skill only if accessor names, components, or the design→code mapping

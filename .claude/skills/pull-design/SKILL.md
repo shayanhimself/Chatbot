@@ -11,7 +11,7 @@ The Chatbot design lives in two claude.ai/design projects, read via the
 **DesignSync** tool. Project IDs: `references/projects.md`.
 
 - **Tokens / components** → the *Chatbot Design System* project (canonical values).
-- **Screen mockups** → the separate *Chatbot designs* project.
+- **Screen mockups** → the separate *Chatbot designs* project, one file per screen.
 
 Read-only: use only `list_files` and `get_file`. Never push, finalize a plan,
 or write.
@@ -53,6 +53,28 @@ carry more than their name suggests:
 `components/<group>/<Name>.d.ts` (with `.jsx` implementation and `.prompt.md`
 intent). Other `guidelines/*.html` are rendered rationale for the token values
 — read them when the *why* is in question, not to harvest values.
+
+## What the designs project holds
+
+Files are named by prefix. `list_files` first — the rows below are the naming
+convention, not a fixed list.
+
+| Path | Holds |
+|---|---|
+| `Screen-<Name>.dc.html` | One screen with **all** its states — empty, loading, error, dialogs. Fetch only the screen you're building. |
+| `Component-<Name>.dc.html` | One reusable non-screen piece. |
+| `_ds/<design-system-id>/` | Snapshot of the Design System the mocks render against. **Not canonical** — token values come from the Design System project. |
+
+Light lives in its own screen file (`data-theme="light"`), covering the key
+screens; every other file is dark.
+
+Inside a screen file: a `<section data-screen-label="…">` of phone-frame mocks, each carrying an id badge (`1a`, `2b`, …) and a one-line
+spec note. The section label, bezel, badge and note are **catalog scaffolding —
+presentation and metadata, never app UI**; only the content inside the frame
+gets built. Name the badge when you refer to a state. Catalog components arrive
+via `<x-import component-from-global-scope="BroDesignSystem_c5a603.*">`;
+everything else is inline style against DS tokens (`var(--primary)`,
+`var(--space-*)`, `var(--radius-*)`).
 
 ## What to do with what you pull
 

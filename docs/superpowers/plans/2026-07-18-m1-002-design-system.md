@@ -1539,7 +1539,7 @@ fun Button(
     <!-- %1$s is the chip's own label, e.g. "Dismiss Filter". -->
     <string name="core_ui_dismiss">Dismiss %1$s</string>
     <!-- Brand wordmark: a name, never translated or capitalized. -->
-    <string name="core_ui_brand_wordmark" translatable="false">bro</string>
+    <string name="core_ui_brand_wordmark" translatable="false">buddy</string>
 </resources>
 ```
 
@@ -2561,8 +2561,8 @@ human call.
 
 - **Color — exact.** Mockup writes a role name: `var(--on-surface-variant)` →
   `MaterialTheme.colorScheme.onSurfaceVariant` (kebab → camel). Roles M3 lacks:
-  `var(--success)` → `ChatbotExtendedTheme.colors.success`. Never a hex; Never 
-  primitives (`ColorPrimitives`), unless the role doesn't exist. 
+  `var(--success)` → `ChatbotExtendedTheme.colors.success`. Never a hex; Never
+  primitives (`ColorPrimitives`), unless the role doesn't exist.
   The theme already resolves dark/light.
 - **Type — exact, but written as px.** Mockup writes raw px + weight
   (`font:500 22px Roboto`), *not* a role name. The M3 scale is a closed set, so
@@ -2574,7 +2574,7 @@ human call.
   nearest token to proceed (`16`→`Spacing.md`, `12`→`Spacing.sm`, pill/`999`→
   `CircleShape`, `12`→`ChatbotShapes.card`). Off-grid px (`11`, `14`, `18`) has
   no exact token — **snap to nearest AND log it**; report every no-exact-match at
-  end of implementation. A human decides whether the mockup drifted or the DS needs a new token; 
+  end of implementation. A human decides whether the mockup drifted or the DS needs a new token;
   never silently absorb it.
 - **Sizing props — dropped.** Mockup may pass `Button size="small"`,
   `fullWidth`, `IconButton size="{{48}}"`. Our components have no `size`/

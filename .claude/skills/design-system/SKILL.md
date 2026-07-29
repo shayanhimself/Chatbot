@@ -103,7 +103,7 @@ frame.
   `fullWidth`, `IconButton size="{{48}}"`. Our components have no `size`/
   `fullWidth` — ignore them, size via `Modifier` (`fillMaxWidth()`, `heightIn()`).
 - **Component vs composition — read the tag.**
-  `<x-import …ChatbotDesignSystem….IconButton>` = a catalog component → call it, map
+  `<x-import …BroDesignSystem_c5a603.IconButton>` = a catalog component → call it, map
   props. A plain token-styled `<div>` (the chat composer, a settings row) = **not**
   in the catalog. Do not invent a DS component for it. If DS genuinely lacks the
   UI, build a component **in the feature module** that needs it, never

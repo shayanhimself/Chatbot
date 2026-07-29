@@ -69,9 +69,15 @@ Selects the dark or light `ColorScheme`, installs `MaterialTheme(colorScheme, ty
 
 Every ligature the app renders is a constant on `Glyphs` so no call site spells one out. Feature modules extend it as their screens need glyphs. Models carry no glyph: a model is identified by name only, never an icon.
 
-**Brand.** The lowercase **bro** wordmark string (`core_ui_brand_wordmark`) and the `forum` glyph tile are the reserved brand vocabulary; No standalone logo asset exists (yet).
+## Brand & naming
 
-**Naming.** "Buddy" is the **display name only** — launcher label, wordmark, and user-facing copy. Code identifiers — Gradle projects, packages, modules, classes, files, functions — use the neutral project name (`Chatbot` / domain terms) and never "Buddy". This is a project-wide convention (also recorded in the `architecture` skill), stated here because 002 owns the brand vocabulary.
+002 owns the brand vocabulary; the conventions here are project-wide (also recorded in the `architecture` skill).
+
+**Wordmark.** The lowercase **buddy** wordmark string (`core_ui_brand_wordmark`) and the `forum` glyph tile are the reserved brand vocabulary; no standalone logo asset exists (yet).
+
+**Display name vs. identifiers.** "buddy" is the **display name only**: launcher label, wordmark, and user-facing copy. Code identifiers (Gradle projects, packages, modules, classes, files, functions) use the neutral project name (`Chatbot` / domain terms) and never "buddy".
+
+**The former name.** The product was previously called "Bro". That name split into **Chatbot** (code identifiers, and both Claude Design project names) and **buddy** (display name). One leftover is permanent: the upstream Design System's JavaScript namespace is `BroDesignSystem_c5a603`, compiled into `_ds_bundle.js` and referenced by `x-import` tags in the screen mockups. It cannot be renamed, so mockup markup is read against that name.
 
 ## Component catalog
 

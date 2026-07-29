@@ -100,9 +100,9 @@ Dependency rules (hard):
 | Screen state | `ScreenUiState` | `ConversationUiState` |
 | Flow accessor | `getXFlow()` | `getRemindersFlow()` |
 
-**Product name vs. identifiers.** "Buddy" is the **display name only** — launcher label,
+**Product name vs. identifiers.** "buddy" is the **display name only** — launcher label,
 wordmark, and user-facing copy. Code identifiers — Gradle projects, packages, modules,
-classes, files, functions — use the neutral project name (`Chatbot`) or plain domain terms, and never "Buddy".
+classes, files, functions — use the neutral project name (`Chatbot`) or plain domain terms, and never "buddy".
 
 ## Building a feature end to end
 

@@ -27,7 +27,7 @@ First sideload. Streaming chat with the user's own key; no agentic tools yet.
 | `002-design-system.md` | `:core:ui` M3 theme, core components, previews + screenshot tests, companion `design-system` project skill. Grows in later milestones as screens need components |
 | `003-chat-engine.md` | `ChatEngine` interface, Ktor Claude implementation, SSE streaming. Highest technical risk — built first among features. Tool-use handling deferred to 008 |
 | `004-conversation-storage.md` | Room schema and `ConversationRepository`: conversations + messages, and the turn that streams a reply and persists it (reminders/memories tables deferred to their specs) |
-| `005-conversation-shell.md` | Nav 3 back stack, conversation list + chat screen (streaming UI, composer, in-conversation model picker), adaptive two-pane, deep-link readiness. Runs on a dev-key stub from debug build config (developer's own key, debug builds only — the product stays BYOK-only) |
+| `005-conversation-shell.md` | Nav 3 back stack, conversation list + chat screen (streaming UI, composer, in-conversation model picker), adaptive two-pane, deep-link readiness. Runs on a dev-key stub from debug build config (developer's own key, debug builds only — the product stays BYOK-only). Adds `:shared:testing` so feature modules can consume `:shared`'s test fakes |
 | `006-onboarding.md` | First-launch key entry, validation, encrypted storage (Tink + Keystore → DataStore), Nav 3 conditional gate (no key → onboarding). Replaces the dev-key stub |
 
 **Exit gate:** onboard with real key → stream chat → conversations persist/resume/delete; all journeys green. **Sideload checkpoint.**
@@ -56,7 +56,16 @@ Hardest subsystem, lands on a proven tool loop.
 
 ### M4 — Polish
 
-- Adaptive two-pane completion across screens (005 follow-through)
+Deferred UI from earlier specs, then the finish work.
+
+| Deferred from | Item |
+|---|---|
+| 005 | Conversation search and its no-results state (mockups 2c, 2d), plus the search action in the list top bar. A `LIKE` query over title and snippet, and a search destination |
+| 005 | Unread indicator on list items. The only item here needing a `lastReadAt` column, so a schema bump and migration |
+| 005 | Suggested prompt chips on the new-chat empty state (3a). Copy only, but the reminder-flavored prompt needs 010 to exist first |
+| 005 | Model picker blurbs (3e). Localizable copy, so feature string resources keyed by `ClaudeModel`, alongside the name already on the model |
+
+Then:
 - Screenshot-test coverage sweep, edge cases
 - Portfolio README + demo recordings
 

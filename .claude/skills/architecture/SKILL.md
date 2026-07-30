@@ -72,10 +72,16 @@ Dependency rules (hard):
   alarms, notifications — e.g. tool executors).
 - **Hilt never crosses into `:shared`.** Shared classes use plain constructor
   injection; Hilt modules in `:app`/`:feature:*` construct and provide them.
-- **No user-visible text in `:shared`.** Expose typed errors
-  (e.g. `ChatError.RateLimited`); feature ViewModels map them to string resources.
-  Strings live in the module that owns the UI: feature strings in the feature,
-  generic strings in `:core:ui`, app name in `:app`.
+- **No localizable copy in `:shared`.** The test is whether a translator would
+  ever touch the string. Prose does — expose typed errors
+  (e.g. `ChatError.RateLimited`) and let feature ViewModels map them to string
+  resources. Untranslatable identifiers do not, and stay on the domain model
+  (`ClaudeModel.displayName = "Sonnet 5"` alongside `id = "claude-sonnet-5"`) so
+  every consumer reads one source rather than duplicating a table per feature.
+  Copy lives in the module that owns the UI: feature strings in the feature,
+  generic strings in `:core:ui`, app name in `:app`. The rule is KMP-load-bearing:
+  Android `strings.xml` is unreachable from commonMain, so anything shared code
+  resolves itself would need a second mechanism the day an iOS target lands.
 
 ## Non-negotiables
 

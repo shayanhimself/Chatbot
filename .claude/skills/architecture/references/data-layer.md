@@ -54,7 +54,7 @@ in-memory state (a `StateFlow` in the engine/repository); persist once on
 
 ## KMP rules
 
-- commonMain: no `android.*`, no Hilt, no user-visible strings. Errors are typed
+- commonMain: no `android.*`, no Hilt, no localizable copy. Errors are typed
   (`sealed class ChatError`), mapped to string resources in feature modules.
 - Time: `kotlinx-datetime` only.
 - Platform capability needed by shared logic itself (crypto, HTTP engine):

@@ -82,10 +82,15 @@ frame.
   `var(--success)` → `ChatbotExtendedTheme.colors.success`. Never a hex; Never
   primitives (`ColorPrimitives`), unless the role doesn't exist.
   The theme already resolves dark/light.
-- **Type — exact, but written as px.** Mockup writes raw px + weight
-  (`font:500 22px Roboto`), *not* a role name. The M3 scale is a closed set, so
-  size+weight resolves to exactly one role — **find it in `Type.kt`** by matching
-  size and weight; never write `22.sp` at a call site. Monospace px → `MonoTextStyle`.
+- **Type — exact, 1:1.** Mockup puts a role class on the element:
+  `class="type-title-large"` → `MaterialTheme.typography.titleLarge` (kebab → camel),
+  same shape as the color rule. `class="type-mono"` → `MonoTextStyle`. The class
+  carries family, weight, size, line-height and tracking as one unit, so never author
+  a `FontWeight`, a `.sp` size or a `letterSpacing` at a call site. An element with no
+  `type-*` class inherits one from an ancestor — walk up before deciding.
+  `font-size` on a `.msy` span is an icon size, not type (see Icons/glyphs).
+  A frame that still writes raw px + weight (`font:500 22px Roboto`) is stale,
+  flag it and report it to the user, to update the design.
 - **Spacing & radius — token role or raw px; check which.** `Spacing` is for padding /
   margin / gaps, *not* component size.
   - **Token role — exact, 1:1.** Spacing: `var(--space-4)` → `Spacing.s4`.

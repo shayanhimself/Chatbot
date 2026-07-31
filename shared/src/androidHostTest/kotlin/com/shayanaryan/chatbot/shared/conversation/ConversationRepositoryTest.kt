@@ -76,7 +76,7 @@ class ConversationRepositoryTest {
 
             val conversation = repository.getConversationsFlow().first().single()
             assertEquals(id, conversation.id)
-            assertEquals(MAX_TITLE_LENGTH, conversation.title.length)
+            assertEquals(ConversationRepository.MAX_TITLE_LENGTH, conversation.title.length)
             assertEquals(ClaudeModel.Opus, conversation.model)
             assertEquals(Instant.fromEpochMilliseconds(1_000), conversation.createdAt)
         }

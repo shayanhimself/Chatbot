@@ -87,7 +87,7 @@ internal class DefaultConversationRepository(
                     conversationDao.createWithFirstMessage(
                         conversation =
                             ConversationEntity(
-                                title = text.take(MAX_TITLE_LENGTH),
+                                title = text.take(ConversationRepository.MAX_TITLE_LENGTH),
                                 model = model,
                                 createdAt = now,
                                 updatedAt = now,

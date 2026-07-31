@@ -3,14 +3,16 @@ package com.shayanaryan.chatbot.shared.conversation
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
 import kotlinx.coroutines.flow.Flow
 
-/** How much of a first message becomes a conversation's title. */
-internal const val MAX_TITLE_LENGTH: Int = 60
-
 /**
  * Owns chat history and the turn that produces it. The database is the source of truth for every
  * message; only the reply currently streaming is in memory, exposed as [TurnState].
  */
 interface ConversationRepository {
+    companion object {
+        /** How much of a first message becomes a conversation's title. */
+        const val MAX_TITLE_LENGTH: Int = 60
+    }
+
     /** Every conversation, most recently updated first. */
     fun getConversationsFlow(): Flow<List<Conversation>>
 

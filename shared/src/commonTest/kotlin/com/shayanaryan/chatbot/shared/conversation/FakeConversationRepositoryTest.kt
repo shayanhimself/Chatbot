@@ -44,7 +44,7 @@ class FakeConversationRepositoryTest {
                     .first()
                     .single { it.id == id }
                     .title
-            assertEquals(MAX_TITLE_LENGTH, title.length)
+            assertEquals(ConversationRepository.MAX_TITLE_LENGTH, title.length)
         }
 
     @Test

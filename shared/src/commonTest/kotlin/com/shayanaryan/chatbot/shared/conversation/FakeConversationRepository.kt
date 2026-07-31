@@ -124,7 +124,7 @@ class FakeConversationRepository(
         val conversation =
             Conversation(
                 id = id,
-                title = text.take(MAX_TITLE_LENGTH),
+                title = text.take(ConversationRepository.MAX_TITLE_LENGTH),
                 model = model,
                 createdAt = now,
                 updatedAt = now,

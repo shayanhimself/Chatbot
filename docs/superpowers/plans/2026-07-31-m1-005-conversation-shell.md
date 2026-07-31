@@ -4825,30 +4825,35 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.navigation.ChatbotApp
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.MutableStateFlow
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     /**
      * The conversation a launch intent asked for, cleared once the back stack has been seeded.
-     * A flow rather than a field so both `onCreate` and `onNewIntent` feed the same composition.
+     * Snapshot state rather than a plain field because `onNewIntent` arrives from outside the
+     * composition and has to recompose it.
      */
-    private val deepLinkConversationId = MutableStateFlow<Long?>(null)
+    private var deepLinkConversationId by mutableStateOf<Long?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        deepLinkConversationId.value = intent.conversationIdExtra()
+        // Only a fresh launch seeds. A recreated activity restores its own back stack, and its
+        // intent still carries the extra it launched with, so reading that extra again would drag
+        // the user back into the notification's conversation on every rotation.
+        if (savedInstanceState == null) {
+            deepLinkConversationId = intent.conversationIdExtra()
+        }
         setContent {
-            val conversationId by deepLinkConversationId.collectAsStateWithLifecycle()
             ChatbotTheme {
                 ChatbotApp(
-                    deepLinkConversationId = conversationId,
-                    onDeepLinkHandled = { deepLinkConversationId.value = null },
+                    deepLinkConversationId = deepLinkConversationId,
+                    onDeepLinkHandled = { deepLinkConversationId = null },
                 )
             }
         }
@@ -4856,25 +4861,29 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        deepLinkConversationId.value = intent.conversationIdExtra()
+        // Without this, getIntent() keeps returning the intent the activity launched with.
+        setIntent(intent)
+        deepLinkConversationId = intent.conversationIdExtra()
     }
-
-    /**
-     * The id is only ever a database key, and a conversation that does not exist resolves to a new
-     * chat rather than an error, so an intent from outside the app cannot do anything worse than
-     * open an empty screen.
-     */
-    private fun Intent.conversationIdExtra(): Long? =
-        getLongExtra(EXTRA_CONVERSATION_ID, NO_CONVERSATION_ID).takeIf { it > 0 }
 
     companion object {
         /** Set by 010's reminder notification to reopen the conversation that scheduled it. */
         const val EXTRA_CONVERSATION_ID: String = "com.shayanaryan.chatbot.extra.CONVERSATION_ID"
-
-        private const val NO_CONVERSATION_ID: Long = -1L
     }
 }
+
+/**
+ * The id is only ever a database key, and a conversation that does not exist resolves to a new chat
+ * rather than an error, so an intent from outside the app cannot do anything worse than open an
+ * empty screen.
+ */
+private fun Intent.conversationIdExtra(): Long? =
+    getLongExtra(MainActivity.EXTRA_CONVERSATION_ID, NO_CONVERSATION_ID).takeIf { it > 0 }
+
+private const val NO_CONVERSATION_ID: Long = -1L
 ```
+
+`ChatbotTheme` wraps here rather than inside `ChatbotApp`. It resolves the same light/dark bit that `enableEdgeToEdge`'s system bar style needs, and that call belongs to the Activity, not to the composition: one file holds both, so 007's theme setting cannot be read in two places that disagree. Leaving `ChatbotApp` unthemed also keeps it renderable in either theme by whatever hosts it, so a preview or a test of the shell needs no `darkTheme` parameter threaded through the navigation layer.
 
 - [ ] **Step 6: Build and install**
 

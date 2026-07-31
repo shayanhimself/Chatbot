@@ -4488,13 +4488,15 @@ Expected: `BUILD SUCCESSFUL`. `:app` does not compile yet: `MainActivity` still 
 - Modify: `app/build.gradle.kts`
 - Create: `app/src/main/kotlin/com/shayanaryan/chatbot/navigation/NavKeys.kt`
 - Create: `app/src/main/kotlin/com/shayanaryan/chatbot/navigation/ChatbotApp.kt`
+- Create: `app/src/main/kotlin/com/shayanaryan/chatbot/navigation/ChatbotNavDisplay.kt`
 - Replace: `app/src/main/kotlin/com/shayanaryan/chatbot/MainActivity.kt`
 - Create: `app/src/debug/kotlin/com/shayanaryan/chatbot/di/DevApiKeyModule.kt`
 
 **Interfaces:**
 - Consumes: `ConversationListRoute` (Task 4) and `ConversationRoute` (Task 7), `NewChatEmptyState` (Task 6).
 - Produces: `ConversationListKey`, `ChatKey(conversationId: Long? = null)`.
-- Produces: `ChatbotApp(deepLinkConversationId: Long?, onDeepLinkHandled: () -> Unit, modifier)`.
+- Produces: `ChatbotApp(deepLinkConversationId: Long?, onDeepLinkHandled: () -> Unit, modifier)`, which owns the back stack.
+- Produces: `ChatbotNavDisplay(backStack: NavBackStack<NavKey>, modifier)`, which owns the graph.
 - Produces: `MainActivity.EXTRA_CONVERSATION_ID`.
 - Produces: `BuildConfig.DEV_API_KEY` on debug builds, and an `ApiKeyProvider` binding in the debug source set only.
 
@@ -4657,9 +4659,50 @@ data class ChatKey(
 ) : NavKey
 ```
 
-- [ ] **Step 4: Build the nav host**
+- [ ] **Step 4: Build the nav host, in two files**
+
+Two responsibilities, so two files. `ChatbotApp` owns the back stack and the one thing that seeds it from outside the app; `ChatbotNavDisplay` owns what each key renders and how the panes arrange. The seam is one parameter wide, and `rememberNavBackStack` pins its return type to `NavBackStack<NavKey>` (the class delegates to `MutableList<NavKey>`), so the graph can push, replace and pop through it.
 
 Create `app/src/main/kotlin/com/shayanaryan/chatbot/navigation/ChatbotApp.kt`:
+
+```kotlin
+package com.shayanaryan.chatbot.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
+import androidx.navigation3.runtime.rememberNavBackStack
+
+/**
+ * The app's root composable. It owns the back stack, starts it on the conversation list, and hands
+ * rendering to [ChatbotNavDisplay].
+ *
+ * @param deepLinkConversationId the conversation an intent asked to open, null on a normal launch.
+ * @param onDeepLinkHandled called once that id has been applied, so the same intent cannot pull the
+ *   user back to the conversation after they navigate away.
+ */
+@Composable
+fun ChatbotApp(
+    deepLinkConversationId: Long?,
+    onDeepLinkHandled: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // The keys are serializable, which is what carries this across process death.
+    val backStack = rememberNavBackStack(ConversationListKey)
+
+    LaunchedEffect(deepLinkConversationId) {
+        val id = deepLinkConversationId ?: return@LaunchedEffect
+        backStack.clear()
+        backStack.add(ConversationListKey)
+        backStack.add(ChatKey(id))
+        onDeepLinkHandled()
+    }
+
+    ChatbotNavDisplay(backStack = backStack, modifier = modifier)
+}
+```
+
+Create `app/src/main/kotlin/com/shayanaryan/chatbot/navigation/ChatbotNavDisplay.kt`:
 
 ```kotlin
 package com.shayanaryan.chatbot.navigation
@@ -4672,7 +4715,6 @@ import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -4680,9 +4722,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.shayanaryan.chatbot.feature.conversation.ConversationListRoute
@@ -4690,23 +4732,17 @@ import com.shayanaryan.chatbot.feature.conversation.ConversationRoute
 import com.shayanaryan.chatbot.feature.conversation.component.NewChatEmptyState
 
 /**
- * The app's only navigation host.
+ * Maps every key to its route and lets the adaptive scene arrange them.
  *
- * @param deepLinkConversationId a conversation id delivered by an intent, or null. Nothing sends
- *   one yet; 010's reminder notification is what eventually does, and this exists so that is a
- *   one-line addition rather than a navigation rework.
- * @param onDeepLinkHandled called once the back stack has been seeded, so the same intent is not
- *   replayed on the next recomposition.
+ * @param backStack owned by the caller, since a launch intent has to be able to replace it
+ *   wholesale.
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun ChatbotApp(
-    deepLinkConversationId: Long?,
-    onDeepLinkHandled: () -> Unit,
+fun ChatbotNavDisplay(
+    backStack: NavBackStack<NavKey>,
     modifier: Modifier = Modifier,
 ) {
-    val backStack = rememberNavBackStack(ConversationListKey)
-
     // The open conversation, reported up by the chat route because the key deliberately never
     // learns it. Plain remember is enough: the ViewModel's SavedStateHandle is the durable store,
     // and the lambda fires again on the first composition after a restore.
@@ -4730,14 +4766,6 @@ fun ChatbotApp(
         } else {
             backStack.add(key)
         }
-    }
-
-    LaunchedEffect(deepLinkConversationId) {
-        val id = deepLinkConversationId ?: return@LaunchedEffect
-        backStack.clear()
-        backStack.add(ConversationListKey)
-        backStack.add(ChatKey(id))
-        onDeepLinkHandled()
     }
 
     NavDisplay(

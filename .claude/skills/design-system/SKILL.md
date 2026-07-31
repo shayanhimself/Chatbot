@@ -91,16 +91,16 @@ frame.
   `font-size` on a `.msy` span is an icon size, not type (see Icons/glyphs).
   A frame that still writes raw px + weight (`font:500 22px Roboto`) is stale,
   flag it and report it to the user, to update the design.
-- **Spacing & radius — token role or raw px; check which.** `Spacing` is for padding /
-  margin / gaps, *not* component size.
-  - **Token role — exact, 1:1.** Spacing: `var(--space-4)` → `Spacing.s4`.
-    Radius, is either: component-scoped (`--radius-full`
-    → `CircleShape`, `--radius-card` → `ComponentShapes.card`),
-    or the numeric scale on a plain surface (`--radius-N`
-    → `RoundedCornerShape(RadiusPrimitives.radiusN)`; slotted values `1/2/3/4/7` may use
-    `MaterialTheme.shapes.*` instead).
-  - **Raw px — snap AND log**. Snap to nearest (`16`→`Spacing.s4`, pill/`999`→`CircleShape`); report every off-grid px
-    (`11`, `14`, `18`) at the end — a human decides drift vs. new token, never silently absorb.
+- **Spacing & radius — exact, 1:1.** `Spacing` is for padding / margin / gaps,
+  *not* component size. `var(--space-4)` → `Spacing.s4`.
+  Radius is either component-scoped (`--radius-full`
+  → `CircleShape`, `--radius-card` → `ComponentShapes.card`),
+  or the numeric scale on a plain surface (`--radius-N`
+  → `RoundedCornerShape(RadiusPrimitives.radiusN)`; slotted values `1/2/3/4/7` may use
+  `MaterialTheme.shapes.*` instead).
+  - Raw px in app UI is stale, report it so the design gets
+    tokenized. Never silently absorb an off-grid or untokenized value.
+  - Exception: Phone-frame chrome keeps raw px because it is never built.
 - **Explicit size — px is dp, use `.dp` directly.** A fixed width/height/icon size
   (`width:40px`, `size:24px`) is *not* spacing. 1 px in design = 1 dp in Android, so write it as a plain `.dp`.
   `Spacing` is padding/margin/gaps only.

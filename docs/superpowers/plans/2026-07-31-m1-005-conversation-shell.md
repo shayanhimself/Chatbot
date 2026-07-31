@@ -43,11 +43,9 @@ Pulled with `pull-design` from the *Chatbot designs* project (`f6b3ad66-7433-4a2
 
 Report these to the user at the end; do not silently absorb them.
 
-1. **Off-scale type.** The list row title is `500 15px` → `titleMedium` (16/Medium). The snippet is `400 13px` → `bodyMedium` (14/Normal). The timestamp is `400 11px` → `bodySmall` (12/Normal). The error copy is `400 15px/22px` → `bodyLarge` (16/24). The empty-state body is `400 15px/22px` → `bodyLarge`.
-2. **Off-grid spacing.** Bubble padding `10px 16px` → `Spacing.s3` / `Spacing.s4`. Chip and composer internal `gap:6px` → `Spacing.s2`.
-3. **Bold spans dropped.** Frames 3g and 3h bold a fragment of the error sentence. The row renders one text style; no `AnnotatedString`.
-4. **Model names come from `ClaudeModel.displayName`**, so the picker reads "Opus 5", not the mockup's stale "Opus 4.8".
-5. **Phone bezel, status bar, home indicator are catalog scaffolding**, never built. Real system bars come from edge-to-edge insets.
+1. **Bold spans dropped.** Frames 3g and 3h bold a fragment of the error sentence. The row renders one text style; no `AnnotatedString`.
+2. **Model names come from `ClaudeModel.displayName`**, so the picker reads "Opus 5", not the mockup's stale "Opus 4.8".
+3. **Phone bezel, status bar, home indicator are catalog scaffolding**, never built. Real system bars come from edge-to-edge insets.
 
 ## Adaptive posture
 
@@ -1503,7 +1501,7 @@ fun ConversationListItem(
                 )
                 Text(
                     text = stringResource(relativeTime.unitRes, relativeTime.value),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

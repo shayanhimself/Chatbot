@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -47,7 +48,13 @@ fun DsBadge(
         Box(modifier.size(8.dp).background(container, CircleShape))
     } else {
         Box(
-            modifier.background(container, CircleShape).padding(horizontal = 6.dp, vertical = 1.dp),
+            modifier
+                // 16dp square minimum, not a fixed height: labelSmall is 16sp tall at scale 1, so
+                // the badge matches the design there and grows instead of clipping when the user
+                // scales text up.
+                .defaultMinSize(minWidth = 16.dp, minHeight = 16.dp)
+                .background(container, CircleShape)
+                .padding(horizontal = Spacing.s1),
             contentAlignment = Alignment.Center,
         ) {
             Text(text, color = onContainer, style = MaterialTheme.typography.labelSmall)

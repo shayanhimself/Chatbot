@@ -6,11 +6,13 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -84,6 +86,22 @@ fun DsButton(
     val action = if (loading) ({}) else onClick
     val shape = ComponentShapes.button
     val content = buttonContent(text, loading, leadingGlyph, trailingGlyph)
+    // A glyph tightens the label padding symmetrically to 20dp, where M3 defaults to an asymmetric
+    // 16/24. The text variant keeps its own 12dp padding whether or not it carries a glyph.
+    val contentPadding =
+        when {
+            variant == ButtonVariant.Text -> {
+                ButtonDefaults.TextButtonContentPadding
+            }
+
+            leadingGlyph != null || trailingGlyph != null -> {
+                PaddingValues(horizontal = Spacing.s5, vertical = Spacing.s2)
+            }
+
+            else -> {
+                ButtonDefaults.ContentPadding
+            }
+        }
     when (variant) {
         ButtonVariant.Filled -> {
             M3Button(
@@ -92,6 +110,7 @@ fun DsButton(
                 enabled = enabled,
                 shape = shape,
                 interactionSource = interactionSource,
+                contentPadding = contentPadding,
                 content = content,
             )
         }
@@ -103,6 +122,7 @@ fun DsButton(
                 enabled = enabled,
                 shape = shape,
                 interactionSource = interactionSource,
+                contentPadding = contentPadding,
                 content = content,
             )
         }
@@ -114,6 +134,7 @@ fun DsButton(
                 enabled = enabled,
                 shape = shape,
                 interactionSource = interactionSource,
+                contentPadding = contentPadding,
                 content = content,
             )
         }
@@ -125,6 +146,7 @@ fun DsButton(
                 enabled = enabled,
                 shape = shape,
                 interactionSource = interactionSource,
+                contentPadding = contentPadding,
                 content = content,
             )
         }
@@ -136,6 +158,7 @@ fun DsButton(
                 enabled = enabled,
                 shape = shape,
                 interactionSource = interactionSource,
+                contentPadding = contentPadding,
                 content = content,
             )
         }

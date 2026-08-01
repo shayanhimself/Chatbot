@@ -17,6 +17,7 @@
 - **No em dashes in prose** (specs, docs, comments). The exception is user-facing copy lifted verbatim from a mockup, which stays exactly as the design wrote it.
 - **KDoc on every interface and contract**, and on anything not self-explanatory from its name and signature.
 - **Test function names use backtick spaced form**: `` fun `does the thing`() ``.
+- **Import order is ktlint_official's**: everything else first (including `kotlinx.*`), then `java.*`, `javax.*`, `kotlin.*`. So `javax.inject.Inject` sits *above* `kotlin.time.Clock`. `spotlessApply` fixes it either way; writing it right keeps the diff honest.
 - **Every public composable ships a colocated plain `@Preview`** in its own file, one per distinct visual state, wrapped in `ChatbotTheme`. Screenshot goldens live separately in `src/screenshotTest/`.
 - **No mocking library.** Fakes and real objects only.
 - **No ViewModel → UI event channels.** Every outcome is folded into `UiState`.
@@ -83,7 +84,7 @@ Checked against the `adaptive` skill's five steps, so every one of them is eithe
 
 **Interfaces:**
 - Produces: Gradle project `:shared:testing`, consumed as `testImplementation(project(":shared:testing"))`. Publishes `FakeClock`, `FakeConversationRepository`, `FakeScriptedChatEngine`, `FakeManualChatEngine` in their existing packages.
-- Produces: catalog aliases `libs.androidx.hilt.lifecycle.viewmodel.compose` and `libs.androidx.adaptive.navigation3`.
+- Produces: catalog aliases `libs.androidx.hilt.lifecycle.viewmodel.compose`, `libs.androidx.adaptive.navigation3` and `libs.kotlin.test.junit`.
 
 - [ ] **Step 1: Confirm the baseline is green before touching anything**
 
@@ -93,7 +94,7 @@ Checked against the `adaptive` skill's five steps, so every one of them is eithe
 
 Expected: `BUILD SUCCESSFUL`. If it is not, stop and report. No task starts on a red baseline.
 
-- [ ] **Step 2: Pin the two missing libraries**
+- [ ] **Step 2: Pin the three missing libraries**
 
 Both are additions to `gradle/libs.versions.toml`. In `[versions]`, after `screenshot = "0.0.1-alpha15"`:
 
@@ -108,6 +109,18 @@ In `[libraries]`, after `androidx-navigation3-ui`:
 androidx-hilt-lifecycle-viewmodel-compose = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel-compose", version.ref = "androidxHilt" }
 androidx-adaptive-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3", version.ref = "adaptiveNavigation3" }
 ```
+
+and, after `kotlin-test`:
+
+```toml
+kotlin-test-junit = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version.ref = "kotlin" }
+```
+
+`kotlin-test` alone is enough in `:shared`, where the Kotlin Multiplatform plugin substitutes the
+framework-specific variant. `:feature:conversation` is a plain Android library, nothing performs
+that substitution there, and every `kotlin.test` symbol the feature's tests import (`Test`,
+`BeforeTest`, `AfterTest`, `assertEquals`) is unresolved without this artifact. `:core:ui` never
+hit it because it imports JUnit 4 annotations directly.
 
 Two things this deliberately does **not** do, both verified against the published POMs:
 
@@ -270,7 +283,20 @@ Expected: `BUILD SUCCESSFUL`. Report the new module and the two pinned versions,
 
 - [ ] **Step 1: Write the failing DAO tests for the snippet subquery**
 
-Append to `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/conversation/local/ConversationDaoTest.kt`, inside the class:
+Step 4 *replaces* `observeAll()` rather than adding beside it, so two tests already in this file
+stop compiling and are rewritten here alongside the new ones. Both read the entity directly where
+the projection now wraps it:
+
+```kotlin
+                    .observeAllWithSnippet()
+                    .first()
+                    .map { it.conversation.id }
+```
+
+in `orders conversations by most recently updated`, and the same substitution plus
+`.first().conversation.id` in `touching a conversation moves it to the head of the list`.
+
+Then append to `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/conversation/local/ConversationDaoTest.kt`, inside the class:
 
 ```kotlin
     @Test
@@ -504,7 +530,7 @@ class ConversationSnippetTest {
         }
 
     @Test
-    fun `a conversation whose first turn has not finished has no snippet yet`() =
+    fun `a conversation whose first turn has not finished is summarized by the user's own message`() =
         runDatabaseTest { database ->
             val repository = repository(database, turnScope())
             val id = repository.send(null, "hello")
@@ -699,7 +725,7 @@ Add whatever imports these need (`ChatError`, `assertNull`, `first`, `runTest`) 
 ./gradlew :shared:testing:testAndroidHostTest :shared:testAndroidHostTest
 ```
 
-Expected: FAIL first. Every existing test that constructs a `Conversation` literal now misses the `snippet` argument. Add `snippet = null` (or the text the test actually expects) to each. Re-run until PASS.
+Expected: PASS. Nothing outside the fake constructs a `Conversation` literal, so reshaping it has no fallout; if a test does turn up, add `snippet = null` or the text it actually expects.
 
 - [ ] **Step 13: Checkpoint**
 
@@ -804,6 +830,10 @@ dependencies {
     testImplementation(project(":shared:testing"))
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)
+    // Carries the JVM actuals for kotlin.test's annotations. This module is a plain Android
+    // library, so nothing substitutes the framework variant the way KMP does in :shared, and
+    // without this every kotlin.test import in the tests below is unresolved.
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.ext.junit)
@@ -828,8 +858,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlin.time.Clock
 import javax.inject.Singleton
+import kotlin.time.Clock
 
 /**
  * The app's only source of time. Both the repository's stored timestamps and the conversation
@@ -863,7 +893,7 @@ In `DatabaseModule.kt`, take the clock and pass it on:
         )
 ```
 
-Add `import kotlin.time.Clock`.
+Add `import kotlin.time.Clock`, after `javax.inject.Singleton`.
 
 - [ ] **Step 3: Add the feature's strings**
 
@@ -1201,9 +1231,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 import kotlin.time.Clock
 import kotlin.time.Instant
-import javax.inject.Inject
 
 /**
  * The conversation list. Read-only: every mutation belongs to the chat screen, so this holds no
@@ -2351,6 +2381,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class ConversationViewModelTest {
     private val dispatcher = StandardTestDispatcher()
+
     // A non-zero step makes successive writes distinguishable, which is what ordering needs.
     private val clock = FakeClock(autoAdvanceBy = 1.milliseconds)
     private val repository = FakeConversationRepository(clock)
@@ -2523,10 +2554,15 @@ class ConversationViewModelTest {
             viewModel.onSend("hello")
             advanceUntilIdle()
 
+            // Every read of uiState needs an advance first: localState reaches it through
+            // combine(…).stateIn(viewModelScope), and viewModelScope runs on the
+            // StandardTestDispatcher, which executes nothing until it is advanced.
             viewModel.onDeleteRequested()
+            advanceUntilIdle()
             assertTrue(viewModel.uiState.value.deleteDialogVisible)
 
             viewModel.onDeleteDismissed()
+            advanceUntilIdle()
             assertEquals(false, viewModel.uiState.value.deleteDialogVisible)
         }
 
@@ -4766,6 +4802,10 @@ fun ChatbotNavDisplay(
         }
     }
 
+    // Typed, so the removed element is the lambda's coerced result rather than a discarded
+    // expression the compiler warns about.
+    val popChat: () -> Unit = { backStack.removeLastOrNull() }
+
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
@@ -4799,11 +4839,11 @@ fun ChatbotNavDisplay(
                 entry<ChatKey>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
                     ConversationRoute(
                         conversationId = key.conversationId,
-                        onBack = if (twoPane) null else ({ backStack.removeLastOrNull(); Unit }),
+                        onBack = if (twoPane) null else popChat,
                         // One path for both windows: popping the chat leaves the list, which on a
                         // wide window means the detail pane falls back to its placeholder, and the
                         // placeholder is the new-chat state.
-                        onDeleted = { backStack.removeLastOrNull() },
+                        onDeleted = popChat,
                         onConversationIdChanged = { selectedConversationId = it },
                     )
                 }

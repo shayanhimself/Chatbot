@@ -187,6 +187,8 @@ The message list follows the tail while tokens arrive and stops following once t
 
 **Offline has no special treatment.** Losing connectivity is `ChatError.Network` and renders as the ordinary inline error row with Retry (3h), the same as any other failure.
 
+**The error row does not survive process death.** It is drawn from the turn, which 004 holds in memory, so a relaunch shows the conversation without it. Sending again is the way forward.
+
 ## Dev key
 
 `:app` enables `buildConfig` and exposes a debug-only `DEV_API_KEY`, read at configuration time from the `ANTHROPIC_API_KEY` environment variable or the `anthropic.api.key` property in `local.properties`. Those are the same two sources 003's gated integration test already reads, so a machine set up to run that test needs no further setup. `DevApiKeyProvider` lives in `:app`'s `debug` source set and is bound to `ApiKeyProvider` there.

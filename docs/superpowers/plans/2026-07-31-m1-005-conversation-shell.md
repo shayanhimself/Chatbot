@@ -11,6 +11,8 @@
 ## Global Constraints
 
 - **Never commit or push.** `CLAUDE.md` overrides the superpowers default: this plan has **no commit steps**. Each task ends with a **Checkpoint**: run the verification commands, confirm the output, stop for review. The user commits.
+- execute tasks in the current branch, no worktree
+- when task is done, check all the steps of that task
 - **"buddy" is display-name only.** Never in identifiers, packages, files, functions. Code uses `Chatbot` or plain domain terms.
 - **`const val` is `SCREAMING_SNAKE_CASE`**; non-const `val` is `camelCase`.
 - **No trailing (end-of-line) comments.** Comment on its own line above the code.

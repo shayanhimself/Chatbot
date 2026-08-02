@@ -283,7 +283,7 @@ Expected: `BUILD SUCCESSFUL`. Report the new module and the two pinned versions,
 - Produces: `ConversationRepository.getConversationFlow(conversationId: Long): Flow<Conversation?>`.
 - Consumes: nothing new from Task 1 beyond the module the fake now lives in.
 
-- [ ] **Step 1: Write the failing DAO tests for the snippet subquery**
+- [x] **Step 1: Write the failing DAO tests for the snippet subquery**
 
 Step 4 *replaces* `observeAll()` rather than adding beside it, so two tests already in this file
 stop compiling and are rewritten here alongside the new ones. Both read the entity directly where
@@ -373,7 +373,7 @@ Then append to `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared
     }
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 ```bash
 ./gradlew :shared:testAndroidHostTest --tests "*ConversationDaoTest*"
@@ -381,7 +381,7 @@ Then append to `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared
 
 Expected: FAIL to compile. `observeAllWithSnippet` and `observeByIdWithSnippet` are unresolved.
 
-- [ ] **Step 3: Add the text fold**
+- [x] **Step 3: Add the text fold**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/chat/ContentText.kt`:
 
@@ -391,9 +391,7 @@ package com.shayanaryan.chatbot.shared.chat
 /**
  * A message's content as text a person reads: every [ContentBlock.Text] in order, concatenated.
  *
- * This is the single answer to which blocks count as a message's text, which is what matters at
- * 008 when `ToolUse` and `ToolResult` become blocks. They are added here once rather than at
- * every call site that renders or summarizes a message.
+ * This is the single answer to which blocks count as a message's text.
  *
  * @return the joined text, empty when the message carries no text block.
  */
@@ -401,7 +399,7 @@ fun List<ContentBlock>.textContent(): String =
     filterIsInstance<ContentBlock.Text>().joinToString(separator = "") { it.text }
 ```
 
-- [ ] **Step 4: Add the DAO projection and the two queries**
+- [x] **Step 4: Add the DAO projection and the two queries**
 
 Create `shared/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/local/ConversationWithSnippet.kt`:
 
@@ -416,8 +414,7 @@ import com.shayanaryan.chatbot.shared.chat.ContentBlock
  * than stored. Nothing writes [snippet], so it cannot drift from the messages it summarizes.
  *
  * @property snippet null for a conversation whose only messages failed or were cancelled, and for
- *   one whose first turn has not finished. The existing `List<ContentBlock>` converter decodes the
- *   projected JSON column.
+ *   one whose first turn has not finished.
  */
 internal data class ConversationWithSnippet(
     @Embedded val conversation: ConversationEntity,
@@ -453,7 +450,7 @@ In `ConversationDao.kt`, replace the `observeAll()` declaration (lines 26-27) wi
 
 The `status = 'Complete'` filter matches the history query for the same reason: a failed turn's partial text is not what the conversation is about, and after a failed first turn the user's own message is the honest summary.
 
-- [ ] **Step 5: Run the DAO tests to verify they pass**
+- [x] **Step 5: Run the DAO tests to verify they pass**
 
 ```bash
 ./gradlew :shared:testAndroidHostTest --tests "*ConversationDaoTest*"
@@ -461,7 +458,7 @@ The `status = 'Complete'` filter matches the history query for the same reason: 
 
 Expected: PASS, all six new cases.
 
-- [ ] **Step 6: Write the failing repository tests**
+- [x] **Step 6: Write the failing repository tests**
 
 Create `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared/conversation/ConversationSnippetTest.kt`:
 
@@ -574,7 +571,7 @@ class ConversationSnippetTest {
 }
 ```
 
-- [ ] **Step 7: Run them to verify they fail**
+- [x] **Step 7: Run them to verify they fail**
 
 ```bash
 ./gradlew :shared:testAndroidHostTest --tests "*ConversationSnippetTest*"
@@ -582,7 +579,7 @@ class ConversationSnippetTest {
 
 Expected: FAIL to compile. `Conversation.snippet` and `getConversationFlow` are unresolved.
 
-- [ ] **Step 8: Reshape `Conversation` and add the mapper**
+- [x] **Step 8: Reshape `Conversation` and add the mapper**
 
 In `Conversation.kt`, replace the data class (lines 8-14):
 
@@ -617,7 +614,7 @@ internal fun ConversationWithSnippet.toDomain(): Conversation =
 
 Add `import com.shayanaryan.chatbot.shared.chat.textContent` and `import com.shayanaryan.chatbot.shared.conversation.local.ConversationWithSnippet` is unnecessary, since the mapper is in the same package. Remove the now-unused `ConversationEntity` import only if nothing else in the file uses it.
 
-- [ ] **Step 9: Add the repository read**
+- [x] **Step 9: Add the repository read**
 
 In `ConversationRepository.kt`, after `getConversationsFlow()`:
 
@@ -640,7 +637,7 @@ In `DefaultConversationRepository.kt`, replace `getConversationsFlow` (lines 64-
         conversationDao.observeByIdWithSnippet(conversationId).map { it?.toDomain() }
 ```
 
-- [ ] **Step 10: Update the fake to match the reshaped contract**
+- [x] **Step 10: Update the fake to match the reshaped contract**
 
 `shared/testing/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/conversation/FakeConversationRepository.kt`:
 
@@ -681,7 +678,7 @@ In `appendMessage`, keep the projected snippet honest: only a `Complete` message
         }
 ```
 
-- [ ] **Step 11: Add the fake's own coverage**
+- [x] **Step 11: Add the fake's own coverage**
 
 Append to `shared/testing/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/conversation/FakeConversationRepositoryTest.kt`, inside the class:
 
@@ -721,7 +718,7 @@ Append to `shared/testing/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/c
 
 Add whatever imports these need (`ChatError`, `assertNull`, `first`, `runTest`) if the file lacks them.
 
-- [ ] **Step 12: Run everything and fix the fallout**
+- [x] **Step 12: Run everything and fix the fallout**
 
 ```bash
 ./gradlew :shared:testing:testAndroidHostTest :shared:testAndroidHostTest
@@ -729,7 +726,7 @@ Add whatever imports these need (`ChatError`, `assertNull`, `first`, `runTest`) 
 
 Expected: PASS. Nothing outside the fake constructs a `Conversation` literal, so reshaping it has no fallout; if a test does turn up, add `snippet = null` or the text it actually expects.
 
-- [ ] **Step 13: Checkpoint**
+- [x] **Step 13: Checkpoint**
 
 ```bash
 ./gradlew spotlessApply

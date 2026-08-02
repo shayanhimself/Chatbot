@@ -33,6 +33,12 @@ class FakeConversationRepository(
 
     override fun getConversationsFlow(): Flow<List<Conversation>> = conversations
 
+    override fun getConversationFlow(conversationId: Long): Flow<Conversation?> =
+        conversations
+            .map { list ->
+                list.firstOrNull { it.id == conversationId }
+            }.distinctUntilChanged()
+
     override fun getMessagesFlow(conversationId: Long): Flow<List<Message>> =
         messages.map { it[conversationId].orEmpty() }.distinctUntilChanged()
 
@@ -126,6 +132,7 @@ class FakeConversationRepository(
                 id = id,
                 title = text.take(ConversationRepository.MAX_TITLE_LENGTH),
                 model = model,
+                snippet = text,
                 createdAt = now,
                 updatedAt = now,
             )
@@ -155,8 +162,21 @@ class FakeConversationRepository(
         }
         conversations.update { list ->
             list
-                .map { if (it.id == conversationId) it.copy(updatedAt = now) else it }
-                .mostRecentFirst()
+                .map {
+                    when {
+                        it.id != conversationId -> {
+                            it
+                        }
+
+                        status == MessageStatus.Complete && text.isNotBlank() -> {
+                            it.copy(updatedAt = now, snippet = text)
+                        }
+
+                        else -> {
+                            it.copy(updatedAt = now)
+                        }
+                    }
+                }.mostRecentFirst()
         }
     }
 

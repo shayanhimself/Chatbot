@@ -23,8 +23,27 @@ internal abstract class ConversationDao {
     @Insert
     abstract suspend fun insertMessage(message: MessageEntity): Long
 
-    @Query("SELECT * FROM conversations ORDER BY updatedAt DESC")
-    abstract fun observeAll(): Flow<List<ConversationEntity>>
+    /**
+     * Every conversation, most recently updated first, each with the content of its last complete
+     * message. Room re-runs this flow whenever a table the query references is invalidated, and
+     * the subquery makes `messages` one of them.
+     */
+    @Query(
+        "SELECT c.*, (SELECT m.content FROM messages m " +
+            "WHERE m.conversationId = c.id AND m.status = 'Complete' " +
+            "ORDER BY m.id DESC LIMIT 1) AS snippet " +
+            "FROM conversations c ORDER BY c.updatedAt DESC",
+    )
+    abstract fun observeAllWithSnippet(): Flow<List<ConversationWithSnippet>>
+
+    /** The same projection for one conversation. Emits null once the row is gone. */
+    @Query(
+        "SELECT c.*, (SELECT m.content FROM messages m " +
+            "WHERE m.conversationId = c.id AND m.status = 'Complete' " +
+            "ORDER BY m.id DESC LIMIT 1) AS snippet " +
+            "FROM conversations c WHERE c.id = :id",
+    )
+    abstract fun observeByIdWithSnippet(id: Long): Flow<ConversationWithSnippet?>
 
     @Query("SELECT * FROM conversations WHERE id = :id")
     abstract suspend fun findById(id: Long): ConversationEntity?

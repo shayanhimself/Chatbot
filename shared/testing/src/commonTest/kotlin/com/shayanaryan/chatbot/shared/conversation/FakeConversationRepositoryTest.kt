@@ -10,6 +10,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -229,5 +230,51 @@ class FakeConversationRepositoryTest {
             repository.delete(id)
 
             assertFailsWith<IllegalArgumentException> { repository.send(id, "again") }
+        }
+
+    @Test
+    fun `the snippet follows the last complete message`() =
+        runTest {
+            val repository = FakeConversationRepository()
+            val id = repository.send(null, "hello")
+            repository.emitDelta(id, "a reply")
+            repository.completeTurn(id)
+
+            assertEquals(
+                "a reply",
+                repository
+                    .getConversationsFlow()
+                    .first()
+                    .single()
+                    .snippet,
+            )
+        }
+
+    @Test
+    fun `a failed reply leaves the snippet on the user's own message`() =
+        runTest {
+            val repository = FakeConversationRepository()
+            val id = repository.send(null, "hello")
+            repository.emitDelta(id, "half")
+            repository.failTurn(id, ChatError.Network)
+
+            assertEquals(
+                "hello",
+                repository
+                    .getConversationsFlow()
+                    .first()
+                    .single()
+                    .snippet,
+            )
+        }
+
+    @Test
+    fun `the single-conversation flow emits null after delete`() =
+        runTest {
+            val repository = FakeConversationRepository()
+            val id = repository.send(null, "hello")
+            repository.delete(id)
+
+            assertNull(repository.getConversationFlow(id).first())
         }
 }

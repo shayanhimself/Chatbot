@@ -62,7 +62,10 @@ internal class DefaultConversationRepository(
     private val mutex = Mutex()
 
     override fun getConversationsFlow(): Flow<List<Conversation>> =
-        conversationDao.observeAll().map { entities -> entities.map { it.toDomain() } }
+        conversationDao.observeAllWithSnippet().map { rows -> rows.map { it.toDomain() } }
+
+    override fun getConversationFlow(conversationId: Long): Flow<Conversation?> =
+        conversationDao.observeByIdWithSnippet(conversationId).map { it?.toDomain() }
 
     override fun getMessagesFlow(conversationId: Long): Flow<List<Message>> =
         messageDao

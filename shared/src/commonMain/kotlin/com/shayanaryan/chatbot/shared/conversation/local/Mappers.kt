@@ -2,17 +2,19 @@ package com.shayanaryan.chatbot.shared.conversation.local
 
 import com.shayanaryan.chatbot.shared.chat.ChatMessage
 import com.shayanaryan.chatbot.shared.chat.ContentBlock
+import com.shayanaryan.chatbot.shared.chat.textContent
 import com.shayanaryan.chatbot.shared.conversation.Conversation
 import com.shayanaryan.chatbot.shared.conversation.Message
 import kotlin.time.Instant
 
-internal fun ConversationEntity.toDomain(): Conversation =
+internal fun ConversationWithSnippet.toDomain(): Conversation =
     Conversation(
-        id = id,
-        title = title,
-        model = model,
-        createdAt = Instant.fromEpochMilliseconds(createdAt),
-        updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+        id = conversation.id,
+        title = conversation.title,
+        model = conversation.model,
+        snippet = snippet?.textContent()?.takeIf { it.isNotBlank() },
+        createdAt = Instant.fromEpochMilliseconds(conversation.createdAt),
+        updatedAt = Instant.fromEpochMilliseconds(conversation.updatedAt),
     )
 
 internal fun MessageEntity.toDomain(): Message =

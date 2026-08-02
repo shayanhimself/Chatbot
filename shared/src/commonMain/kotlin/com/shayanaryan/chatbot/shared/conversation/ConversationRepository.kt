@@ -16,6 +16,12 @@ interface ConversationRepository {
     /** Every conversation, most recently updated first. */
     fun getConversationsFlow(): Flow<List<Conversation>>
 
+    /**
+     * One conversation, re-emitting whenever it or its messages change. Emits null for a
+     * conversation that does not exist or has been deleted.
+     */
+    fun getConversationFlow(conversationId: Long): Flow<Conversation?>
+
     /** Every message in one conversation in insertion order, whatever its status. */
     fun getMessagesFlow(conversationId: Long): Flow<List<Message>>
 

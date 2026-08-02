@@ -13,6 +13,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
+private const val UNKNOWN_CONVERSATION_ID = 404L
+
 @RunWith(RobolectricTestRunner::class)
 class ConversationDaoTest {
     private suspend fun ChatbotDatabase.newConversation(
@@ -52,9 +54,9 @@ class ConversationDaoTest {
             val ids =
                 database
                     .conversationDao()
-                    .observeAll()
+                    .observeAllWithSnippet()
                     .first()
-                    .map { it.id }
+                    .map { it.conversation.id }
 
             assertEquals(listOf(newer, older), ids)
         }
@@ -71,10 +73,10 @@ class ConversationDaoTest {
                 older,
                 database
                     .conversationDao()
-                    .observeAll()
+                    .observeAllWithSnippet()
                     .first()
                     .first()
-                    .id,
+                    .conversation.id,
             )
         }
 
@@ -142,4 +144,92 @@ class ConversationDaoTest {
                 database.messageDao().observeForConversation(conversationId).first(),
             )
         }
+
+    @Test
+    fun `the snippet is the last complete message`() =
+        runDatabaseTest { database ->
+            val id = database.newConversation("chat", updatedAt = 1L)
+            database.conversationDao().insertMessage(
+                message("first", createdAt = 1L, conversationId = id),
+            )
+            database.conversationDao().insertMessage(
+                message("second", createdAt = 2L, conversationId = id),
+            )
+
+            val row =
+                database
+                    .conversationDao()
+                    .observeAllWithSnippet()
+                    .first()
+                    .single()
+
+            assertEquals("second", (row.snippet?.single() as ContentBlock.Text).text)
+        }
+
+    @Test
+    fun `the snippet skips a message the app never completed`() =
+        runDatabaseTest { database ->
+            val id = database.newConversation("chat", updatedAt = 1L)
+            database.conversationDao().insertMessage(
+                message("asked", createdAt = 1L, conversationId = id),
+            )
+            database.conversationDao().insertMessage(
+                message("half", createdAt = 2L, conversationId = id)
+                    .copy(role = Role.Assistant, status = MessageStatus.Failed),
+            )
+
+            val row =
+                database
+                    .conversationDao()
+                    .observeAllWithSnippet()
+                    .first()
+                    .single()
+
+            assertEquals("asked", (row.snippet?.single() as ContentBlock.Text).text)
+        }
+
+    @Test
+    fun `a conversation with no complete message has no snippet`() =
+        runDatabaseTest { database ->
+            database.newConversation("chat", updatedAt = 1L)
+
+            val row =
+                database
+                    .conversationDao()
+                    .observeAllWithSnippet()
+                    .first()
+                    .single()
+
+            assertNull(row.snippet)
+        }
+
+    @Test
+    fun `the single-conversation read carries the same snippet`() =
+        runDatabaseTest { database ->
+            val id = database.newConversation("chat", updatedAt = 1L)
+            database.conversationDao().insertMessage(
+                message("only", createdAt = 1L, conversationId = id),
+            )
+
+            val row = database.conversationDao().observeByIdWithSnippet(id).first()
+
+            assertEquals("only", (row?.snippet?.single() as ContentBlock.Text).text)
+        }
+
+    @Test
+    fun `the single-conversation read is null for a row that does not exist`() =
+        runDatabaseTest { database ->
+            assertNull(
+                database.conversationDao().observeByIdWithSnippet(UNKNOWN_CONVERSATION_ID).first(),
+            )
+        }
+
+    /**
+     * The subquery filters on a string literal that no compiler checks against the enum. This is
+     * what fails if the constant is ever renamed.
+     */
+    @Test
+    fun `the snippet filter names a real status`() {
+        assertEquals("Complete", MessageStatus.Complete.name)
+    }
 }

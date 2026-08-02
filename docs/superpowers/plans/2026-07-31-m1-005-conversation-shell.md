@@ -27,7 +27,7 @@
 - **Navigation 2 / `navigation-compose` is prohibited**. This is load-bearing for Task 1's dependency choice.
 - **TDD throughout**: red → green → refactor.
 - **Spacing from `Spacing`, radius from `RadiusPrimitives`/`ComponentShapes`, color from `MaterialTheme.colorScheme` / `ChatbotExtendedTheme.colors`, type from `MaterialTheme.typography`, glyphs from `Glyphs`.** Never a raw hex, never a bare ligature string. Explicit component sizes (`width`, `height`, icon size) are plain `.dp`.
-- Verification uses **debug** tasks from Task 8 onward: `:app:assembleRelease` stops working the moment a ViewModel injects `ConversationRepository`, because only then must Dagger resolve `ApiKeyProvider`. That is deliberate; 006 restores it.
+- Verification uses **debug** tasks from Task 3 onward: `:app:assembleRelease` stops working the moment a ViewModel injects `ConversationRepository`, because only then must Dagger resolve `ApiKeyProvider`. That is deliberate; 006 restores it. Debug keeps building because Task 3 Step 11a pulls Task 8's debug-only dev key forward to exactly that moment.
 
 ## Design source
 
@@ -744,12 +744,11 @@ The module gains Hilt, KSP, the screenshot plugin and the Compose lifecycle arti
 **Files:**
 - Modify: `feature/conversation/build.gradle.kts`
 - Create: `app/src/main/kotlin/com/shayanaryan/chatbot/di/TimeModule.kt`
-- Modify: `app/src/main/kotlin/com/shayanaryan/chatbot/di/DatabaseModule.kt:31-42`
+- Rename: `app/src/main/kotlin/com/shayanaryan/chatbot/di/DatabaseModule.kt` → `DataModule.kt`, and modify it
 - Create: `feature/conversation/src/main/res/values/strings.xml`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/RelativeTime.kt`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListUiState.kt`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListViewModel.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/StateProduction.kt`
 - Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/RelativeTimeTest.kt`
 - Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListViewModelTest.kt`
 
@@ -759,12 +758,12 @@ The module gains Hilt, KSP, the screenshot plugin and the Compose lifecycle arti
 - Produces: `ConversationListItemUiState(id: Long, title: String, snippet: String?, relativeTime: RelativeTime)`.
 - Produces: `RelativeTime(unitRes: Int, value: Int)` and `fun Instant.relativeTo(now: Instant): RelativeTime`.
 - Produces: `ConversationListViewModel.uiState: StateFlow<ConversationListUiState>`.
-- Produces: internal `const val SUBSCRIPTION_TIMEOUT_MILLIS = 5_000L`.
+- Produces: internal `const val SUBSCRIPTION_TIMEOUT_MILLIS = 5_000L`, in `ConversationListViewModel.kt` beside its first user. Task 5's chat ViewModel reads the same constant.
 - Produces: a `kotlin.time.Clock` binding in `SingletonComponent`.
 
 **Spec delta to report:** 005 writes `ConversationListUiState(isLoading, conversations: List<Conversation>)`. Relative timestamps have to be resolved against the injected clock, and the architecture skill forbids `Resources` inside a ViewModel, so the state carries a UI model with a `@StringRes` id instead of the domain `Conversation`. Everything else about the state is as specced.
 
-- [ ] **Step 1: Give the module its dependencies**
+- [x] **Step 1: Give the module its dependencies**
 
 Replace `feature/conversation/build.gradle.kts` wholesale:
 
@@ -844,7 +843,7 @@ dependencies {
 }
 ```
 
-- [ ] **Step 2: Bind one clock for the whole app**
+- [x] **Step 2: Bind one clock for the whole app**
 
 `createConversationRepository`'s `clock` parameter defaults to `Clock.System` and covers the repository's own timestamps only. The list ViewModel is a second consumer that Hilt constructs, and the graph has no `kotlin.time.Clock` binding, so add one and route the repository through it too. One source of time, and a test that swaps it swaps both.
 
@@ -873,7 +872,7 @@ object TimeModule {
 }
 ```
 
-In `DatabaseModule.kt`, take the clock and pass it on:
+Rename `DatabaseModule.kt` to `DataModule.kt`, since it now provides more than the database, then take the clock and pass it on:
 
 ```kotlin
     @Provides
@@ -894,7 +893,7 @@ In `DatabaseModule.kt`, take the clock and pass it on:
 
 Add `import kotlin.time.Clock`, after `javax.inject.Singleton`.
 
-- [ ] **Step 3: Add the feature's strings**
+- [x] **Step 3: Add the feature's strings**
 
 Create `feature/conversation/src/main/res/values/strings.xml`. This file carries every piece of copy both screens need, including the ones later tasks consume, so no task has to come back and edit it:
 
@@ -928,24 +927,24 @@ Create `feature/conversation/src/main/res/values/strings.xml`. This file carries
     <!-- Delete -->
     <string name="conversation_delete">Delete chat</string>
     <string name="conversation_delete_title">Delete this chat?</string>
-    <string name="conversation_delete_body">It\'s stored only on this device, so it\'s gone for good — along with any reminders it set.</string>
+    <string name="conversation_delete_body">It\'s stored only on this device, so it\'s gone for good.</string>
     <string name="conversation_delete_confirm">Delete</string>
     <string name="conversation_delete_cancel">Cancel</string>
 
     <!-- Turn failures. One per ChatError case; the repository never carries prose. -->
     <string name="conversation_error_authentication">Your API key was rejected. Check the key this build is using and try again.</string>
-    <string name="conversation_error_rate_limited">The API returned 429 — rate limited. Your key hit its request cap; try again in a moment.</string>
-    <string name="conversation_error_rate_limited_after">The API returned 429 — rate limited. Your key hit its request cap; try again in %1$d seconds.</string>
-    <string name="conversation_error_overloaded">Claude is overloaded right now. Try again in a moment.</string>
-    <string name="conversation_error_invalid_request">The API rejected the request as invalid. That one is on the app, not on you.</string>
-    <string name="conversation_error_server">The API hit a server error. Try again in a moment.</string>
-    <string name="conversation_error_network">Couldn\'t reach the API — no network connection. Check your connection and try again.</string>
+    <string name="conversation_error_rate_limited">The API returned 429 (rate limited). Time for bathroom break?</string>
+    <string name="conversation_error_rate_limited_after">The API returned 429 (rate limited). Come back in %1$d seconds.</string>
+    <string name="conversation_error_overloaded">Claude is overloaded right now. Time for bathroom break?</string>
+    <string name="conversation_error_invalid_request">The API rejected the request as invalid. My bad.</string>
+    <string name="conversation_error_server">The API hit a server error. Whoopsy.</string>
+    <string name="conversation_error_network">Couldn\'t reach the API. Check your connection and try again.</string>
     <string name="conversation_error_timeout">The request timed out before a reply arrived. Try again.</string>
-    <string name="conversation_error_unexpected">Something went wrong on the way to Claude. Try again.</string>
+    <string name="conversation_error_unexpected">Something went wrong on the way to Claude. Whoopsy.</string>
 </resources>
 ```
 
-- [ ] **Step 4: Write the failing relative-time tests**
+- [x] **Step 4: Write the failing relative-time tests**
 
 Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/RelativeTimeTest.kt`:
 
@@ -1003,7 +1002,7 @@ class RelativeTimeTest {
 }
 ```
 
-- [ ] **Step 5: Run them to verify they fail**
+- [x] **Step 5: Run them to verify they fail**
 
 ```bash
 ./gradlew :feature:conversation:testDebugUnitTest --tests "*RelativeTimeTest*"
@@ -1011,7 +1010,7 @@ class RelativeTimeTest {
 
 Expected: FAIL to compile. `RelativeTime` and `relativeTo` are unresolved.
 
-- [ ] **Step 6: Implement relative time**
+- [x] **Step 6: Implement relative time**
 
 Create `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/RelativeTime.kt`:
 
@@ -1040,22 +1039,49 @@ data class RelativeTime(
 )
 
 /**
+ * Truncates towards the past:
+ * 45s  -> now    90m -> 1h    9d  -> 1w
+ * 100s -> 1m     26h -> 1d    15d -> 2w
+ *
  * @param now the reading of the injected clock this label is relative to. A timestamp in the
  *   future (a device clock that moved backwards) reads as "now" rather than as a negative age.
  */
 fun Instant.relativeTo(now: Instant): RelativeTime {
     val elapsed = now - this
     return when {
-        elapsed < 1.minutes -> RelativeTime(R.string.conversation_time_now, 0)
-        elapsed < 1.hours -> RelativeTime(R.string.conversation_time_minutes, elapsed.inWholeMinutes.toInt())
-        elapsed < 1.days -> RelativeTime(R.string.conversation_time_hours, elapsed.inWholeHours.toInt())
-        elapsed < 7.days -> RelativeTime(R.string.conversation_time_days, elapsed.inWholeDays.toInt())
-        else -> RelativeTime(R.string.conversation_time_weeks, (elapsed.inWholeDays / 7).toInt())
+        elapsed < 1.minutes -> {
+            RelativeTime(R.string.conversation_time_now, 0)
+        }
+
+        elapsed < 1.hours -> {
+            RelativeTime(
+                R.string.conversation_time_minutes,
+                elapsed.inWholeMinutes.toInt(),
+            )
+        }
+
+        elapsed < 1.days -> {
+            RelativeTime(
+                R.string.conversation_time_hours,
+                elapsed.inWholeHours.toInt(),
+            )
+        }
+
+        elapsed < 7.days -> {
+            RelativeTime(
+                R.string.conversation_time_days,
+                elapsed.inWholeDays.toInt(),
+            )
+        }
+
+        else -> {
+            RelativeTime(R.string.conversation_time_weeks, (elapsed.inWholeDays / 7).toInt())
+        }
     }
 }
 ```
 
-- [ ] **Step 7: Run the relative-time tests to verify they pass**
+- [x] **Step 7: Run the relative-time tests to verify they pass**
 
 ```bash
 ./gradlew :feature:conversation:testDebugUnitTest --tests "*RelativeTimeTest*"
@@ -1063,7 +1089,7 @@ fun Instant.relativeTo(now: Instant): RelativeTime {
 
 Expected: PASS.
 
-- [ ] **Step 8: Write the failing list ViewModel tests**
+- [x] **Step 8: Write the failing list ViewModel tests**
 
 Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListViewModelTest.kt`:
 
@@ -1072,8 +1098,9 @@ package com.shayanaryan.chatbot.feature.conversation
 
 import com.shayanaryan.chatbot.shared.FakeClock
 import com.shayanaryan.chatbot.shared.conversation.FakeConversationRepository
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -1117,7 +1144,10 @@ class ConversationListViewModelTest {
             val viewModel = ConversationListViewModel(FakeConversationRepository(clock), clock)
 
             assertTrue(viewModel.uiState.value.isLoading)
-            assertEquals(emptyList<ConversationListItemUiState>(), viewModel.uiState.value.conversations)
+            assertEquals(
+                emptyList<ConversationListItemUiState>(),
+                viewModel.uiState.value.conversations,
+            )
         }
 
     @Test
@@ -1141,7 +1171,9 @@ class ConversationListViewModelTest {
             collecting(viewModel)
             advanceUntilIdle()
 
-            val row = viewModel.uiState.value.conversations.single()
+            val row =
+                viewModel.uiState.value.conversations
+                    .single()
 
             assertEquals(id, row.id)
             assertEquals("plan a weekend", row.title)
@@ -1160,15 +1192,15 @@ class ConversationListViewModelTest {
 
             assertEquals(
                 RelativeTime(R.string.conversation_time_hours, 2),
-                viewModel.uiState.value.conversations.single().relativeTime,
+                viewModel.uiState.value.conversations
+                    .single()
+                    .relativeTime,
             )
         }
 }
 ```
 
-Add `import kotlinx.coroutines.launch`.
-
-- [ ] **Step 9: Run them to verify they fail**
+- [x] **Step 9: Run them to verify they fail**
 
 ```bash
 ./gradlew :feature:conversation:testDebugUnitTest --tests "*ConversationListViewModelTest*"
@@ -1176,19 +1208,7 @@ Add `import kotlinx.coroutines.launch`.
 
 Expected: FAIL to compile. `ConversationListViewModel` is unresolved.
 
-- [ ] **Step 10: Write the state and the ViewModel**
-
-Create `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/StateProduction.kt`:
-
-```kotlin
-package com.shayanaryan.chatbot.feature.conversation
-
-/**
- * How long a `stateIn` pipeline keeps collecting after its last subscriber leaves. Long enough to
- * survive a configuration change, short enough that a backgrounded screen stops reading Room.
- */
-internal const val SUBSCRIPTION_TIMEOUT_MILLIS: Long = 5_000L
-```
+- [x] **Step 10: Write the state and the ViewModel**
 
 Create `ConversationListUiState.kt`:
 
@@ -1196,8 +1216,8 @@ Create `ConversationListUiState.kt`:
 package com.shayanaryan.chatbot.feature.conversation
 
 /**
- * @property isLoading true until Room's first emission, which is what the skeleton rows render
- *   against. An empty list with [isLoading] false is the genuinely-empty state.
+ * @property isLoading true until Room's first emission.
+ * @property conversations every conversation, most recently updated first.
  */
 data class ConversationListUiState(
     val isLoading: Boolean = true,
@@ -1207,6 +1227,12 @@ data class ConversationListUiState(
 /**
  * One row. A UI model rather than the domain `Conversation` because the timestamp is already
  * resolved here, against the clock the ViewModel was given.
+ *
+ * @property id the conversation a tap on this row opens.
+ * @property title the conversation's first message, truncated by the repository.
+ * @property snippet the last complete message's text, the row's second line.
+ * @property relativeTime how long ago the conversation was last written to, already reduced to a
+ *   unit and a count so the row only has to resolve a string.
  */
 data class ConversationListItemUiState(
     val id: Long,
@@ -1235,12 +1261,14 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 
 /**
+ * How long a `stateIn` pipeline keeps collecting after its last subscriber leaves. Long enough to
+ * survive a configuration change, short enough that a backgrounded screen stops reading Room.
+ */
+internal const val SUBSCRIPTION_TIMEOUT_MILLIS: Long = 5_000L
+
+/**
  * The conversation list. Read-only: every mutation belongs to the chat screen, so this holds no
  * events at all.
- *
- * Timestamps are resolved once per emission rather than on a ticker, so a row reading "2h" does
- * not become "3h" while the screen stays open. Room re-emits on every message write, which in
- * practice refreshes them often enough.
  */
 @HiltViewModel
 class ConversationListViewModel
@@ -1270,11 +1298,14 @@ private fun Conversation.toUiState(now: Instant) =
         id = id,
         title = title,
         snippet = snippet,
+        // Timestamps are resolved once per emission rather than on a ticker, so a row reading "2h" does
+        // not become "3h" while the screen stays open. Room re-emits on every message write, which in
+        // practice refreshes them often enough.
         relativeTime = updatedAt.relativeTo(now),
     )
 ```
 
-- [ ] **Step 11: Run the list ViewModel tests to verify they pass**
+- [x] **Step 11: Run the list ViewModel tests to verify they pass**
 
 ```bash
 ./gradlew :feature:conversation:testDebugUnitTest --tests "*ConversationListViewModelTest*"
@@ -1282,14 +1313,27 @@ private fun Conversation.toUiState(now: Instant) =
 
 Expected: PASS, all four.
 
-- [ ] **Step 12: Checkpoint**
+- [x] **Step 11a: Pull the dev key forward from Task 8**
+
+`ConversationListViewModel` is `@HiltViewModel` and injects `ConversationRepository`, and `:app`
+depends on `:feature:conversation`, so from this step on Dagger must resolve `ChatEngine` →
+`ApiKeyProvider` to build `:app` at all. Debug included, not release only. The dev key therefore
+lands here rather than in Task 8, which keeps `:app:assembleDebug` usable as every later
+checkpoint's verification.
+
+Apply **Task 8 Step 2 in full** (`app/src/debug/kotlin/com/shayanaryan/chatbot/di/DevApiKeyModule.kt`),
+and the dev-key half of **Task 8 Step 1**: the `devApiKey` provider, `buildConfig = true`, and the
+`debug { buildConfigField(…) }` block. Task 8's serialization plugin and Navigation 3 artifacts stay
+in Task 8, since nothing references them yet.
+
+- [x] **Step 12: Checkpoint**
 
 ```bash
 ./gradlew spotlessApply
 ./gradlew :feature:conversation:testDebugUnitTest :app:assembleDebug spotlessCheck
 ```
 
-Expected: `BUILD SUCCESSFUL`. `:app:assembleDebug` still works: no ViewModel is wired into the graph yet, so Dagger has not had to resolve `ApiKeyProvider`. Stop for review.
+Expected: `BUILD SUCCESSFUL`, which is what Step 11a is there to keep true. Stop for review.
 
 ---
 
@@ -2922,7 +2966,7 @@ class ErrorRowTest {
         }
 
         composeRule
-            .onNodeWithText("Couldn't reach the API — no network connection. Check your connection and try again.")
+            .onNodeWithText("Couldn't reach the API. Check your connection and try again.")
             .assertIsDisplayed()
     }
 }
@@ -4535,6 +4579,10 @@ Expected: `BUILD SUCCESSFUL`. `:app` does not compile yet: `MainActivity` still 
 
 - [ ] **Step 1: Give `:app` its dependencies and the dev key field**
 
+**Partly done in Task 3 Step 11a.** The `devApiKey` provider, `buildConfig = true` and the
+`debug { buildConfigField(…) }` block are already in place; only the serialization plugin and the
+four navigation artifacts remain. The full script is kept below for reference.
+
 In `app/build.gradle.kts`, add the serialization plugin, turn on `buildConfig`, read the dev key through configuration-cache-safe providers, and add the nav and adaptive artifacts:
 
 ```kotlin
@@ -4547,10 +4595,7 @@ plugins {
 }
 
 /**
- * The developer's own key, from the same two places 003's gated integration test reads, so a
- * machine set up to run that test needs no further setup. Read through Gradle's providers rather
- * than System.getenv/File so the configuration cache tracks both as build inputs. Empty when
- * neither is present, which fails at first use rather than at build time.
+ * The developer's own key, from local.properties. Will be removed when onboarding is implemented.
  */
 val devApiKey: Provider<String> =
     providers
@@ -4625,6 +4670,8 @@ and in `dependencies`, after `libs.androidx.lifecycle.runtime.compose`:
 `local.properties` is already git-ignored, and the key never reaches a release build: `DEV_API_KEY` is declared on the debug build type only.
 
 - [ ] **Step 2: Bind the dev key, debug only**
+
+**Already done in Task 3 Step 11a.** Verify the file below exists and matches, then move on.
 
 Create `app/src/debug/kotlin/com/shayanaryan/chatbot/di/DevApiKeyModule.kt`:
 

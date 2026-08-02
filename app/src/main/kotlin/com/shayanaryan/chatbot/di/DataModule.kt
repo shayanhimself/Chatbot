@@ -14,6 +14,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import javax.inject.Singleton
+import kotlin.time.Clock
 
 /**
  * Registers `:shared`'s storage layer. Hilt cannot enter `:shared`, so the database and the
@@ -21,7 +22,7 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
-object DatabaseModule {
+object DataModule {
     @Provides
     @Singleton
     fun provideChatbotDatabase(
@@ -34,10 +35,12 @@ object DatabaseModule {
         database: ChatbotDatabase,
         engine: ChatEngine,
         @ApplicationScope externalScope: CoroutineScope,
+        clock: Clock,
     ): ConversationRepository =
         createConversationRepository(
             database = database,
             engine = engine,
             externalScope = externalScope,
+            clock = clock,
         )
 }

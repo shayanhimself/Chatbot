@@ -5,6 +5,27 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+/**
+ * The developer's own key, from local.properties. Will be removed when onboarding is implemented.
+ */
+val devApiKey: Provider<String> =
+    providers
+        .environmentVariable("ANTHROPIC_API_KEY")
+        .orElse(
+            providers
+                .fileContents(layout.projectDirectory.file("../local.properties"))
+                .asText
+                .map { contents ->
+                    contents
+                        .lineSequence()
+                        .map(String::trim)
+                        .firstOrNull { it.startsWith("anthropic.api.key=") }
+                        ?.substringAfter('=')
+                        ?.trim()
+                        .orEmpty()
+                },
+        ).orElse("")
+
 android {
     namespace = "com.shayanaryan.chatbot"
     compileSdk = 37
@@ -18,6 +39,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "DEV_API_KEY", "\"${devApiKey.get()}\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -33,7 +57,7 @@ android {
     buildFeatures {
         compose = true
         aidl = false
-        buildConfig = false
+        buildConfig = true
         shaders = false
     }
 

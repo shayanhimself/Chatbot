@@ -1,8 +1,8 @@
 <resources>
     <!-- Conversation list -->
     <string name="conversation_list_title">Chats</string>
-    <string name="conversation_list_empty_title">no conversations yet</string>
-    <string name="conversation_list_empty_body">start a chat and it\'ll show up here. everything stays on this device.</string>
+    <string name="conversation_list_empty_title">Hmmm, a bit quite here</string>
+    <string name="conversation_list_empty_body">Let\'s chat…</string>
     <string name="conversation_list_new_chat">new chat</string>
 
     <!-- Relative timestamps. The "now" string takes no argument; the others take a count. -->

@@ -49,7 +49,7 @@ class ConversationListViewModelTest {
 
             assertTrue(viewModel.uiState.value.isLoading)
             assertEquals(
-                emptyList<ConversationListItemUiState>(),
+                emptyList(),
                 viewModel.uiState.value.conversations,
             )
         }

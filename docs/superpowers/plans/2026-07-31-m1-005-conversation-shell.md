@@ -20,13 +20,13 @@
 - **KDoc on every interface and contract**, and on anything not self-explanatory from its name and signature.
 - **Test function names use backtick spaced form**: `` fun `does the thing`() ``.
 - **Import order is ktlint_official's**: everything else first (including `kotlinx.*`), then `java.*`, `javax.*`, `kotlin.*`. So `javax.inject.Inject` sits *above* `kotlin.time.Clock`. `spotlessApply` fixes it either way; writing it right keeps the diff honest.
-- **Every public composable ships a colocated plain `@Preview`** in its own file, one per distinct visual state, wrapped in `ChatbotTheme`. Screenshot goldens live separately in `src/screenshotTest/`.
+- **Every public composable ships a colocated plain `@Preview`** in its own file, one per distinct visual state, wrapped in `ChatbotTheme(darkTheme = true)`: the app is dark-first, and an unqualified `ChatbotTheme` renders light because the preview renderer defaults `uiMode` to `UI_MODE_NIGHT_NO`. Wrap the content in a `Surface` whenever the composable paints no background of its own, since `showBackground = true` paints white underneath it. Screenshot goldens live separately in `src/screenshotTest/`.
 - **No mocking library.** Fakes and real objects only.
 - **No ViewModel → UI event channels.** Every outcome is folded into `UiState`.
 - **No async work in ViewModel `init` or constructors.** State comes from the `stateIn` pipeline.
 - **Navigation 2 / `navigation-compose` is prohibited**. This is load-bearing for Task 1's dependency choice.
 - **TDD throughout**: red → green → refactor.
-- **Spacing from `Spacing`, radius from `RadiusPrimitives`/`ComponentShapes`, color from `MaterialTheme.colorScheme` / `ChatbotExtendedTheme.colors`, type from `MaterialTheme.typography`, glyphs from `Glyphs`.** Never a raw hex, never a bare ligature string. Explicit component sizes (`width`, `height`, icon size) are plain `.dp`.
+- **Spacing from `Spacing`, radius from `MaterialTheme.shapes`/`ComponentShapes`, falling back to `RadiusPrimitives` only for a radius no slot carries, color from `MaterialTheme.colorScheme` / `ChatbotExtendedTheme.colors`, type from `MaterialTheme.typography`, glyphs from `Glyphs`.** Never a raw hex, never a bare ligature string. Explicit component sizes (`width`, `height`, icon size) are plain `.dp`.
 - Verification uses **debug** tasks from Task 3 onward: `:app:assembleRelease` stops working the moment a ViewModel injects `ConversationRepository`, because only then must Dagger resolve `ApiKeyProvider`. That is deliberate; 006 restores it. Debug keeps building because Task 3 Step 11a pulls Task 8's debug-only dev key forward to exactly that moment.
 
 ## Design source
@@ -1349,6 +1349,7 @@ Frames 2a, 2b, 2e and the light rendering 7b. Search and settings actions in the
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListScreen.kt`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListRoute.kt`
 - Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListScreenTest.kt`
+- Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/preview/FormFactorPreviews.kt`
 - Test: `feature/conversation/src/screenshotTest/kotlin/com/shayanaryan/chatbot/feature/conversation/preview/ConversationListPreviews.kt`
 
 **Interfaces:**
@@ -1358,7 +1359,7 @@ Frames 2a, 2b, 2e and the light rendering 7b. Search and settings actions in the
 - Produces: `ConversationListItem(title, snippet, relativeTime, selected, onClick, modifier)`.
 - Produces: `Glyphs.ADD`, `Glyphs.ARROW_BACK`, `Glyphs.ARROW_UPWARD`, `Glyphs.STOP`, `Glyphs.MORE_VERT`, `Glyphs.DELETE`, `Glyphs.EXPAND_MORE`, `Glyphs.EXPAND_LESS`, `Glyphs.CHECK`, `Glyphs.REFRESH`.
 
-- [ ] **Step 1: Add every glyph both screens reference**
+- [x] **Step 1: Add every glyph both screens reference**
 
 In `Glyphs.kt`, the object grows once, here, so no later task edits `:core:ui`:
 
@@ -1381,7 +1382,7 @@ object Glyphs {
 }
 ```
 
-- [ ] **Step 2: Write the failing Compose UI tests**
+- [x] **Step 2: Write the failing Compose UI tests**
 
 Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListScreenTest.kt`:
 
@@ -1491,7 +1492,7 @@ class ConversationListScreenTest {
 
 Add `import androidx.compose.ui.test.assertDoesNotExist`.
 
-- [ ] **Step 3: Run them to verify they fail**
+- [x] **Step 3: Run them to verify they fail**
 
 ```bash
 ./gradlew :feature:conversation:testDebugUnitTest --tests "*ConversationListScreenTest*"
@@ -1499,7 +1500,7 @@ Add `import androidx.compose.ui.test.assertDoesNotExist`.
 
 Expected: FAIL to compile. `ConversationListScreen` is unresolved.
 
-- [ ] **Step 4: Build the row**
+- [x] **Step 4: Build the row**
 
 Create `component/ConversationListItem.kt`. The design file marks the last row with a `last` boolean so it drops its own divider; in Compose that is the call site drawing dividers *between* items, so the row itself carries none.
 
@@ -1512,8 +1513,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -1524,7 +1525,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.RadiusPrimitives
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.feature.conversation.R
 import com.shayanaryan.chatbot.feature.conversation.RelativeTime
@@ -1547,7 +1547,7 @@ fun ConversationListItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(RadiusPrimitives.radius4)
+    val shape = MaterialTheme.shapes.large
     Row(
         modifier =
             modifier
@@ -1594,33 +1594,37 @@ fun ConversationListItem(
 @Preview(showBackground = true)
 @Composable
 private fun ConversationListItemPreview() {
-    ChatbotTheme {
-        ConversationListItem(
-            title = "Weekend trip to Portland",
-            snippet = "Booked — I'll remind you to check in Friday.",
-            relativeTime = RelativeTime(R.string.conversation_time_hours, 2),
-            selected = false,
-            onClick = {},
-        )
+    ChatbotTheme(darkTheme = true) {
+        Surface {
+            ConversationListItem(
+                title = "Weekend trip to Portland",
+                snippet = "Booked — I'll remind you to check in Friday.",
+                relativeTime = RelativeTime(R.string.conversation_time_hours, 2),
+                selected = false,
+                onClick = {},
+            )
+        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun ConversationListItemSelectedPreview() {
-    ChatbotTheme {
-        ConversationListItem(
-            title = "Miso glaze recipe",
-            snippet = null,
-            relativeTime = RelativeTime(R.string.conversation_time_days, 1),
-            selected = true,
-            onClick = {},
-        )
+    ChatbotTheme(darkTheme = true) {
+        Surface {
+            ConversationListItem(
+                title = "Miso glaze recipe",
+                snippet = null,
+                relativeTime = RelativeTime(R.string.conversation_time_days, 1),
+                selected = true,
+                onClick = {},
+            )
+        }
     }
 }
 ```
 
-- [ ] **Step 5: Build the empty and loading states**
+- [x] **Step 5: Build the empty and loading states**
 
 Create `component/ConversationListEmpty.kt`, frame 2b's centred tile, headline and body:
 
@@ -1634,8 +1638,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -1647,11 +1651,10 @@ import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.DsIcon
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.RadiusPrimitives
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.feature.conversation.R
 
-/** Frame 2b: nothing stored yet, so the screen says so and the new-chat button carries the flow. */
+/** Nothing stored yet, so the screen says so and the new-chat button carries the flow. */
 @Composable
 fun ConversationListEmpty(modifier: Modifier = Modifier) {
     Column(
@@ -1665,7 +1668,7 @@ fun ConversationListEmpty(modifier: Modifier = Modifier) {
                     .size(88.dp)
                     .background(
                         color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = RoundedCornerShape(RadiusPrimitives.radius7),
+                        shape = MaterialTheme.shapes.extraLarge,
                     ),
             contentAlignment = Alignment.Center,
         ) {
@@ -1695,7 +1698,9 @@ fun ConversationListEmpty(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 private fun ConversationListEmptyPreview() {
-    ChatbotTheme { ConversationListEmpty() }
+    ChatbotTheme(darkTheme = true) {
+        Surface { ConversationListEmpty() }
+    }
 }
 ```
 
@@ -1714,8 +1719,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -1723,34 +1728,51 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.RadiusPrimitives
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 
-/** Widths the four skeleton rows use, taken straight from frame 2e. */
-private val SKELETON_ROWS =
+/**
+ * How wide a placeholder row's two bars are, each a fraction of the row's width. The bars stand in
+ * for the two lines [ConversationListItem] draws.
+ *
+ * @property title the top bar, where the title goes.
+ * @property snippet the bottom bar, where the snippet goes.
+ */
+private data class SkeletonWidths(
+    val title: Float,
+    val snippet: Float,
+)
+
+/**
+ * One entry per placeholder row, top to bottom. Widths differ because real titles and replies do;
+ * identical rows would read as a table.
+ */
+private val skeletonRows =
     listOf(
-        0.62f to 0.88f,
-        0.48f to 0.74f,
-        0.70f to 0.56f,
-        0.54f to 0.80f,
+        SkeletonWidths(title = 0.62f, snippet = 0.88f),
+        SkeletonWidths(title = 0.48f, snippet = 0.74f),
+        SkeletonWidths(title = 0.70f, snippet = 0.56f),
+        SkeletonWidths(title = 0.54f, snippet = 0.80f),
     )
 
+/**
+ * Opacity of the bottom row, faded so the list reads as continuing past the edge of the screen
+ * rather than ending there.
+ */
 private const val LAST_SKELETON_ROW_ALPHA = 0.6f
 
-/** Frame 2e: what the list shows for the frame or two before Room's first emission arrives. */
+/** What the list shows for the frame or two before Room's first emission arrives. */
 @Composable
 fun ConversationListSkeleton(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.s4, vertical = Spacing.s2),
         verticalArrangement = Arrangement.spacedBy(Spacing.s6),
     ) {
-        SKELETON_ROWS.forEachIndexed { index, (titleWidth, snippetWidth) ->
+        skeletonRows.forEachIndexed { index, widths ->
             SkeletonRow(
-                titleWidth = titleWidth,
-                snippetWidth = snippetWidth,
+                widths = widths,
                 modifier =
                     Modifier.alpha(
-                        if (index == SKELETON_ROWS.lastIndex) LAST_SKELETON_ROW_ALPHA else 1f,
+                        if (index == skeletonRows.lastIndex) LAST_SKELETON_ROW_ALPHA else 1f,
                     ),
             )
         }
@@ -1759,8 +1781,7 @@ fun ConversationListSkeleton(modifier: Modifier = Modifier) {
 
 @Composable
 private fun SkeletonRow(
-    titleWidth: Float,
-    snippetWidth: Float,
+    widths: SkeletonWidths,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -1779,20 +1800,20 @@ private fun SkeletonRow(
         ) {
             Box(
                 Modifier
-                    .fillMaxWidth(titleWidth)
+                    .fillMaxWidth(widths.title)
                     .height(14.dp)
                     .background(
                         MaterialTheme.colorScheme.surfaceContainerHigh,
-                        RoundedCornerShape(RadiusPrimitives.radius2),
+                        MaterialTheme.shapes.small,
                     ),
             )
             Box(
                 Modifier
-                    .fillMaxWidth(snippetWidth)
+                    .fillMaxWidth(widths.snippet)
                     .height(12.dp)
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
-                        RoundedCornerShape(RadiusPrimitives.radius2),
+                        MaterialTheme.shapes.small,
                     ),
             )
         }
@@ -1802,11 +1823,13 @@ private fun SkeletonRow(
 @Preview(showBackground = true)
 @Composable
 private fun ConversationListSkeletonPreview() {
-    ChatbotTheme { ConversationListSkeleton() }
+    ChatbotTheme(darkTheme = true) {
+        Surface { ConversationListSkeleton() }
+    }
 }
 ```
 
-- [ ] **Step 6: Build the stateless screen**
+- [x] **Step 6: Build the stateless screen**
 
 Create `ConversationListScreen.kt`:
 
@@ -1920,7 +1943,7 @@ internal val PREVIEW_CONVERSATIONS =
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun ConversationListPopulatedPreview() {
-    ChatbotTheme {
+    ChatbotTheme(darkTheme = true) {
         ConversationListScreen(
             uiState = ConversationListUiState(isLoading = false, conversations = PREVIEW_CONVERSATIONS),
             selectedConversationId = null,
@@ -1933,7 +1956,7 @@ private fun ConversationListPopulatedPreview() {
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun ConversationListEmptyPreview() {
-    ChatbotTheme {
+    ChatbotTheme(darkTheme = true) {
         ConversationListScreen(
             uiState = ConversationListUiState(isLoading = false, conversations = emptyList()),
             selectedConversationId = null,
@@ -1946,7 +1969,7 @@ private fun ConversationListEmptyPreview() {
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun ConversationListLoadingPreview() {
-    ChatbotTheme {
+    ChatbotTheme(darkTheme = true) {
         ConversationListScreen(
             uiState = ConversationListUiState(isLoading = true),
             selectedConversationId = null,
@@ -1957,7 +1980,7 @@ private fun ConversationListLoadingPreview() {
 }
 ```
 
-- [ ] **Step 7: Build the stateful route**
+- [x] **Step 7: Build the stateful route**
 
 Create `ConversationListRoute.kt`:
 
@@ -1993,7 +2016,7 @@ fun ConversationListRoute(
 }
 ```
 
-- [ ] **Step 8: Run the UI tests to verify they pass**
+- [x] **Step 8: Run the UI tests to verify they pass**
 
 ```bash
 ./gradlew :feature:conversation:testDebugUnitTest --tests "*ConversationListScreenTest*"
@@ -2001,12 +2024,12 @@ fun ConversationListRoute(
 
 Expected: PASS, all five.
 
-- [ ] **Step 9: Record the screenshot goldens**
+- [x] **Step 9: Record the screenshot goldens**
 
-First create `feature/conversation/src/screenshotTest/kotlin/com/shayanaryan/chatbot/feature/conversation/preview/FormFactorPreviews.kt`. 005 asks for a golden per design frame, which proves the states; the `adaptive` skill asks for a golden per form factor, which proves the layout. Both screens ship both, and this annotation is the second half:
+First create `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/preview/FormFactorPreviews.kt`. 005 asks for a golden per design frame, which proves the states; the `adaptive` skill asks for a golden per form factor, which proves the layout. Both screens ship both, and this annotation is the second half. It lives in `:core:ui`'s **main** source set, not a test one: every feature's screenshot tests need it, and a test source set is not published to consumers. `ui-tooling-preview` is the production-safe half of the tooling split, so the annotation costs nothing at runtime.
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.preview
+package com.shayanaryan.chatbot.core.ui.preview
 
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -2031,6 +2054,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import com.shayanaryan.chatbot.core.ui.preview.FormFactorPreviews
 import com.shayanaryan.chatbot.feature.conversation.ConversationListScreen
 import com.shayanaryan.chatbot.feature.conversation.ConversationListUiState
 import com.shayanaryan.chatbot.feature.conversation.PREVIEW_CONVERSATIONS
@@ -2102,7 +2126,7 @@ Add the form-factor sweep to the same file, on the populated state, since that i
 @FormFactorPreviews
 @Composable
 private fun ListFormFactorPreview() {
-    ChatbotTheme { ListScreen(populated) }
+    ChatbotTheme(darkTheme = true) { ListScreen(populated) }
 }
 ```
 
@@ -2113,7 +2137,7 @@ private fun ListFormFactorPreview() {
 
 Expected: the update task writes goldens under `feature/conversation/src/debug/screenshotTest/reference/`; the validate task then passes. Before moving on, show the user the populated and empty goldens and the four form-factor ones, and get them to confirm. A golden recorded from a wrong render is worse than no golden, and only a person can say whether the tablet width still looks right.
 
-- [ ] **Step 10: Checkpoint**
+- [x] **Step 10: Checkpoint**
 
 ```bash
 ./gradlew spotlessApply
@@ -3047,7 +3071,6 @@ import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Motion
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.RadiusPrimitives
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.shared.chat.Role
 
@@ -3131,13 +3154,13 @@ private fun StreamingCaret(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 private fun MessageBubbleUserPreview() {
-    ChatbotTheme { MessageBubble(text = "help me plan a weekend in portland", role = Role.User) }
+    ChatbotTheme(darkTheme = true) { MessageBubble(text = "help me plan a weekend in portland", role = Role.User) }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun MessageBubbleAssistantPreview() {
-    ChatbotTheme {
+    ChatbotTheme(darkTheme = true) {
         MessageBubble(
             text = "Love it. Two nights? I'd do Powell's Books + a food-cart lunch Saturday.",
             role = Role.Assistant,
@@ -3148,7 +3171,7 @@ private fun MessageBubbleAssistantPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun MessageBubbleStreamingPreview() {
-    ChatbotTheme {
+    ChatbotTheme(darkTheme = true) {
         MessageBubble(
             text = "Love it. Two nights? I'd do Powell's Books + a food-cart lunch Saturday, then Forest Park in the",
             role = Role.Assistant,
@@ -3201,7 +3224,7 @@ private const val DOT_CYCLE_MILLIS = 1200
 private const val DOT_STAGGER_MILLIS = 200
 private const val DOT_MIN_ALPHA = 0.25f
 
-/** Frame 3f: the turn has started but no token has arrived yet. */
+/** The turn has started but no token has arrived yet. */
 @Composable
 fun ThinkingIndicator(modifier: Modifier = Modifier) {
     val description = stringResource(R.string.conversation_thinking)
@@ -3242,7 +3265,7 @@ fun ThinkingIndicator(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 private fun ThinkingIndicatorPreview() {
-    ChatbotTheme { ThinkingIndicator() }
+    ChatbotTheme(darkTheme = true) { ThinkingIndicator() }
 }
 ```
 
@@ -3328,13 +3351,13 @@ fun ErrorRow(
 @Preview(showBackground = true)
 @Composable
 private fun ErrorRowRateLimitedPreview() {
-    ChatbotTheme { ErrorRow(error = ChatError.RateLimited(retryAfterSeconds = null), onRetry = {}) }
+    ChatbotTheme(darkTheme = true) { ErrorRow(error = ChatError.RateLimited(retryAfterSeconds = null), onRetry = {}) }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun ErrorRowNetworkPreview() {
-    ChatbotTheme { ErrorRow(error = ChatError.Network, onRetry = {}) }
+    ChatbotTheme(darkTheme = true) { ErrorRow(error = ChatError.Network, onRetry = {}) }
 }
 ```
 
@@ -3369,7 +3392,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.RadiusPrimitives
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.feature.conversation.R
 
-/** Frame 3a's body: a chat with no first message yet. */
+/** A chat with no first message yet. */
 @Composable
 fun NewChatEmptyState(modifier: Modifier = Modifier) {
     Column(
@@ -3407,7 +3430,7 @@ fun NewChatEmptyState(modifier: Modifier = Modifier) {
 @Preview(showBackground = true, heightDp = 400)
 @Composable
 private fun NewChatEmptyStatePreview() {
-    ChatbotTheme { NewChatEmptyState() }
+    ChatbotTheme(darkTheme = true) { NewChatEmptyState() }
 }
 ```
 
@@ -3687,7 +3710,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
@@ -3709,7 +3731,6 @@ import com.shayanaryan.chatbot.core.ui.designsystem.component.DsIconButton
 import com.shayanaryan.chatbot.core.ui.designsystem.component.IconButtonVariant
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-import com.shayanaryan.chatbot.core.ui.designsystem.theme.RadiusPrimitives
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.feature.conversation.R
 
@@ -3743,7 +3764,7 @@ fun Composer(
                     .defaultMinSize(minHeight = 48.dp)
                     .background(
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        shape = RoundedCornerShape(RadiusPrimitives.radius7),
+                        shape = MaterialTheme.shapes.extraLarge,
                     ).padding(horizontal = Spacing.s4, vertical = Spacing.s3),
             contentAlignment = Alignment.CenterStart,
         ) {
@@ -3793,7 +3814,7 @@ fun Composer(
 @Preview(showBackground = true)
 @Composable
 private fun ComposerEmptyPreview() {
-    ChatbotTheme {
+    ChatbotTheme(darkTheme = true) {
         Composer(state = rememberTextFieldState(), isStreaming = false, onSend = {}, onCancel = {})
     }
 }
@@ -3801,7 +3822,7 @@ private fun ComposerEmptyPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun ComposerStreamingPreview() {
-    ChatbotTheme {
+    ChatbotTheme(darkTheme = true) {
         Composer(state = rememberTextFieldState(), isStreaming = true, onSend = {}, onCancel = {})
     }
 }
@@ -3917,13 +3938,13 @@ fun ModelPickerChip(
 @Preview(showBackground = true)
 @Composable
 private fun ModelPickerChipPreview() {
-    ChatbotTheme { ModelPickerChip(model = ClaudeModel.Sonnet, enabled = true, onModelSelected = {}) }
+    ChatbotTheme(darkTheme = true) { ModelPickerChip(model = ClaudeModel.Sonnet, enabled = true, onModelSelected = {}) }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun ModelPickerChipDisabledPreview() {
-    ChatbotTheme { ModelPickerChip(model = ClaudeModel.Haiku, enabled = false, onModelSelected = {}) }
+    ChatbotTheme(darkTheme = true) { ModelPickerChip(model = ClaudeModel.Haiku, enabled = false, onModelSelected = {}) }
 }
 ```
 
@@ -3944,7 +3965,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.feature.conversation.R
 
-/** Frame 3j. Destructive and local-only, so it asks first and says why it matters. */
+/** Destructive and local-only, so it asks first and says why it matters. */
 @Composable
 fun DeleteChatDialog(
     onConfirm: () -> Unit,
@@ -3965,7 +3986,7 @@ fun DeleteChatDialog(
 @Preview
 @Composable
 private fun DeleteChatDialogPreview() {
-    ChatbotTheme { DeleteChatDialog(onConfirm = {}, onDismiss = {}) }
+    ChatbotTheme(darkTheme = true) { DeleteChatDialog(onConfirm = {}, onDismiss = {}) }
 }
 ```
 
@@ -4185,7 +4206,7 @@ One fixture, used by both the colocated previews below and the screenshot golden
 ```kotlin
 /**
  * The states the design draws, as one fixture the colocated previews and the screenshot goldens
- * both read, so a golden and a preview can never disagree about what a frame contains.
+ * both read, so a golden and a preview can never disagree about what a state contains.
  */
 internal object ChatPreviewData {
     private fun message(
@@ -4266,49 +4287,49 @@ private fun PreviewChat(
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun ChatNewPreview() {
-    ChatbotTheme { PreviewChat(ChatPreviewData.newChat) }
+    ChatbotTheme(darkTheme = true) { PreviewChat(ChatPreviewData.newChat) }
 }
 
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun ChatIdlePreview() {
-    ChatbotTheme { PreviewChat(ChatPreviewData.openChat) }
+    ChatbotTheme(darkTheme = true) { PreviewChat(ChatPreviewData.openChat) }
 }
 
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun ChatThinkingPreview() {
-    ChatbotTheme { PreviewChat(ChatPreviewData.thinking) }
+    ChatbotTheme(darkTheme = true) { PreviewChat(ChatPreviewData.thinking) }
 }
 
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun ChatStreamingPreview() {
-    ChatbotTheme { PreviewChat(ChatPreviewData.streaming) }
+    ChatbotTheme(darkTheme = true) { PreviewChat(ChatPreviewData.streaming) }
 }
 
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun ChatRateLimitedPreview() {
-    ChatbotTheme { PreviewChat(ChatPreviewData.rateLimited) }
+    ChatbotTheme(darkTheme = true) { PreviewChat(ChatPreviewData.rateLimited) }
 }
 
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun ChatNetworkFailurePreview() {
-    ChatbotTheme { PreviewChat(ChatPreviewData.network) }
+    ChatbotTheme(darkTheme = true) { PreviewChat(ChatPreviewData.network) }
 }
 
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun ChatDeleteDialogPreview() {
-    ChatbotTheme { PreviewChat(ChatPreviewData.deleting) }
+    ChatbotTheme(darkTheme = true) { PreviewChat(ChatPreviewData.deleting) }
 }
 
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun ChatTwoPanePreview() {
-    ChatbotTheme { PreviewChat(ChatPreviewData.openChat, onBack = null) }
+    ChatbotTheme(darkTheme = true) { PreviewChat(ChatPreviewData.openChat, onBack = null) }
 }
 ```
 
@@ -4388,6 +4409,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import com.shayanaryan.chatbot.core.ui.preview.FormFactorPreviews
 import com.shayanaryan.chatbot.feature.conversation.ChatPreviewData
 import com.shayanaryan.chatbot.feature.conversation.ConversationScreen
 import com.shayanaryan.chatbot.feature.conversation.ConversationUiState
@@ -4531,7 +4553,7 @@ private fun ChatDetailPaneLightPreview() {
 @FormFactorPreviews
 @Composable
 private fun ChatFormFactorPreview() {
-    ChatbotTheme { Chat(ChatPreviewData.openChat) }
+    ChatbotTheme(darkTheme = true) { Chat(ChatPreviewData.openChat) }
 }
 ```
 

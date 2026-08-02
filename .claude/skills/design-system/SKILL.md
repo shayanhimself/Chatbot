@@ -93,11 +93,10 @@ frame.
   flag it and report it to the user, to update the design.
 - **Spacing & radius — exact, 1:1.** `Spacing` is for padding / margin / gaps,
   *not* component size. `var(--space-4)` → `Spacing.s4`.
-  Radius is either component-scoped (`--radius-full`
-  → `CircleShape`, `--radius-card` → `ComponentShapes.card`),
-  or the numeric scale on a plain surface (`--radius-N`
-  → `RoundedCornerShape(RadiusPrimitives.radiusN)`; slotted values `1/2/3/4/7` may use
-  `MaterialTheme.shapes.*` instead).
+  Radius is component-scoped where the design names a component (`--radius-full`
+  → `CircleShape`, `--radius-card` → `ComponentShapes.card`). On a plain surface,
+  `--radius-N` takes the `MaterialTheme.shapes.*` slot holding that radius, and falls
+  back to `RoundedCornerShape(RadiusPrimitives.radiusN)` only for a radius no slot carries.
   - Raw px in app UI is stale, report it so the design gets
     tokenized. Never silently absorb an off-grid or untokenized value.
   - Exception: Phone-frame chrome keeps raw px because it is never built.

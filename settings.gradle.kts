@@ -22,12 +22,17 @@ dependencyResolutionManagement {
     }
 }
 
+// Type-safe project accessors.
+// Still a feature preview on Gradle 9.6.1, so it stays opt-in.
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 rootProject.name = "chatbot"
 
 include(
     ":app",
     ":core:ui",
     ":shared",
+    ":shared:testing",
     ":feature:conversation",
     ":feature:onboarding",
     ":feature:settings",

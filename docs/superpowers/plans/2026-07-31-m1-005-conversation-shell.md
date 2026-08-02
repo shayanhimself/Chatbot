@@ -85,10 +85,10 @@ Checked against the `adaptive` skill's five steps, so every one of them is eithe
 `TestChatEngine.kt` and `SseFixtures.kt` **stay** in `:shared` commonTest: `ClaudeChatEngine` and `installChatDefaults()` are `internal` to `:shared`, so a helper that builds a real engine over a `MockEngine` cannot compile from another module.
 
 **Interfaces:**
-- Produces: Gradle project `:shared:testing`, consumed as `testImplementation(project(":shared:testing"))`. Publishes `FakeClock`, `FakeConversationRepository`, `FakeScriptedChatEngine`, `FakeManualChatEngine` in their existing packages.
+- Produces: Gradle project `:shared:testing`, consumed as `testImplementation(projects.shared.testing)`. Publishes `FakeClock`, `FakeConversationRepository`, `FakeScriptedChatEngine`, `FakeManualChatEngine` in their existing packages.
 - Produces: catalog aliases `libs.androidx.hilt.lifecycle.viewmodel.compose`, `libs.androidx.adaptive.navigation3` and `libs.kotlin.test.junit`.
 
-- [ ] **Step 1: Confirm the baseline is green before touching anything**
+- [x] **Step 1: Confirm the baseline is green before touching anything**
 
 ```bash
 ./gradlew :shared:testAndroidHostTest :core:ui:testDebugUnitTest :app:assembleDebug spotlessCheck
@@ -96,7 +96,7 @@ Checked against the `adaptive` skill's five steps, so every one of them is eithe
 
 Expected: `BUILD SUCCESSFUL`. If it is not, stop and report. No task starts on a red baseline.
 
-- [ ] **Step 2: Pin the three missing libraries**
+- [x] **Step 2: Pin the three missing libraries**
 
 Both are additions to `gradle/libs.versions.toml`. In `[versions]`, after `screenshot = "0.0.1-alpha15"`:
 
@@ -131,7 +131,7 @@ Two things this deliberately does **not** do, both verified against the publishe
 
 `lifecycle-viewmodel-navigation3` is already pinned via `version.ref = "lifecycle"` and 2.11.0 exists, so no change is needed.
 
-- [ ] **Step 3: Register the module**
+- [x] **Step 3: Register the module**
 
 In `settings.gradle.kts`, add `":shared:testing"` to the `include(…)` list, after `":shared"`:
 
@@ -148,7 +148,7 @@ include(
 )
 ```
 
-- [ ] **Step 4: Create the module's build script**
+- [x] **Step 4: Create the module's build script**
 
 Create `shared/testing/build.gradle.kts`:
 
@@ -176,7 +176,7 @@ kotlin {
             // api, not implementation: every fake's public surface is a :shared type: the
             // repository interface it implements, the models it returns. A consumer that
             // sees the fake must see those too.
-            api(project(":shared"))
+            api(projects.shared)
             implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
@@ -198,7 +198,7 @@ tasks.withType<Test>().configureEach {
 
 The fakes live in `commonMain`, a production source set, which is exactly what makes them visible to other Gradle projects. Every consumer takes the module as `testImplementation`, so nothing reaches an APK. The graph stays acyclic because Gradle resolves classpaths per source set: `:shared`'s main compilation and its test compilation are separate units, and only the test one points at `:shared:testing`.
 
-- [ ] **Step 5: Move the four fakes and their two tests**
+- [x] **Step 5: Move the four fakes and their two tests**
 
 ```bash
 mkdir -p shared/testing/src/commonMain/kotlin/com/shayanaryan/chatbot/shared/{chat,conversation}
@@ -220,20 +220,20 @@ git mv shared/src/commonTest/kotlin/com/shayanaryan/chatbot/shared/chat/FakeManu
 
 Package declarations are unchanged: keeping the fakes in the packages they already sit in costs no churn in `:shared`'s own tests and is legal on Android. Two Gradle projects then share a package, and `internal` still does not cross between them, which is why `TestChatEngine.kt` had to stay behind.
 
-- [ ] **Step 6: Point `:shared`'s tests at the new module**
+- [x] **Step 6: Point `:shared`'s tests at the new module**
 
 In `shared/build.gradle.kts`, add one line to each test source set:
 
 ```kotlin
         commonTest.dependencies {
-            implementation(project(":shared:testing"))
+            implementation(projects.shared.testing)
             implementation(libs.kotlin.test)
             implementation(libs.ktor.client.mock)
             implementation(libs.kotlinx.coroutines.test)
         }
         // No typed accessor exists for this source set.
         getByName("androidHostTest").dependencies {
-            implementation(project(":shared:testing"))
+            implementation(projects.shared.testing)
             implementation(libs.junit)
             implementation(libs.robolectric)
             implementation(libs.androidx.test.core)
@@ -241,7 +241,7 @@ In `shared/build.gradle.kts`, add one line to each test source set:
         }
 ```
 
-- [ ] **Step 7: Run both modules' tests**
+- [x] **Step 7: Run both modules' tests**
 
 ```bash
 ./gradlew :shared:testing:testAndroidHostTest :shared:testAndroidHostTest
@@ -249,7 +249,7 @@ In `shared/build.gradle.kts`, add one line to each test source set:
 
 Expected: PASS for both. `:shared`'s existing tests import the fakes from packages that have not changed, so no import edits are needed anywhere. A failure here is a missing dependency edge, not a test regression.
 
-- [ ] **Step 8: Checkpoint**
+- [x] **Step 8: Checkpoint**
 
 ```bash
 ./gradlew spotlessApply
@@ -811,8 +811,8 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
-    implementation(project(":shared"))
-    implementation(project(":core:ui"))
+    implementation(projects.shared)
+    implementation(projects.core.ui)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
@@ -829,7 +829,7 @@ dependencies {
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     ksp(libs.hilt.compiler)
 
-    testImplementation(project(":shared:testing"))
+    testImplementation(projects.shared.testing)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)
     // Carries the JVM actuals for kotlin.test's annotations. This module is a plain Android

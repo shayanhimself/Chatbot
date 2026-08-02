@@ -18,8 +18,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":shared"))
-    implementation(project(":core:ui"))
+    implementation(projects.shared)
+    implementation(projects.core.ui)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)

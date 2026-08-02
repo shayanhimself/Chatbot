@@ -49,12 +49,12 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":shared"))
-    implementation(project(":core:ui"))
-    implementation(project(":feature:conversation"))
-    implementation(project(":feature:onboarding"))
-    implementation(project(":feature:settings"))
-    implementation(project(":feature:reminders"))
+    implementation(projects.shared)
+    implementation(projects.core.ui)
+    implementation(projects.feature.conversation)
+    implementation(projects.feature.onboarding)
+    implementation(projects.feature.settings)
+    implementation(projects.feature.reminders)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)

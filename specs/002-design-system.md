@@ -104,6 +104,8 @@ The design system remains the source of truth for their *appearance* regardless:
 
 Compose Preview Screenshot Testing (`com.android.compose.screenshot` plugin, `@PreviewTest` + `@Preview`), wired into the version catalog and `:core:ui`. Each component ships previews covering its variants in **both** dark and light. Roborazzi is the documented fallback if the preview-channel tool blocks.
 
+The `preview` package carries what every module's screenshot tests share, currently the `FormFactorPreviews` multi-device preview annotation.
+
 ## Companion skill
 
 A project skill at `.claude/skills/design-system/SKILL.md` is what later feature work loads to build a screen: a short screen recipe, pointers to look tokens and catalog components up **in the code** (the code is the SSOT for names and values), the design→Compose translation layer, the M3-import boundary rule, and the manual upstream-sync procedure. Which role/component each element uses is decided by the design, not restated in the skill. It grows as the catalog grows in later milestones.

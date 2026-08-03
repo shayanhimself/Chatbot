@@ -1,4 +1,4 @@
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
 /**
  * @property isLoading true until Room's first emission.

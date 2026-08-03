@@ -1,5 +1,6 @@
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
+import com.shayanaryan.chatbot.feature.conversation.R
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.days

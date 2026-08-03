@@ -1,13 +1,13 @@
-package com.shayanaryan.chatbot.feature.conversation.preview
+package com.shayanaryan.chatbot.feature.conversation.conversationlist.preview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.preview.FormFactorPreviews
-import com.shayanaryan.chatbot.feature.conversation.ConversationListScreen
-import com.shayanaryan.chatbot.feature.conversation.ConversationListUiState
-import com.shayanaryan.chatbot.feature.conversation.PREVIEW_CONVERSATIONS
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.ConversationListScreen
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.ConversationListUiState
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.PREVIEW_CONVERSATIONS
 
 @Composable
 private fun ListScreen(uiState: ConversationListUiState) {

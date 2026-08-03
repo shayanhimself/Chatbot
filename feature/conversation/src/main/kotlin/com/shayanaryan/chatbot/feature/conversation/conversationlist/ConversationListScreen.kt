@@ -1,4 +1,4 @@
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -19,9 +19,10 @@ import com.shayanaryan.chatbot.core.ui.designsystem.component.DsButton
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
-import com.shayanaryan.chatbot.feature.conversation.component.ConversationListEmpty
-import com.shayanaryan.chatbot.feature.conversation.component.ConversationListItem
-import com.shayanaryan.chatbot.feature.conversation.component.ConversationListSkeleton
+import com.shayanaryan.chatbot.feature.conversation.R
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.component.ConversationListEmpty
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.component.ConversationListItem
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.component.ConversationListSkeleton
 
 /**
  * The app's home screen: browse and resume conversations, or start one.

@@ -1,6 +1,7 @@
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
 import androidx.annotation.StringRes
+import com.shayanaryan.chatbot.feature.conversation.R
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes

@@ -1,4 +1,4 @@
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.chat
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

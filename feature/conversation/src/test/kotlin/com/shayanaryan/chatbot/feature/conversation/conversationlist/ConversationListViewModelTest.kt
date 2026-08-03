@@ -1,5 +1,6 @@
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
+import com.shayanaryan.chatbot.feature.conversation.R
 import com.shayanaryan.chatbot.shared.FakeClock
 import com.shayanaryan.chatbot.shared.conversation.FakeConversationRepository
 import kotlinx.coroutines.Dispatchers

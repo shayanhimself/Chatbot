@@ -1,7 +1,8 @@
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.shayanaryan.chatbot.core.ui.viewmodel.SUBSCRIPTION_TIMEOUT_MILLIS
 import com.shayanaryan.chatbot.shared.conversation.Conversation
 import com.shayanaryan.chatbot.shared.conversation.ConversationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,12 +13,6 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import kotlin.time.Clock
 import kotlin.time.Instant
-
-/**
- * How long a `stateIn` pipeline keeps collecting after its last subscriber leaves. Long enough to
- * survive a configuration change, short enough that a backgrounded screen stops reading Room.
- */
-internal const val SUBSCRIPTION_TIMEOUT_MILLIS: Long = 5_000L
 
 /**
  * The conversation list. Read-only: every mutation belongs to the chat screen, so this holds no

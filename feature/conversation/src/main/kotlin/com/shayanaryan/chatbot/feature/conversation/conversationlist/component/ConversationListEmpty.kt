@@ -1,4 +1,4 @@
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.conversationlist.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

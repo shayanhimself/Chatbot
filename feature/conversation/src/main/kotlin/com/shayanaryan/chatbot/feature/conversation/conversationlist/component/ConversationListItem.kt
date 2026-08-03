@@ -1,4 +1,4 @@
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.conversationlist.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,7 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.feature.conversation.R
-import com.shayanaryan.chatbot.feature.conversation.RelativeTime
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.RelativeTime
 
 /**
  * One conversation in the list: title and age on the first line, the last complete reply on the

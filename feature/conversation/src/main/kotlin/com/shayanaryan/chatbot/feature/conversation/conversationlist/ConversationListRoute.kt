@@ -1,4 +1,4 @@
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue

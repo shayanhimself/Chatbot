@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 
-private const val LAST_SKELETON_ROW_ALPHA = 0.6f
+private const val LAST_SKELETON_ITEM_ALPHA = 0.6f
 
 @Composable
 fun ConversationListSkeleton(modifier: Modifier = Modifier) {
@@ -29,12 +29,12 @@ fun ConversationListSkeleton(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.s4, vertical = Spacing.s2),
         verticalArrangement = Arrangement.spacedBy(Spacing.s6),
     ) {
-        skeletonRows.forEachIndexed { index, widths ->
-            SkeletonRow(
+        skeletonItems.forEachIndexed { index, widths ->
+            SkeletonItem(
                 widths = widths,
                 modifier =
                     Modifier.alpha(
-                        if (index == skeletonRows.lastIndex) LAST_SKELETON_ROW_ALPHA else 1f,
+                        if (index == skeletonItems.lastIndex) LAST_SKELETON_ITEM_ALPHA else 1f,
                     ),
             )
         }
@@ -42,7 +42,7 @@ fun ConversationListSkeleton(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SkeletonRow(
+private fun SkeletonItem(
     widths: SkeletonWidths,
     modifier: Modifier = Modifier,
 ) {
@@ -91,10 +91,10 @@ private fun ConversationListSkeletonPreview() {
 }
 
 /**
- * One entry per placeholder row, top to bottom. Widths differ because real titles and replies do;
- * identical rows would read as a table.
+ * One entry per placeholder item, top to bottom. Widths differ because real titles and replies do;
+ * identical items would read as a table.
  */
-private val skeletonRows =
+private val skeletonItems =
     listOf(
         SkeletonWidths(title = 0.62f, snippet = 0.88f),
         SkeletonWidths(title = 0.48f, snippet = 0.74f),
@@ -103,8 +103,8 @@ private val skeletonRows =
     )
 
 /**
- * How wide a placeholder row's two bars are, each a fraction of the row's width. The bars stand in
- * for the two lines [ConversationListItem] draws.
+ * How wide a placeholder item's two bars are, each a fraction of the item's width. The bars stand
+ * in for the two lines [ConversationListItem] draws.
  *
  * @property title the top bar, where the title goes.
  * @property snippet the bottom bar, where the snippet goes.

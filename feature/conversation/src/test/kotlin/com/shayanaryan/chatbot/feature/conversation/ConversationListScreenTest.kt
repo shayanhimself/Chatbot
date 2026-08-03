@@ -16,7 +16,7 @@ class ConversationListScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val rows =
+    private val items =
         listOf(
             ConversationListItemUiState(
                 id = 1L,
@@ -50,8 +50,8 @@ class ConversationListScreenTest {
     }
 
     @Test
-    fun `shows a row per conversation with its snippet and age`() {
-        setScreen(ConversationListUiState(isLoading = false, conversations = rows))
+    fun `shows an item per conversation with its snippet and age`() {
+        setScreen(ConversationListUiState(isLoading = false, conversations = items))
 
         composeRule.onNodeWithText("Weekend trip to Portland").assertIsDisplayed()
         composeRule.onNodeWithText("Powell's Books first.").assertIsDisplayed()
@@ -60,10 +60,10 @@ class ConversationListScreenTest {
     }
 
     @Test
-    fun `reports the id of the row that was tapped`() {
+    fun `reports the id of the item that was tapped`() {
         var clicked: Long? = null
         setScreen(
-            ConversationListUiState(isLoading = false, conversations = rows),
+            ConversationListUiState(isLoading = false, conversations = items),
             onConversationClick = { clicked = it },
         )
 
@@ -80,7 +80,7 @@ class ConversationListScreenTest {
     }
 
     @Test
-    fun `shows neither rows nor the empty state while loading`() {
+    fun `shows neither items nor the empty state while loading`() {
         setScreen(ConversationListUiState(isLoading = true, conversations = emptyList()))
 
         composeRule.onNodeWithText("Hmmm, a bit quite here").assertDoesNotExist()
@@ -90,7 +90,7 @@ class ConversationListScreenTest {
     fun `the new chat button reports a tap`() {
         var tapped = false
         setScreen(
-            ConversationListUiState(isLoading = false, conversations = rows),
+            ConversationListUiState(isLoading = false, conversations = items),
             onNewChat = { tapped = true },
         )
 

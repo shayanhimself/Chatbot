@@ -36,7 +36,7 @@ Pulled with `pull-design` from the *Chatbot designs* project (`f6b3ad66-7433-4a2
 | File | Frames used |
 |---|---|
 | `Screen-Conversation List.dc.html` | 2a populated, 2b empty, 2e loading (2c/2d search are M4) |
-| `Component-ConversationListItem.dc.html` | the row |
+| `Component-ConversationListItem.dc.html` | the item |
 | `Screen-Chat.dc.html` | 3a, 3b, 3e, 3f, 3g, 3h, 3i, 3j, 3k (3c/3d tool chips are 008+) |
 | `Screen-Light Theme.dc.html` | 7b, 7c, the light renderings of the same two screens |
 
@@ -46,7 +46,7 @@ Pulled with `pull-design` from the *Chatbot designs* project (`f6b3ad66-7433-4a2
 
 Report these to the user at the end; do not silently absorb them.
 
-1. **Bold spans dropped.** Frames 3g and 3h bold a fragment of the error sentence. The row renders one text style; no `AnnotatedString`.
+1. **Bold spans dropped.** Frames 3g and 3h bold a fragment of the error sentence. The item renders one text style; no `AnnotatedString`.
 2. **Model names come from `ClaudeModel.displayName`**, so the picker reads "Opus 5", not the mockup's stale "Opus 4.8".
 3. **Phone bezel, status bar, home indicator are catalog scaffolding**, never built. Real system bars come from edge-to-edge insets.
 
@@ -60,7 +60,7 @@ Checked against the `adaptive` skill's five steps, so every one of them is eithe
 | 2. Adaptive navigation area (`NavigationSuiteScaffold`) | Not applicable. The app has no navigation bar and no top-level destination switcher: the list is the home screen and the chat is its detail. 007's settings entry point is the first thing that could change that. |
 | 3.1. List-detail via `SceneStrategy` | Done, and it is the reason the whole nav graph sits in `:app`. `rememberListDetailSceneStrategy` on `NavDisplay.sceneStrategies`, `listPane(detailPlaceholder = …)` and `detailPane()` metadata. **`ListDetailPaneScaffold` is not used**, per the skill's explicit instruction. The detail pane carries no back arrow on a wide window. |
 | 3.2. Supporting pane | Not applicable. There is no third surface supporting either screen. |
-| 4. Adaptive column count | Deliberately skipped for the conversation list, and it must not be applied to the message list. The list is a column of full-width text rows inside a list pane the scene already bounds, so `GridCells.Adaptive` resolves to one column at every width the app runs at; the design draws one column in both 2a and 3k. Chat bubbles are a conversation, not a collection, so a grid would be wrong at any width. Revisit if a genuinely wide single-pane surface appears. |
+| 4. Adaptive column count | Deliberately skipped for the conversation list, and it must not be applied to the message list. The list is a column of full-width text items inside a list pane the scene already bounds, so `GridCells.Adaptive` resolves to one column at every width the app runs at; the design draws one column in both 2a and 3k. Chat bubbles are a conversation, not a collection, so a grid would be wrong at any width. Revisit if a genuinely wide single-pane surface appears. |
 | 5. Collapsing app bars on scroll | Deliberately skipped. The chat's top bar holds the title and the only route to delete, and the list's holds the only heading; neither competes for space at any supported width. No mockup collapses either. |
 
 
@@ -1139,7 +1139,7 @@ class ConversationListViewModelTest {
     }
 
     @Test
-    fun `starts loading with no rows`() =
+    fun `starts loading with no items`() =
         runTest(dispatcher) {
             val viewModel = ConversationListViewModel(FakeConversationRepository(clock), clock)
 
@@ -1171,13 +1171,13 @@ class ConversationListViewModelTest {
             collecting(viewModel)
             advanceUntilIdle()
 
-            val row =
+            val item =
                 viewModel.uiState.value.conversations
                     .single()
 
-            assertEquals(id, row.id)
-            assertEquals("plan a weekend", row.title)
-            assertEquals("Powell's Books first.", row.snippet)
+            assertEquals(id, item.id)
+            assertEquals("plan a weekend", item.title)
+            assertEquals("Powell's Books first.", item.snippet)
         }
 
     @Test
@@ -1225,14 +1225,14 @@ data class ConversationListUiState(
 )
 
 /**
- * One row. A UI model rather than the domain `Conversation` because the timestamp is already
+ * One item. A UI model rather than the domain `Conversation` because the timestamp is already
  * resolved here, against the clock the ViewModel was given.
  *
- * @property id the conversation a tap on this row opens.
+ * @property id the conversation a tap on this item opens.
  * @property title the conversation's first message, truncated by the repository.
- * @property snippet the last complete message's text, the row's second line.
+ * @property snippet the last complete message's text, the item's second line.
  * @property relativeTime how long ago the conversation was last written to, already reduced to a
- *   unit and a count so the row only has to resolve a string.
+ *   unit and a count so the item only has to resolve a string.
  */
 data class ConversationListItemUiState(
     val id: Long,
@@ -1298,9 +1298,9 @@ private fun Conversation.toUiState(now: Instant) =
         id = id,
         title = title,
         snippet = snippet,
-        // Timestamps are resolved once per emission rather than on a ticker, so a row reading "2h" does
-        // not become "3h" while the screen stays open. Room re-emits on every message write, which in
-        // practice refreshes them often enough.
+        // Timestamps are resolved once per emission rather than on a ticker, so an item reading
+        // "2h" does not become "3h" while the screen stays open. Room re-emits on every message
+        // write, which in practice refreshes them often enough.
         relativeTime = updatedAt.relativeTo(now),
     )
 ```
@@ -1405,7 +1405,7 @@ class ConversationListScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val rows =
+    private val items =
         listOf(
             ConversationListItemUiState(
                 id = 1L,
@@ -1439,8 +1439,8 @@ class ConversationListScreenTest {
     }
 
     @Test
-    fun `shows a row per conversation with its snippet and age`() {
-        setScreen(ConversationListUiState(isLoading = false, conversations = rows))
+    fun `shows an item per conversation with its snippet and age`() {
+        setScreen(ConversationListUiState(isLoading = false, conversations = items))
 
         composeRule.onNodeWithText("Weekend trip to Portland").assertIsDisplayed()
         composeRule.onNodeWithText("Powell's Books first.").assertIsDisplayed()
@@ -1449,10 +1449,10 @@ class ConversationListScreenTest {
     }
 
     @Test
-    fun `reports the id of the row that was tapped`() {
+    fun `reports the id of the item that was tapped`() {
         var clicked: Long? = null
         setScreen(
-            ConversationListUiState(isLoading = false, conversations = rows),
+            ConversationListUiState(isLoading = false, conversations = items),
             onConversationClick = { clicked = it },
         )
 
@@ -1469,7 +1469,7 @@ class ConversationListScreenTest {
     }
 
     @Test
-    fun `shows neither rows nor the empty state while loading`() {
+    fun `shows neither items nor the empty state while loading`() {
         setScreen(ConversationListUiState(isLoading = true, conversations = emptyList()))
 
         composeRule.onNodeWithText("no conversations yet").assertDoesNotExist()
@@ -1479,7 +1479,7 @@ class ConversationListScreenTest {
     fun `the new chat button reports a tap`() {
         var tapped = false
         setScreen(
-            ConversationListUiState(isLoading = false, conversations = rows),
+            ConversationListUiState(isLoading = false, conversations = items),
             onNewChat = { tapped = true },
         )
 
@@ -1500,9 +1500,9 @@ Add `import androidx.compose.ui.test.assertDoesNotExist`.
 
 Expected: FAIL to compile. `ConversationListScreen` is unresolved.
 
-- [x] **Step 4: Build the row**
+- [x] **Step 4: Build the item**
 
-Create `component/ConversationListItem.kt`. The design file marks the last row with a `last` boolean so it drops its own divider; in Compose that is the call site drawing dividers *between* items, so the row itself carries none.
+Create `component/ConversationListItem.kt`. The design file marks the last item with a `last` boolean so it drops its own divider; in Compose that is the call site drawing dividers *between* items, so the item itself carries none.
 
 ```kotlin
 package com.shayanaryan.chatbot.feature.conversation.component
@@ -1704,7 +1704,7 @@ private fun ConversationListEmptyPreview() {
 }
 ```
 
-Create `component/ConversationListSkeleton.kt`, frame 2e's four placeholder rows:
+Create `component/ConversationListSkeleton.kt`, frame 2e's four placeholder items:
 
 ```kotlin
 package com.shayanaryan.chatbot.feature.conversation.component
@@ -1731,8 +1731,8 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 
 /**
- * How wide a placeholder row's two bars are, each a fraction of the row's width. The bars stand in
- * for the two lines [ConversationListItem] draws.
+ * How wide a placeholder item's two bars are, each a fraction of the item's width. The bars stand
+ * in for the two lines [ConversationListItem] draws.
  *
  * @property title the top bar, where the title goes.
  * @property snippet the bottom bar, where the snippet goes.
@@ -1743,10 +1743,10 @@ private data class SkeletonWidths(
 )
 
 /**
- * One entry per placeholder row, top to bottom. Widths differ because real titles and replies do;
- * identical rows would read as a table.
+ * One entry per placeholder item, top to bottom. Widths differ because real titles and replies do;
+ * identical items would read as a table.
  */
-private val skeletonRows =
+private val skeletonItems =
     listOf(
         SkeletonWidths(title = 0.62f, snippet = 0.88f),
         SkeletonWidths(title = 0.48f, snippet = 0.74f),
@@ -1755,10 +1755,10 @@ private val skeletonRows =
     )
 
 /**
- * Opacity of the bottom row, faded so the list reads as continuing past the edge of the screen
+ * Opacity of the bottom item, faded so the list reads as continuing past the edge of the screen
  * rather than ending there.
  */
-private const val LAST_SKELETON_ROW_ALPHA = 0.6f
+private const val LAST_SKELETON_ITEM_ALPHA = 0.6f
 
 /** What the list shows for the frame or two before Room's first emission arrives. */
 @Composable
@@ -1767,12 +1767,12 @@ fun ConversationListSkeleton(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.s4, vertical = Spacing.s2),
         verticalArrangement = Arrangement.spacedBy(Spacing.s6),
     ) {
-        skeletonRows.forEachIndexed { index, widths ->
-            SkeletonRow(
+        skeletonItems.forEachIndexed { index, widths ->
+            SkeletonItem(
                 widths = widths,
                 modifier =
                     Modifier.alpha(
-                        if (index == skeletonRows.lastIndex) LAST_SKELETON_ROW_ALPHA else 1f,
+                        if (index == skeletonItems.lastIndex) LAST_SKELETON_ITEM_ALPHA else 1f,
                     ),
             )
         }
@@ -1780,7 +1780,7 @@ fun ConversationListSkeleton(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SkeletonRow(
+private fun SkeletonItem(
     widths: SkeletonWidths,
     modifier: Modifier = Modifier,
 ) {
@@ -1864,7 +1864,7 @@ import com.shayanaryan.chatbot.feature.conversation.component.ConversationListSk
  *
  * Stateless. This overload is what previews, screenshot tests and Compose tests drive.
  *
- * @param selectedConversationId the conversation open in the detail pane, highlighted in the row.
+ * @param selectedConversationId the conversation open in the detail pane, highlighted in the item.
  *   Always null on a narrow window, which never shows the list beside a chat.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1905,15 +1905,15 @@ fun ConversationListScreen(
                     modifier = Modifier.padding(padding),
                     contentPadding = PaddingValues(horizontal = Spacing.s2, vertical = Spacing.s1),
                 ) {
-                    itemsIndexed(uiState.conversations, key = { _, row -> row.id }) { index, row ->
+                    itemsIndexed(uiState.conversations, key = { _, item -> item.id }) { index, item ->
                         ConversationListItem(
-                            title = row.title,
-                            snippet = row.snippet,
-                            relativeTime = row.relativeTime,
-                            selected = row.id == selectedConversationId,
-                            onClick = { onConversationClick(row.id) },
+                            title = item.title,
+                            snippet = item.snippet,
+                            relativeTime = item.relativeTime,
+                            selected = item.id == selectedConversationId,
+                            onClick = { onConversationClick(item.id) },
                         )
-                        // The design marks the last row so it drops its own divider; drawing
+                        // The design marks the last item so it drops its own divider; drawing
                         // between items says the same thing without a prop.
                         if (index != uiState.conversations.lastIndex) {
                             HorizontalDivider(
@@ -2148,32 +2148,32 @@ Expected: `BUILD SUCCESSFUL`. Report the frames covered and any off-grid values 
 
 ---
 
-### Task 5: The chat ViewModel and the row-folding rule
+### Task 5: The chat ViewModel and the item-folding rule
 
 Room and the in-memory turn are folded into one list so the `LazyColumn` has a single source and no composable has to reconcile two. This carries the most risk in the spec and gets the most cases.
 
 **Files:**
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationUiState.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatRows.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationViewModel.kt`
-- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatRowsTest.kt`
-- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationViewModelTest.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatItems.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatViewModel.kt`
+- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatItemsTest.kt`
+- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatViewModelTest.kt`
 
 **Interfaces:**
 - Consumes: `ConversationRepository` (`getConversationFlow`, `getMessagesFlow`, `getTurnFlow`, `send`, `retry`, `cancel`, `setModel`, `delete`), `TurnState`, `Message`, `MessageStatus`, `ChatError`, `ClaudeModel`, `List<ContentBlock>.textContent()`.
-- Produces: `sealed interface ChatRow` with `Persisted(message: Message)`, `Thinking`, `Streaming(text: String)`, `Error(error: ChatError)`.
-- Produces: `internal fun chatRows(messages: List<Message>, turn: TurnState): List<ChatRow>`.
-- Produces: `ConversationUiState(conversationId: Long?, title: String?, model: ClaudeModel, rows: List<ChatRow>, isStreaming: Boolean, deleteDialogVisible: Boolean, deleted: Boolean)`.
-- Produces: `ConversationViewModel` with `uiState: StateFlow<ConversationUiState>`, `Factory.create(initialConversationId: Long?)`, and methods `onSend(String)`, `onCancel()`, `onRetry()`, `onModelSelected(ClaudeModel)`, `onDeleteRequested()`, `onDeleteDismissed()`, `onDeleteConfirmed()`.
+- Produces: `sealed interface ChatItem` with `Persisted(message: Message)`, `Thinking`, `Streaming(text: String)`, `Error(error: ChatError)`.
+- Produces: `internal fun chatItems(messages: List<Message>, turn: TurnState): List<ChatItem>`.
+- Produces: `ConversationUiState(conversationId: Long?, title: String?, model: ClaudeModel, items: List<ChatItem>, isStreaming: Boolean, deleteDialogVisible: Boolean, deleted: Boolean)`.
+- Produces: `ChatViewModel` with `uiState: StateFlow<ConversationUiState>`, `Factory.create(initialConversationId: Long?)`, and methods `onSend(String)`, `onCancel()`, `onRetry()`, `onModelSelected(ClaudeModel)`, `onDeleteRequested()`, `onDeleteDismissed()`, `onDeleteConfirmed()`.
 
 **Two spec deltas to report**, both forced by the spec's own prose:
 
-- `ConversationUiState` gains `conversationId`. 005 says the list's selected row reads the live id reported "through an `onConversationIdChanged` lambda driven by its `UiState`", and that the overflow button is hidden while the id is null. Both need the id in the state.
+- `ConversationUiState` gains `conversationId`. 005 says the list's selected item reads the live id reported "through an `onConversationIdChanged` lambda driven by its `UiState`", and that the overflow button is hidden while the id is null. Both need the id in the state.
 - `ConversationUiState` gains `deleted`. 005 says confirming delete "pops to the list, or on a wide window returns the detail pane to the new-chat state", a navigation trigger, which the architecture skill requires be a state field the UI observes, never an event channel. Setting it only after `delete` returns is also what keeps `viewModelScope` alive long enough to finish the delete before the entry is popped.
 
-- [ ] **Step 1: Write the failing row-folding tests**
+- [ ] **Step 1: Write the failing item-folding tests**
 
-The rule is pure, so it is tested as a pure function before any flow plumbing exists. Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatRowsTest.kt`:
+The rule is pure, so it is tested as a pure function before any flow plumbing exists. Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatItemsTest.kt`:
 
 ```kotlin
 package com.shayanaryan.chatbot.feature.conversation
@@ -2190,7 +2190,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 
-class ChatRowsTest {
+class ChatItemsTest {
     private var nextId = 1L
 
     private fun message(
@@ -2215,24 +2215,24 @@ class ChatRowsTest {
 
     @Test
     fun `an idle conversation is only its persisted messages`() {
-        val rows = chatRows(listOf(user("hi"), assistant("hello")), TurnState.Idle)
+        val items = chatItems(listOf(user("hi"), assistant("hello")), TurnState.Idle)
 
-        assertEquals(2, rows.size)
-        assertTrue(rows.all { it is ChatRow.Persisted })
+        assertEquals(2, items.size)
+        assertTrue(items.all { it is ChatItem.Persisted })
     }
 
     @Test
-    fun `an empty streaming turn after a user message is the thinking row`() {
-        val rows = chatRows(listOf(user("hi")), TurnState.Streaming(""))
+    fun `an empty streaming turn after a user message is the thinking item`() {
+        val items = chatItems(listOf(user("hi")), TurnState.Streaming(""))
 
-        assertEquals(ChatRow.Thinking, rows.last())
+        assertEquals(ChatItem.Thinking, items.last())
     }
 
     @Test
-    fun `a streaming turn with text is the streaming row`() {
-        val rows = chatRows(listOf(user("hi")), TurnState.Streaming("hel"))
+    fun `a streaming turn with text is the streaming item`() {
+        val items = chatItems(listOf(user("hi")), TurnState.Streaming("hel"))
 
-        assertEquals(ChatRow.Streaming("hel"), rows.last())
+        assertEquals(ChatItem.Streaming("hel"), items.last())
     }
 
     /**
@@ -2241,11 +2241,11 @@ class ChatRowsTest {
      * Rendering both would double the bubble for a frame.
      */
     @Test
-    fun `a stale streaming turn behind a persisted reply adds no row`() {
-        val rows = chatRows(listOf(user("hi"), assistant("hello")), TurnState.Streaming("hello"))
+    fun `a stale streaming turn behind a persisted reply adds no item`() {
+        val items = chatItems(listOf(user("hi"), assistant("hello")), TurnState.Streaming("hello"))
 
-        assertEquals(2, rows.size)
-        assertTrue(rows.all { it is ChatRow.Persisted })
+        assertEquals(2, items.size)
+        assertTrue(items.all { it is ChatItem.Persisted })
     }
 
     /**
@@ -2253,53 +2253,53 @@ class ChatRowsTest {
      * delete, so the error renders *after* that row rather than instead of it.
      */
     @Test
-    fun `a failed turn keeps its persisted row and adds the error`() {
-        val rows =
-            chatRows(
+    fun `a failed turn keeps its persisted item and adds the error`() {
+        val items =
+            chatItems(
                 listOf(user("hi"), assistant("half", MessageStatus.Failed)),
                 TurnState.Failed(ChatError.Network),
             )
 
-        assertEquals(3, rows.size)
-        assertIs<ChatRow.Persisted>(rows[1])
-        assertEquals(ChatRow.Error(ChatError.Network), rows[2])
+        assertEquals(3, items.size)
+        assertIs<ChatItem.Persisted>(items[1])
+        assertEquals(ChatItem.Error(ChatError.Network), items[2])
     }
 
     @Test
     fun `a failed turn that produced no text still shows the error`() {
-        val rows =
-            chatRows(
+        val items =
+            chatItems(
                 listOf(user("hi"), assistant("", MessageStatus.Failed)),
                 TurnState.Failed(ChatError.Overloaded),
             )
 
-        assertEquals(2, rows.size)
-        assertEquals(ChatRow.Error(ChatError.Overloaded), rows.last())
+        assertEquals(2, items.size)
+        assertEquals(ChatItem.Error(ChatError.Overloaded), items.last())
     }
 
     @Test
-    fun `a blank message is not a row`() {
-        val rows = chatRows(listOf(user("hi"), assistant("")), TurnState.Idle)
+    fun `a blank message is not an item`() {
+        val items = chatItems(listOf(user("hi"), assistant("")), TurnState.Idle)
 
-        assertEquals(1, rows.size)
+        assertEquals(1, items.size)
     }
 
     @Test
     fun `a cancelled reply keeps its partial text as an ordinary message`() {
-        val rows =
-            chatRows(
+        val items =
+            chatItems(
                 listOf(user("hi"), assistant("half a th", MessageStatus.Cancelled)),
                 TurnState.Idle,
             )
 
-        assertEquals(2, rows.size)
-        val persisted = assertIs<ChatRow.Persisted>(rows.last())
+        assertEquals(2, items.size)
+        val persisted = assertIs<ChatItem.Persisted>(items.last())
         assertEquals(MessageStatus.Cancelled, persisted.message.status)
     }
 
     @Test
-    fun `an empty conversation with an idle turn has no rows at all`() {
-        assertEquals(emptyList<ChatRow>(), chatRows(emptyList(), TurnState.Idle))
+    fun `an empty conversation with an idle turn has no items at all`() {
+        assertEquals(emptyList<ChatItem>(), chatItems(emptyList(), TurnState.Idle))
     }
 }
 ```
@@ -2307,12 +2307,12 @@ class ChatRowsTest {
 - [ ] **Step 2: Run them to verify they fail**
 
 ```bash
-./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatRowsTest*"
+./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatItemsTest*"
 ```
 
-Expected: FAIL to compile. `chatRows` and `ChatRow` are unresolved.
+Expected: FAIL to compile. `chatItems` and `ChatItem` are unresolved.
 
-- [ ] **Step 3: Write the row model and the fold**
+- [ ] **Step 3: Write the item model and the fold**
 
 Create `ConversationUiState.kt`:
 
@@ -2327,24 +2327,24 @@ import com.shayanaryan.chatbot.shared.model.ClaudeModel
  * One item in the message list. Persisted history and the turn in flight are folded into a single
  * list so the `LazyColumn` reads one source and no composable reconciles two.
  */
-sealed interface ChatRow {
+sealed interface ChatItem {
     /** A message Room has stored, whatever status it ended with. */
     data class Persisted(
         val message: Message,
-    ) : ChatRow
+    ) : ChatItem
 
     /** A turn that has started but produced no token yet. */
-    data object Thinking : ChatRow
+    data object Thinking : ChatItem
 
     /** @property text the reply so far, cumulative rather than the latest delta. */
     data class Streaming(
         val text: String,
-    ) : ChatRow
+    ) : ChatItem
 
     /** The last turn failed. Renders after the failed message rather than instead of it. */
     data class Error(
         val error: ChatError,
-    ) : ChatRow
+    ) : ChatItem
 }
 
 /**
@@ -2361,14 +2361,14 @@ data class ConversationUiState(
     val conversationId: Long? = null,
     val title: String? = null,
     val model: ClaudeModel = ClaudeModel.Default,
-    val rows: List<ChatRow> = emptyList(),
+    val items: List<ChatItem> = emptyList(),
     val isStreaming: Boolean = false,
     val deleteDialogVisible: Boolean = false,
     val deleted: Boolean = false,
 )
 ```
 
-Create `ChatRows.kt`:
+Create `ChatItems.kt`:
 
 ```kotlin
 package com.shayanaryan.chatbot.feature.conversation
@@ -2384,42 +2384,42 @@ import com.shayanaryan.chatbot.shared.conversation.TurnState
  * Blank messages are dropped for the same reason 004 drops them on the way into a request: a turn
  * that produced no text still stores its row, and an empty bubble is noise.
  *
- * The live row is gated on the last *stored* message still being the user's. 004 guarantees the
+ * The live item is gated on the last *stored* message still being the user's. 004 guarantees the
  * assistant row is inserted before the turn returns to [TurnState.Idle], so there is a window
  * where Room has already emitted the finished message while the turn still reads
  * [TurnState.Streaming]; once an assistant message is the last stored row, any live text is stale
  * by definition. [TurnState.Failed] is exempt, because 004 writes a failed assistant row and keeps
  * the turn entry until the next send, retry or delete.
  */
-internal fun chatRows(
+internal fun chatItems(
     messages: List<Message>,
     turn: TurnState,
-): List<ChatRow> {
-    val rows = messages.filter { it.content.textContent().isNotBlank() }.map(ChatRow::Persisted)
+): List<ChatItem> {
+    val items = messages.filter { it.content.textContent().isNotBlank() }.map(ChatItem::Persisted)
     val awaitingReply = messages.lastOrNull()?.role == Role.User
     val trailing =
         when {
-            turn is TurnState.Failed -> ChatRow.Error(turn.error)
+            turn is TurnState.Failed -> ChatItem.Error(turn.error)
             !awaitingReply -> null
-            turn is TurnState.Streaming && turn.text.isEmpty() -> ChatRow.Thinking
-            turn is TurnState.Streaming -> ChatRow.Streaming(turn.text)
+            turn is TurnState.Streaming && turn.text.isEmpty() -> ChatItem.Thinking
+            turn is TurnState.Streaming -> ChatItem.Streaming(turn.text)
             else -> null
         }
-    return if (trailing == null) rows else rows + trailing
+    return if (trailing == null) items else items + trailing
 }
 ```
 
 - [ ] **Step 4: Run the fold tests to verify they pass**
 
 ```bash
-./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatRowsTest*"
+./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatItemsTest*"
 ```
 
 Expected: PASS, all nine.
 
 - [ ] **Step 5: Write the failing ViewModel tests**
 
-Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationViewModelTest.kt`:
+Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatViewModelTest.kt`:
 
 ```kotlin
 package com.shayanaryan.chatbot.feature.conversation
@@ -2446,7 +2446,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ConversationViewModelTest {
+class ChatViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
     // A non-zero step makes successive writes distinguishable, which is what ordering needs.
@@ -2466,14 +2466,14 @@ class ConversationViewModelTest {
     private fun viewModel(
         initialConversationId: Long? = null,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
-    ) = ConversationViewModel(initialConversationId, savedStateHandle, repository)
+    ) = ChatViewModel(initialConversationId, savedStateHandle, repository)
 
-    private fun TestScope.collecting(viewModel: ConversationViewModel) {
+    private fun TestScope.collecting(viewModel: ChatViewModel) {
         backgroundScope.launch { viewModel.uiState.collect {} }
     }
 
     @Test
-    fun `a new chat has no id, no title and no rows`() =
+    fun `a new chat has no id, no title and no items`() =
         runTest(dispatcher) {
             val viewModel = viewModel()
             collecting(viewModel)
@@ -2481,7 +2481,7 @@ class ConversationViewModelTest {
 
             assertNull(viewModel.uiState.value.conversationId)
             assertNull(viewModel.uiState.value.title)
-            assertEquals(emptyList<ChatRow>(), viewModel.uiState.value.rows)
+            assertEquals(emptyList<ChatItem>(), viewModel.uiState.value.items)
         }
 
     @Test
@@ -2520,20 +2520,20 @@ class ConversationViewModelTest {
             collecting(viewModel)
             viewModel.onSend("hello")
             advanceUntilIdle()
-            assertEquals(ChatRow.Thinking, viewModel.uiState.value.rows.last())
+            assertEquals(ChatItem.Thinking, viewModel.uiState.value.items.last())
 
             repository.emitDelta(1L, "hel")
             advanceUntilIdle()
-            assertEquals(ChatRow.Streaming("hel"), viewModel.uiState.value.rows.last())
+            assertEquals(ChatItem.Streaming("hel"), viewModel.uiState.value.items.last())
 
             repository.completeTurn(1L)
             advanceUntilIdle()
-            assertTrue(viewModel.uiState.value.rows.last() is ChatRow.Persisted)
+            assertTrue(viewModel.uiState.value.items.last() is ChatItem.Persisted)
             assertEquals(false, viewModel.uiState.value.isStreaming)
         }
 
     @Test
-    fun `a failed turn shows the error row`() =
+    fun `a failed turn shows the error item`() =
         runTest(dispatcher) {
             val viewModel = viewModel()
             collecting(viewModel)
@@ -2543,8 +2543,8 @@ class ConversationViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                ChatRow.Error(ChatError.RateLimited(30)),
-                viewModel.uiState.value.rows.last(),
+                ChatItem.Error(ChatError.RateLimited(30)),
+                viewModel.uiState.value.items.last(),
             )
         }
 
@@ -2561,7 +2561,7 @@ class ConversationViewModelTest {
             viewModel.onRetry()
             advanceUntilIdle()
 
-            assertEquals(ChatRow.Thinking, viewModel.uiState.value.rows.last())
+            assertEquals(ChatItem.Thinking, viewModel.uiState.value.items.last())
         }
 
     @Test
@@ -2576,8 +2576,8 @@ class ConversationViewModelTest {
             viewModel.onCancel()
             advanceUntilIdle()
 
-            val last = viewModel.uiState.value.rows.last()
-            assertTrue(last is ChatRow.Persisted && last.message.content.isNotEmpty())
+            val last = viewModel.uiState.value.items.last()
+            assertTrue(last is ChatItem.Persisted && last.message.content.isNotEmpty())
             assertEquals(false, viewModel.uiState.value.isStreaming)
         }
 
@@ -2671,14 +2671,14 @@ Add `import kotlinx.coroutines.flow.first`, `import kotlin.time.Duration.Compani
 - [ ] **Step 6: Run them to verify they fail**
 
 ```bash
-./gradlew :feature:conversation:testDebugUnitTest --tests "*ConversationViewModelTest*"
+./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatViewModelTest*"
 ```
 
-Expected: FAIL to compile. `ConversationViewModel` is unresolved.
+Expected: FAIL to compile. `ChatViewModel` is unresolved.
 
 - [ ] **Step 7: Write the ViewModel**
 
-Create `ConversationViewModel.kt`:
+Create `ChatViewModel.kt`:
 
 ```kotlin
 package com.shayanaryan.chatbot.feature.conversation
@@ -2714,7 +2714,7 @@ private data class ChatSlice(
     val conversationId: Long? = null,
     val title: String? = null,
     val model: ClaudeModel? = null,
-    val rows: List<ChatRow> = emptyList(),
+    val items: List<ChatItem> = emptyList(),
     val isStreaming: Boolean = false,
 )
 
@@ -2738,8 +2738,8 @@ private data class LocalState(
  * @param initialConversationId the id the navigation key carried, null for a new chat. The saved
  *   value wins over it when present.
  */
-@HiltViewModel(assistedFactory = ConversationViewModel.Factory::class)
-class ConversationViewModel
+@HiltViewModel(assistedFactory = ChatViewModel.Factory::class)
+class ChatViewModel
     @AssistedInject
     constructor(
         @Assisted private val initialConversationId: Long?,
@@ -2748,7 +2748,7 @@ class ConversationViewModel
     ) : ViewModel() {
         @AssistedFactory
         interface Factory {
-            fun create(initialConversationId: Long?): ConversationViewModel
+            fun create(initialConversationId: Long?): ChatViewModel
         }
 
         private val conversationId =
@@ -2768,7 +2768,7 @@ class ConversationViewModel
                     conversationId = slice.conversationId,
                     title = slice.title,
                     model = slice.model ?: local.pendingModel,
-                    rows = slice.rows,
+                    items = slice.items,
                     isStreaming = slice.isStreaming,
                     deleteDialogVisible = local.deleteDialogVisible,
                     deleted = local.deleted,
@@ -2800,7 +2800,7 @@ class ConversationViewModel
                             conversationId = id,
                             title = conversation.title,
                             model = conversation.model,
-                            rows = chatRows(messages, turn),
+                            items = chatItems(messages, turn),
                             isStreaming = turn is TurnState.Streaming,
                         )
                     }
@@ -2869,7 +2869,7 @@ class ConversationViewModel
 - [ ] **Step 8: Run the ViewModel tests to verify they pass**
 
 ```bash
-./gradlew :feature:conversation:testDebugUnitTest --tests "*ConversationViewModelTest*"
+./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatViewModelTest*"
 ```
 
 Expected: PASS, all twelve.
@@ -2885,7 +2885,7 @@ Expected: `BUILD SUCCESSFUL`. Report the two `ConversationUiState` fields added 
 
 ---
 
-### Task 6: The chat message rows
+### Task 6: The chat message items
 
 Everything that renders inside the message list: the bubble (3b), the thinking indicator (3f), the inline error with retry (3g, 3h), and the new-chat empty state (3a). Suggested prompt chips in 3a and tool chips in 3c/3d are **not built**.
 
@@ -2893,21 +2893,21 @@ Everything that renders inside the message list: the bubble (3b), the thinking i
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatErrorText.kt`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/MessageBubble.kt`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ThinkingIndicator.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ErrorRow.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ErrorItem.kt`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/NewChatEmptyState.kt`
-- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ErrorRowTest.kt`
+- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ErrorItemTest.kt`
 
 **Interfaces:**
 - Consumes: `ChatError`, `Role`, `Glyphs`, `ComponentShapes.bubbleUser` / `.bubbleAssistant`, `Motion.caretBlinkMillis`, the error strings from Task 3.
 - Produces: `@Composable fun ChatError.text(): String`.
 - Produces: `MessageBubble(text: String, role: Role, modifier, streaming: Boolean = false)`.
 - Produces: `ThinkingIndicator(modifier)`.
-- Produces: `ErrorRow(error: ChatError, onRetry: () -> Unit, modifier)`.
+- Produces: `ErrorItem(error: ChatError, onRetry: () -> Unit, modifier)`.
 - Produces: `NewChatEmptyState(modifier)`.
 
 - [ ] **Step 1: Write the failing error-copy test**
 
-Every `ChatError` case must resolve to distinct copy, and the rate-limited case must change when the server sent a hint. Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ErrorRowTest.kt`:
+Every `ChatError` case must resolve to distinct copy, and the rate-limited case must change when the server sent a hint. Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ErrorItemTest.kt`:
 
 ```kotlin
 package com.shayanaryan.chatbot.feature.conversation.component
@@ -2927,7 +2927,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
-class ErrorRowTest {
+class ErrorItemTest {
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -2972,7 +2972,7 @@ class ErrorRowTest {
         var retried = false
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
-                ErrorRow(error = ChatError.Network, onRetry = { retried = true })
+                ErrorItem(error = ChatError.Network, onRetry = { retried = true })
             }
         }
 
@@ -2985,7 +2985,7 @@ class ErrorRowTest {
     fun `the network failure renders its sentence`() {
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
-                ErrorRow(error = ChatError.Network, onRetry = {})
+                ErrorItem(error = ChatError.Network, onRetry = {})
             }
         }
 
@@ -2999,10 +2999,10 @@ class ErrorRowTest {
 - [ ] **Step 2: Run it to verify it fails**
 
 ```bash
-./gradlew :feature:conversation:testDebugUnitTest --tests "*ErrorRowTest*"
+./gradlew :feature:conversation:testDebugUnitTest --tests "*ErrorItemTest*"
 ```
 
-Expected: FAIL to compile. `ErrorRow` and `ChatError.text` are unresolved.
+Expected: FAIL to compile. `ErrorItem` and `ChatError.text` are unresolved.
 
 - [ ] **Step 3: Map errors to copy**
 
@@ -3269,9 +3269,9 @@ private fun ThinkingIndicatorPreview() {
 }
 ```
 
-- [ ] **Step 6: Build the error row**
+- [ ] **Step 6: Build the error item**
 
-Create `component/ErrorRow.kt`, frames 3g and 3h, which differ only in copy:
+Create `component/ErrorItem.kt`, frames 3g and 3h, which differ only in copy:
 
 ```kotlin
 package com.shayanaryan.chatbot.feature.conversation.component
@@ -3308,7 +3308,7 @@ private const val ERROR_MAX_WIDTH_FRACTION = 0.86f
  * special treatment: it is `ChatError.Network` and lands here like any other failure.
  */
 @Composable
-fun ErrorRow(
+fun ErrorItem(
     error: ChatError,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
@@ -3350,14 +3350,14 @@ fun ErrorRow(
 
 @Preview(showBackground = true)
 @Composable
-private fun ErrorRowRateLimitedPreview() {
-    ChatbotTheme(darkTheme = true) { ErrorRow(error = ChatError.RateLimited(retryAfterSeconds = null), onRetry = {}) }
+private fun ErrorItemRateLimitedPreview() {
+    ChatbotTheme(darkTheme = true) { ErrorItem(error = ChatError.RateLimited(retryAfterSeconds = null), onRetry = {}) }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun ErrorRowNetworkPreview() {
-    ChatbotTheme(darkTheme = true) { ErrorRow(error = ChatError.Network, onRetry = {}) }
+private fun ErrorItemNetworkPreview() {
+    ChatbotTheme(darkTheme = true) { ErrorItem(error = ChatError.Network, onRetry = {}) }
 }
 ```
 
@@ -3434,10 +3434,10 @@ private fun NewChatEmptyStatePreview() {
 }
 ```
 
-- [ ] **Step 8: Run the error-row tests to verify they pass**
+- [ ] **Step 8: Run the error-item tests to verify they pass**
 
 ```bash
-./gradlew :feature:conversation:testDebugUnitTest --tests "*ErrorRowTest*"
+./gradlew :feature:conversation:testDebugUnitTest --tests "*ErrorItemTest*"
 ```
 
 Expected: PASS, all four.
@@ -3455,7 +3455,7 @@ Expected: `BUILD SUCCESSFUL`. Screenshot goldens for these come with the whole s
 
 ### Task 7: The chat screen
 
-The chrome around the rows (top bar, composer, model picker, overflow menu, delete dialog), and the stateless screen and route that assemble it. Frames 3a, 3b, 3e, 3f, 3g, 3h, 3i, 3j.
+The chrome around the items (top bar, composer, model picker, overflow menu, delete dialog), and the stateless screen and route that assemble it. Frames 3a, 3b, 3e, 3f, 3g, 3h, 3i, 3j.
 
 **Files:**
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/Composer.kt`
@@ -3467,7 +3467,7 @@ The chrome around the rows (top bar, composer, model picker, overflow menu, dele
 - Create: `feature/conversation/src/screenshotTest/kotlin/com/shayanaryan/chatbot/feature/conversation/preview/ChatPreviews.kt`
 
 **Interfaces:**
-- Consumes: `ConversationUiState`, `ChatRow`, `MessageBubble`, `ThinkingIndicator`, `ErrorRow`, `NewChatEmptyState`, `textContent()`.
+- Consumes: `ConversationUiState`, `ChatItem`, `MessageBubble`, `ThinkingIndicator`, `ErrorItem`, `NewChatEmptyState`, `textContent()`.
 - Produces: `ConversationScreen(uiState, onBack, onSend, onCancel, onRetry, onModelSelected, onDeleteRequested, onDeleteDismissed, onDeleteConfirmed, modifier, composerState)`, stateless; `composerState` defaults to `rememberTextFieldState()`.
 - Produces: `internal object ChatPreviewData`, the fixture the colocated previews and the screenshot goldens share.
 - Produces: `ConversationRoute(conversationId, onBack, onDeleted, onConversationIdChanged, modifier, viewModel)`, stateful, what `:app` calls.
@@ -3475,7 +3475,7 @@ The chrome around the rows (top bar, composer, model picker, overflow menu, dele
 - Produces: `ModelPickerChip(model: ClaudeModel, enabled: Boolean, onModelSelected: (ClaudeModel) -> Unit, modifier)`.
 - Produces: `DeleteChatDialog(onConfirm: () -> Unit, onDismiss: () -> Unit)`.
 
-**Test note that will otherwise cost an hour:** `ThinkingIndicator` and the streaming caret use `rememberInfiniteTransition`, which never lets the Compose test clock go idle. Any test that puts a thinking or streaming row on screen must set `composeRule.mainClock.autoAdvance = false` **before** `setContent`, or `waitForIdle` hangs.
+**Test note that will otherwise cost an hour:** `ThinkingIndicator` and the streaming caret use `rememberInfiniteTransition`, which never lets the Compose test clock go idle. Any test that puts a thinking or streaming item on screen must set `composeRule.mainClock.autoAdvance = false` **before** `setContent`, or `waitForIdle` hangs.
 
 - [ ] **Step 1: Write the failing screen tests**
 
@@ -3516,7 +3516,7 @@ class ConversationScreenTest {
         id: Long,
         role: Role,
         text: String,
-    ) = ChatRow.Persisted(
+    ) = ChatItem.Persisted(
         Message(
             id = id,
             conversationId = 1L,
@@ -3532,7 +3532,7 @@ class ConversationScreenTest {
             conversationId = 1L,
             title = "Weekend trip to Portland",
             model = ClaudeModel.Sonnet,
-            rows =
+            items =
                 listOf(
                     persisted(1L, Role.User, "help me plan a weekend in portland"),
                     persisted(2L, Role.Assistant, "Powell's Books first."),
@@ -3610,7 +3610,7 @@ class ConversationScreenTest {
         composeRule.mainClock.autoAdvance = false
         var cancelled = false
         setScreen(
-            openChat.copy(rows = openChat.rows + ChatRow.Streaming("Powell"), isStreaming = true),
+            openChat.copy(items = openChat.items + ChatItem.Streaming("Powell"), isStreaming = true),
             onCancel = { cancelled = true },
         )
 
@@ -3668,9 +3668,9 @@ class ConversationScreenTest {
     }
 
     @Test
-    fun `retry on the error row reports it`() {
+    fun `retry on the error item reports it`() {
         var retried = false
-        setScreen(openChat.copy(rows = openChat.rows + ChatRow.Error(ChatError.Network)), onRetry = { retried = true })
+        setScreen(openChat.copy(items = openChat.items + ChatItem.Error(ChatError.Network)), onRetry = { retried = true })
 
         composeRule.onNodeWithText("Retry").performClick()
 
@@ -4033,7 +4033,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.feature.conversation.component.Composer
 import com.shayanaryan.chatbot.feature.conversation.component.DeleteChatDialog
-import com.shayanaryan.chatbot.feature.conversation.component.ErrorRow
+import com.shayanaryan.chatbot.feature.conversation.component.ErrorItem
 import com.shayanaryan.chatbot.feature.conversation.component.MessageBubble
 import com.shayanaryan.chatbot.feature.conversation.component.ModelPickerChip
 import com.shayanaryan.chatbot.feature.conversation.component.NewChatEmptyState
@@ -4139,11 +4139,11 @@ fun ConversationScreen(
             }
         },
     ) { padding ->
-        if (uiState.rows.isEmpty()) {
+        if (uiState.items.isEmpty()) {
             NewChatEmptyState(Modifier.padding(padding))
         } else {
             MessageList(
-                rows = uiState.rows,
+                chatItems = uiState.items,
                 onRetry = onRetry,
                 modifier = Modifier.padding(padding),
             )
@@ -4156,16 +4156,16 @@ fun ConversationScreen(
 
 @Composable
 private fun MessageList(
-    rows: List<ChatRow>,
+    chatItems: List<ChatItem>,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
     // Follow the tail while tokens arrive, and stop following once the user scrolls up: the check
     // is taken before the new content is laid out, so it answers "was the user at the bottom".
-    LaunchedEffect(rows) {
-        if (!listState.canScrollForward && rows.isNotEmpty()) {
-            listState.scrollToItem(rows.lastIndex)
+    LaunchedEffect(chatItems) {
+        if (!listState.canScrollForward && chatItems.isNotEmpty()) {
+            listState.scrollToItem(chatItems.lastIndex)
         }
     }
     LazyColumn(
@@ -4174,23 +4174,23 @@ private fun MessageList(
         contentPadding = PaddingValues(horizontal = Spacing.s4, vertical = Spacing.s2),
         verticalArrangement = Arrangement.spacedBy(Spacing.s3),
     ) {
-        items(rows) { row ->
-            when (row) {
-                is ChatRow.Persisted ->
+        items(chatItems) { item ->
+            when (item) {
+                is ChatItem.Persisted ->
                     MessageBubble(
-                        text = row.message.content.textContent(),
-                        role = row.message.role,
+                        text = item.message.content.textContent(),
+                        role = item.message.role,
                     )
 
-                ChatRow.Thinking -> ThinkingIndicator()
-                is ChatRow.Streaming ->
+                ChatItem.Thinking -> ThinkingIndicator()
+                is ChatItem.Streaming ->
                     MessageBubble(
-                        text = row.text,
+                        text = item.text,
                         role = com.shayanaryan.chatbot.shared.chat.Role.Assistant,
                         streaming = true,
                     )
 
-                is ChatRow.Error -> ErrorRow(error = row.error, onRetry = onRetry)
+                is ChatItem.Error -> ErrorItem(error = item.error, onRetry = onRetry)
             }
         }
     }
@@ -4213,7 +4213,7 @@ internal object ChatPreviewData {
         id: Long,
         role: Role,
         text: String,
-    ) = ChatRow.Persisted(
+    ) = ChatItem.Persisted(
         Message(
             id = id,
             conversationId = 1L,
@@ -4231,7 +4231,7 @@ internal object ChatPreviewData {
             conversationId = 1L,
             title = "Weekend trip to Portland",
             model = ClaudeModel.Sonnet,
-            rows =
+            items =
                 listOf(
                     message(1L, Role.User, "help me plan a weekend in portland"),
                     message(
@@ -4244,24 +4244,24 @@ internal object ChatPreviewData {
 
     val thinking =
         openChat.copy(
-            rows = listOf(openChat.rows.first()) + ChatRow.Thinking,
+            items = listOf(openChat.items.first()) + ChatItem.Thinking,
             isStreaming = true,
         )
 
     val streaming =
         openChat.copy(
-            rows =
-                listOf(openChat.rows.first()) +
-                    ChatRow.Streaming(
+            items =
+                listOf(openChat.items.first()) +
+                    ChatItem.Streaming(
                         "Love it. Two nights? I'd do Powell's Books + a food-cart lunch Saturday, then Forest Park in the",
                     ),
             isStreaming = true,
         )
 
     val rateLimited =
-        openChat.copy(rows = openChat.rows + ChatRow.Error(ChatError.RateLimited(retryAfterSeconds = null)))
+        openChat.copy(items = openChat.items + ChatItem.Error(ChatError.RateLimited(retryAfterSeconds = null)))
 
-    val network = openChat.copy(rows = openChat.rows + ChatRow.Error(ChatError.Network))
+    val network = openChat.copy(items = openChat.items + ChatItem.Error(ChatError.Network))
 
     val deleting = openChat.copy(deleteDialogVisible = true)
 }
@@ -4365,8 +4365,8 @@ fun ConversationRoute(
     onDeleted: () -> Unit,
     onConversationIdChanged: (Long?) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ConversationViewModel =
-        hiltViewModel<ConversationViewModel, ConversationViewModel.Factory>(
+    viewModel: ChatViewModel =
+        hiltViewModel<ChatViewModel, ChatViewModel.Factory>(
             creationCallback = { factory -> factory.create(conversationId) },
         ),
 ) {
@@ -4880,7 +4880,7 @@ fun ChatbotNavDisplay(
         onBack = { backStack.removeLastOrNull() },
         sceneStrategies = listOf(listDetailStrategy),
         // The ViewModel store decorator is what scopes a ViewModel to its entry, so a different
-        // ChatKey gets a different ConversationViewModel. Adding it means restating the default
+        // ChatKey gets a different ChatViewModel. Adding it means restating the default
         // saveable-state decorator alongside.
         entryDecorators =
             listOf(
@@ -5078,7 +5078,7 @@ Each is a `<journey>` with a `<description>` and `<actions>`, matching `journeys
      <action>Wait until a reply bubble appears on the left containing "Hello"</action>
      <action>Tap the back arrow</action>
      <action>Verify the list now shows one conversation whose title is the message that was sent</action>
-     <action>Verify that row's second line shows the reply text</action>
+     <action>Verify that item's second line shows the reply text</action>
    </actions>
 </journey>
 ```
@@ -5189,7 +5189,7 @@ Each is a `<journey>` with a `<description>` and `<actions>`, matching `journeys
      <action>Type "Reply with exactly: Hello" into the message field and tap send</action>
      <action>Wait until a reply bubble appears containing "Hello"</action>
      <action>Verify the conversation list and the chat are both visible at the same time</action>
-     <action>Verify the open conversation's row in the list is highlighted</action>
+     <action>Verify the open conversation's item in the list is highlighted</action>
      <action>Verify no back arrow is displayed in the chat pane's top bar</action>
    </actions>
 </journey>
@@ -5291,7 +5291,7 @@ Carried forward exactly as 005's deferral table has it, so nothing here is a sil
 | Piece | Owner |
 |---|---|
 | Search, its no-results state (2c, 2d) and the list top bar's search action | M4 |
-| Unread indicator on list rows | M4, needs a `lastReadAt` column, so a schema bump and migration |
+| Unread indicator on list items | M4, needs a `lastReadAt` column, so a schema bump and migration |
 | Suggested prompt chips on the new-chat empty state (3a) | M4 |
 | Model picker blurbs (3e) | M4 |
 | The list top bar's settings action | 007 |

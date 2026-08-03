@@ -93,7 +93,7 @@ On a wide window both panes show and `ConversationScreen` receives a null `onBac
 
 It is seeded through an assisted-inject factory (`@HiltViewModel(assistedFactory = …)` with `hiltViewModel(creationCallback = …)`), since a Nav 3 key is not injected into `SavedStateHandle` the way a Nav 2 route argument was. After `send` returns a new id the ViewModel writes it to `SavedStateHandle`, which is what survives process death: the restored back stack still says `ChatKey(null)`, and without that write the user would return to an empty new chat instead of the conversation they were in. The saved value wins over the assisted parameter when present.
 
-**The list's selected row reads that id, not the key.** Mockup 3k highlights the open conversation in the list pane, so on a wide window something outside the chat screen does need the live id. `ConversationRoute` reports it upward through an `onConversationIdChanged` lambda driven by its `UiState`, and `:app` hands the reported value to the list as `selectedConversationId`. The key stays stable while the list still gets the truth, and `:app` needs no saved state of its own: the ViewModel's `SavedStateHandle` is the durable store, and the lambda fires again on the first composition after a restore.
+**The list's selected item reads that id, not the key.** Mockup 3k highlights the open conversation in the list pane, so on a wide window something outside the chat screen does need the live id. `ConversationRoute` reports it upward through an `onConversationIdChanged` lambda driven by its `UiState`, and `:app` hands the reported value to the list as `selectedConversationId`. The key stays stable while the list still gets the truth, and `:app` needs no saved state of its own: the ViewModel's `SavedStateHandle` is the durable store, and the lambda fires again on the first composition after a restore.
 
 Switching to a *different* conversation is the opposite case and does rewrite the key, which is correct: a different conversation should get a different ViewModel. Only the null-to-new-id transition is exempt, because there the ViewModel being replaced is the one that owns the in-flight turn.
 
@@ -106,17 +106,17 @@ Switching to a *different* conversation is the opposite case and does rewrite th
 Room and the in-memory turn are folded into one list so the `LazyColumn` has a single source and no composable has to reconcile two:
 
 ```
-sealed interface ChatRow {
-  data class Persisted(val message: Message) : ChatRow
-  data object Thinking : ChatRow
-  data class Streaming(val text: String) : ChatRow
-  data class Error(val error: ChatError) : ChatRow
+sealed interface ChatItem {
+  data class Persisted(val message: Message) : ChatItem
+  data object Thinking : ChatItem
+  data class Streaming(val text: String) : ChatItem
+  data class Error(val error: ChatError) : ChatItem
 }
 
 data class ConversationUiState(
   val title: String?,
   val model: ClaudeModel,
-  val rows: List<ChatRow>,
+  val items: List<ChatItem>,
   val isStreaming: Boolean,
   val deleteDialogVisible: Boolean,
 )
@@ -124,10 +124,10 @@ data class ConversationUiState(
 
 A null `title` means a chat with no first message yet, which the screen renders as the new-chat copy. `getConversationFlow` emitting null resolves to that same state: the ViewModel clears its id and falls back to a new chat. The delete flow does not need this, since it pops or resets the pane itself. The deep link does: `ChatKey` can be seeded from an intent extra, so its id arrives from outside the app with no guarantee the row still exists, and 004's `send` rejects a missing conversation with `IllegalArgumentException`. 010's notification for a conversation deleted between scheduling and firing is that case in production.
 
-Rows are built by one rule:
+Items are built by one rule:
 
 ```
-rows = messages.filter { it.text.isNotBlank() }.map(::Persisted) + trailing
+items = messages.filter { it.text.isNotBlank() }.map(::Persisted) + trailing
 
 trailing = when (turn) {
   Idle              -> nothing
@@ -137,9 +137,9 @@ trailing = when (turn) {
 }
 ```
 
-The guard on the live rows exists because 004 guarantees the assistant row is inserted **before** the turn returns to `Idle`, which means there is a window where Room has already emitted the finished message while the turn still reads `Streaming`. Rendering both would double the bubble for a frame. Keying off the trailing role instead of a timestamp makes it deterministic: once an assistant message is the last persisted row, any live text is stale by definition. `Failed` is exempt because 004 writes a `Failed` assistant row and keeps the turn entry until the next `send`, `retry`, or `delete`, so the error must render after that row rather than instead of it.
+The guard on the live items exists because 004 guarantees the assistant row is inserted **before** the turn returns to `Idle`, which means there is a window where Room has already emitted the finished message while the turn still reads `Streaming`. Rendering both would double the bubble for a frame. Keying off the trailing role instead of a timestamp makes it deterministic: once an assistant message is the last persisted item, any live text is stale by definition. `Failed` is exempt because 004 writes a `Failed` assistant row and keeps the turn entry until the next `send`, `retry`, or `delete`, so the error must render after that row rather than instead of it.
 
-Blank messages are filtered out for the same reason 004 drops them on the way into a request: a turn that produced no text still stores its row, and an empty bubble is noise. Cancelled rows keep their partial text and render as ordinary assistant messages, which is what the user already saw.
+Blank messages are filtered out for the same reason 004 drops them on the way into a request: a turn that produced no text still stores its row, and an empty bubble is noise. Cancelled items keep their partial text and render as ordinary assistant messages, which is what the user already saw.
 
 Events are ViewModel methods, never an event channel: `onSend`, `onCancel`, `onRetry`, `onModelSelected`, and the three delete-dialog methods. **Composer text is screen state**, held in a saveable `TextFieldState` rather than in `UiState`; it survives rotation on its own and the ViewModel only ever sees the finished string.
 
@@ -152,7 +152,7 @@ data class ConversationListUiState(
 )
 ```
 
-`isLoading` is true until the Room flow's first emission and drives the skeleton rows. Relative timestamps ("2h", "1d", "1w") are formatted in the feature from an injected `Clock`, with the unit strings in the feature's resources.
+`isLoading` is true until the Room flow's first emission and drives the skeleton items. Relative timestamps ("2h", "1d", "1w") are formatted in the feature from an injected `Clock`, with the unit strings in the feature's resources.
 
 Both states are produced with the architecture skill's `stateIn` recipe. The chat ViewModel combines `getConversationFlow`, `getMessagesFlow`, and `getTurnFlow` through a `flatMapLatest` on the id, so a null id produces the new-chat state without any flow being subscribed to a conversation that does not exist.
 
@@ -170,14 +170,14 @@ Layout, spacing, color, and the composition of each state come from the mockups,
 Composables to build in `:feature:conversation`:
 
 - **List:** `ConversationListItem`, empty state, loading skeleton, new-chat button
-- **Chat:** `MessageBubble` (user and assistant, with streaming caret), `ThinkingIndicator`, `ErrorRow`, `Composer`, `ModelPickerChip` and its menu, new-chat empty state, overflow menu, delete dialog
+- **Chat:** `MessageBubble` (user and assistant, with streaming caret), `ThinkingIndicator`, `ErrorItem`, `Composer`, `ModelPickerChip` and its menu, new-chat empty state, overflow menu, delete dialog
 
 Where this spec diverges from what those files draw:
 
 - **The list top bar's search and settings actions are not built.** Search is M4; settings has no destination until 007.
 - **Suggested prompt chips (3a), picker blurbs (3e), and the unread dot are not built.** All M4.
 - **Tool chips (3c, 3d) are not built.** 008 onward; everything else in those two frames is ordinary chat.
-- **The selected-row treatment (3k) applies on a wide window only**, since a narrow one never shows the list beside a chat.
+- **The selected-item treatment (3k) applies on a wide window only**, since a narrow one never shows the list beside a chat.
 
 The overflow button opens a dropdown whose only item in this spec is "Delete chat"; tapping it opens a confirm dialog, and confirming calls `delete(id)` and pops to the list, or on a wide window returns the detail pane to the new-chat state. The button is hidden entirely while the conversation id is null, since a chat with no first message has nothing to delete.
 
@@ -185,9 +185,9 @@ The composer's trailing button sends when there is non-blank text and no live tu
 
 The message list follows the tail while tokens arrive and stops following once the user scrolls up.
 
-**Offline has no special treatment.** Losing connectivity is `ChatError.Network` and renders as the ordinary inline error row with Retry (3h), the same as any other failure.
+**Offline has no special treatment.** Losing connectivity is `ChatError.Network` and renders as the ordinary inline error item with Retry (3h), the same as any other failure.
 
-**The error row does not survive process death.** It is drawn from the turn, which 004 holds in memory, so a relaunch shows the conversation without it. Sending again is the way forward.
+**The error item does not survive process death.** It is drawn from the turn, which 004 holds in memory, so a relaunch shows the conversation without it. Sending again is the way forward.
 
 ## Dev key
 
@@ -199,7 +199,7 @@ Release builds get no `ApiKeyProvider` binding and therefore do not assemble unt
 
 TDD throughout, fakes not mocks, per the architecture skill.
 
-- **ViewModels** against `:shared:testing`'s `FakeConversationRepository`, asserting on `StateFlow.value`. The row-folding rule carries the most risk and gets the most cases: thinking before the first token, streaming text, the stale-live-row window after a completed turn, the error row surviving alongside its `Failed` assistant row, blank messages filtered, and cancelled partial text rendered.
+- **ViewModels** against `:shared:testing`'s `FakeConversationRepository`, asserting on `StateFlow.value`. The item-folding rule carries the most risk and gets the most cases: thinking before the first token, streaming text, the stale-live-item window after a completed turn, the error item surviving alongside its `Failed` assistant row, blank messages filtered, and cancelled partial text rendered.
 - **Repository additions** in `:shared`'s `androidHostTest`, where a real database is available: the snippet subquery picking the last `Complete` message, excluding a non-`Complete` one, and `getConversationFlow` emitting null after delete.
 - **Compose UI tests** under Robolectric with the v2 rule, driving the stateless screens: composer enablement, send and stop, the overflow menu and delete dialog, the model picker, and retry.
 - **Screenshots.** Every public composable ships `@PreviewTest` previews in both dark and light, one per frame the two design files carry, minus the frames listed above as not built.
@@ -213,7 +213,7 @@ New XML files in `journeys/`, covering the M1 exit gate:
 | First chat | New chat, send, reply streams in, conversation appears in the list with its snippet |
 | Resume | Kill and relaunch, reopen a conversation, history is intact |
 | Delete | Overflow, confirm, conversation is gone from the list |
-| Retry | A failed turn shows the error row, retry re-runs it |
+| Retry | A failed turn shows the error item, retry re-runs it |
 | Model switch | Picker changes the model and it persists across reopen |
 | Two-pane | On a tablet AVD both panes show and the chat pane has no back arrow |
 
@@ -226,5 +226,5 @@ New XML files in `journeys/`, covering the M1 exit gate:
 | Suggested prompt chips (3a) | M4 | Copy-only, but the reminder-flavored prompt only makes sense once 010 exists |
 | Model picker blurbs (3e) | M4 | Localizable copy, so feature string resources keyed by `ClaudeModel`, alongside the name already on the model |
 | Settings entry point | 007 | The list top bar's settings action, once there is a screen behind it |
-| Tool-call chips (3c, 3d) | 008, 009, 010 | `ToolUse` and `ToolResult` blocks become rows; the chip is their rendering |
+| Tool-call chips (3c, 3d) | 008, 009, 010 | `ToolUse` and `ToolResult` blocks become items; the chip is their rendering |
 | Real `ApiKeyProvider` | 006 | Replaces the debug dev-key stub and makes release builds assemble |

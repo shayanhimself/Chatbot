@@ -43,7 +43,7 @@ class ConversationListViewModelTest {
     }
 
     @Test
-    fun `starts loading with no rows`() =
+    fun `starts loading with no items`() =
         runTest(dispatcher) {
             val viewModel = ConversationListViewModel(FakeConversationRepository(clock), clock)
 
@@ -75,13 +75,13 @@ class ConversationListViewModelTest {
             collecting(viewModel)
             advanceUntilIdle()
 
-            val row =
+            val item =
                 viewModel.uiState.value.conversations
                     .single()
 
-            assertEquals(id, row.id)
-            assertEquals("plan a weekend", row.title)
-            assertEquals("Powell's Books first.", row.snippet)
+            assertEquals(id, item.id)
+            assertEquals("plan a weekend", item.title)
+            assertEquals("Powell's Books first.", item.snippet)
         }
 
     @Test

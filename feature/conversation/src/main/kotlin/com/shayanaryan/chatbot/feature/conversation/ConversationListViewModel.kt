@@ -51,8 +51,8 @@ private fun Conversation.toUiState(now: Instant) =
         id = id,
         title = title,
         snippet = snippet,
-        // Timestamps are resolved once per emission rather than on a ticker, so a row reading "2h" does
-        // not become "3h" while the screen stays open. Room re-emits on every message write, which in
-        // practice refreshes them often enough.
+        // Timestamps are resolved once per emission rather than on a ticker, so an item reading
+        // "2h" does not become "3h" while the screen stays open. Room re-emits on every message
+        // write, which in practice refreshes them often enough.
         relativeTime = updatedAt.relativeTo(now),
     )

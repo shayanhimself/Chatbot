@@ -16,9 +16,11 @@ We use **`android` CLI** for project creation, SDK/emulator management, running 
 
 - **"buddy" is display-name only** — never in code identifiers, packages, files, or functions. Use the neutral project name (`Chatbot` / domain terms) in code; "buddy" appears solely in user-facing copy.
 - **`const val` names use `SCREAMING_SNAKE_CASE`**. Non-const `val`s follow normal `camelCase`.
+- **No magic numbers.** A literal whose value carries meaning gets a named `const val`, so the name explains it instead of a comment. Exempt: `0` and `1`, counts and sizes a test asserts on (`assertEquals(2, items.size)`), and numbers that are already the domain's own vocabulary (an HTTP status, a `@Preview` height).
 - **No trailing (end-of-line) comments.** Put the comment on its own line *above* the code it describes. The one exception is where a language forces inline syntax.
 - **KDoc where it earns its place.** When a function or class — or any of its arguments — isn't self-explanatory from its name and signature, add a KDoc block: one line on what it does, plus `@param`/`@return` for the non-obvious parts. **Interfaces and contracts always get KDoc**.
-- **Never name a design frame in code.** Comments and KDoc say what the code does; a frame id (`2e`, `3k`) is design-side, goes stale, and means nothing to a reader without the design file.
+- **A comment sits with what it explains.** A class KDoc says what the class is, and stops there. Reasoning about one property, function, or branch goes above that property, function, or branch, never accumulated into the block on top of the class. Constructor `@param` lines are the exception, since the language gives them nowhere else to live.
+- **Never name a document in code.** Comments and KDoc say what the code does, in its own terms. A spec number (`004 writes…`), a plan task, or a design frame id (`2e`, `3k`) is document-side: it goes stale, and means nothing to a reader who does not have that file open. Name the thing that behaves the way you are describing (`the repository writes…`) instead.
 - **Test function names use backtick spaced form** (`` fun `does the thing`() ``).
 - **Public composables ship colocated previews.** Every `public @Composable` gets at least one plain `@Preview` in its own file, one per distinct visual state, each wrapped in `ChatbotTheme`.
 

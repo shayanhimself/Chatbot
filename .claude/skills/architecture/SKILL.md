@@ -103,8 +103,9 @@ Dependency rules (hard):
 | Test double | `FakeX` | `FakeReminderRepository` |
 | Data source | `XLocalDataSource` / `XRemoteDataSource` | `MemoryLocalDataSource` |
 | Use case | `VerbNounUseCase`, `operator fun invoke` | `ComposeReminderMessageUseCase` |
-| Screen state | `ScreenUiState` | `ConversationUiState` |
+| Screen state | `ScreenUiState` | `ChatUiState` |
 | Flow accessor | `getXFlow()` | `getRemindersFlow()` |
+| Mapper | extension `X.toY()`, in `YMapper.kt` | `List<Message>.toChatItems()` |
 
 **Product name vs. identifiers.** "buddy" is the **display name only** — launcher label,
 wordmark, and user-facing copy. Code identifiers — Gradle projects, packages, modules,

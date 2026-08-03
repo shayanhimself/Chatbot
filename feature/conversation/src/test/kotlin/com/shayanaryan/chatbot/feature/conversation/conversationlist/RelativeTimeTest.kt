@@ -9,8 +9,10 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
+private const val FIXED_NOW_MILLIS = 1_000_000_000L
+
 class RelativeTimeTest {
-    private val now = Instant.fromEpochMilliseconds(1_000_000_000L)
+    private val now = Instant.fromEpochMilliseconds(FIXED_NOW_MILLIS)
 
     private fun ago(duration: kotlin.time.Duration) = (now - duration).relativeTo(now)
 

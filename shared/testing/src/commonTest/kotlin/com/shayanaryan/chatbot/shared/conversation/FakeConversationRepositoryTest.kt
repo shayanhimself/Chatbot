@@ -18,6 +18,8 @@ import kotlin.test.assertTrue
  * It carries a real turn state machine, and it is the repository every test above the data layer
  * runs against. A defect in it therefore makes those tests pass rather than fail.
  */
+private const val UNKNOWN_CONVERSATION_ID = 404L
+
 class FakeConversationRepositoryTest {
     private val repository = FakeConversationRepository()
 
@@ -217,9 +219,14 @@ class FakeConversationRepositoryTest {
     @Test
     fun `sending into a conversation that does not exist is rejected`() =
         runTest {
-            assertFailsWith<IllegalArgumentException> { repository.send(404L, "hello") }
+            assertFailsWith<IllegalArgumentException> {
+                repository.send(
+                    UNKNOWN_CONVERSATION_ID,
+                    "hello",
+                )
+            }
 
-            assertTrue(repository.getMessagesFlow(404L).first().isEmpty())
+            assertTrue(repository.getMessagesFlow(UNKNOWN_CONVERSATION_ID).first().isEmpty())
         }
 
     @Test

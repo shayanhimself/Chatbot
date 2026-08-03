@@ -21,6 +21,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
+private const val UNKNOWN_CONVERSATION_ID = 404L
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ConversationSnippetTest {
@@ -101,6 +103,6 @@ class ConversationSnippetTest {
         runDatabaseTest { database ->
             val repository = repository(database, turnScope())
 
-            assertNull(repository.getConversationFlow(404L).first())
+            assertNull(repository.getConversationFlow(UNKNOWN_CONVERSATION_ID).first())
         }
 }

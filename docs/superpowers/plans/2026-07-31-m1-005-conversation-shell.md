@@ -13,14 +13,16 @@
 - **Never commit or push.** `CLAUDE.md` overrides the superpowers default: this plan has **no commit steps**. Each task ends with a **Checkpoint**: run the verification commands, confirm the output, stop for review. The user commits.
 - execute tasks in the current branch, no worktree
 - when task is done, check all the steps of that task
-- **"buddy" is display-name only.** Never in identifiers, packages, files, functions. Code uses `Chatbot` or plain domain terms.
-- **`const val` is `SCREAMING_SNAKE_CASE`**; non-const `val` is `camelCase`.
-- **No trailing (end-of-line) comments.** Comment on its own line above the code.
+- **`CLAUDE.md`'s code style and writing rules apply in full** and are not repeated here. What follows is only what is specific to this plan.
 - **No em dashes in prose** (specs, docs, comments). The exception is user-facing copy lifted verbatim from a mockup, which stays exactly as the design wrote it.
-- **KDoc on every interface and contract**, and on anything not self-explanatory from its name and signature.
-- **Test function names use backtick spaced form**: `` fun `does the thing`() ``.
 - **Import order is ktlint_official's**: everything else first (including `kotlinx.*`), then `java.*`, `javax.*`, `kotlin.*`. So `javax.inject.Inject` sits *above* `kotlin.time.Clock`. `spotlessApply` fixes it either way; writing it right keeps the diff honest.
 - **Every public composable ships a colocated plain `@Preview`** in its own file, one per distinct visual state, wrapped in `ChatbotTheme(darkTheme = true)`: the app is dark-first, and an unqualified `ChatbotTheme` renders light because the preview renderer defaults `uiMode` to `UI_MODE_NIGHT_NO`. Wrap the content in a `Surface` whenever the composable paints no background of its own, since `showBackground = true` paints white underneath it. Screenshot goldens live separately in `src/screenshotTest/`.
+- **`:feature:conversation` is split by screen.** Chat code sits in
+  `com.shayanaryan.chatbot.feature.conversation.chat` (with `chat.component` and `chat.preview`), the
+  list in `…conversation.conversationlist` (with `conversationlist.component` and
+  `conversationlist.preview`). The `R` class stays at `…feature.conversation`, so any file resolving
+  a string imports it. Anything both screens use belongs in a module they both depend on, not in
+  either package: `SUBSCRIPTION_TIMEOUT_MILLIS` lives in `:core:ui`.
 - **No mocking library.** Fakes and real objects only.
 - **No ViewModel → UI event channels.** Every outcome is folded into `UiState`.
 - **No async work in ViewModel `init` or constructors.** State comes from the `stateIn` pipeline.
@@ -360,7 +362,7 @@ Then append to `shared/src/androidHostTest/kotlin/com/shayanaryan/chatbot/shared
     @Test
     fun `the single-conversation read is null for a row that does not exist`() =
         runDatabaseTest { database ->
-            assertNull(database.conversationDao().observeByIdWithSnippet(404L).first())
+            assertNull(database.conversationDao().observeByIdWithSnippet(UNKNOWN_CONVERSATION_ID).first())
         }
 
     /**
@@ -486,6 +488,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
+private const val UNKNOWN_CONVERSATION_ID = 404L
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ConversationSnippetTest {
@@ -529,7 +533,7 @@ class ConversationSnippetTest {
         }
 
     @Test
-    fun `a conversation whose first turn has not finished is summarized by the user's own message`() =
+    fun `an unfinished first turn is summarized by the user's own message`() =
         runDatabaseTest { database ->
             val repository = repository(database, turnScope())
             val id = repository.send(null, "hello")
@@ -566,7 +570,7 @@ class ConversationSnippetTest {
         runDatabaseTest { database ->
             val repository = repository(database, turnScope())
 
-            assertNull(repository.getConversationFlow(404L).first())
+            assertNull(repository.getConversationFlow(UNKNOWN_CONVERSATION_ID).first())
         }
 }
 ```
@@ -745,12 +749,13 @@ The module gains Hilt, KSP, the screenshot plugin and the Compose lifecycle arti
 - Modify: `feature/conversation/build.gradle.kts`
 - Create: `app/src/main/kotlin/com/shayanaryan/chatbot/di/TimeModule.kt`
 - Rename: `app/src/main/kotlin/com/shayanaryan/chatbot/di/DatabaseModule.kt` → `DataModule.kt`, and modify it
+- Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/viewmodel/StateProduction.kt`
 - Create: `feature/conversation/src/main/res/values/strings.xml`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/RelativeTime.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListUiState.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListViewModel.kt`
-- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/RelativeTimeTest.kt`
-- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListViewModelTest.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/RelativeTime.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/ConversationListUiState.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/ConversationListViewModel.kt`
+- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/RelativeTimeTest.kt`
+- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/ConversationListViewModelTest.kt`
 
 **Interfaces:**
 - Consumes: `ConversationRepository.getConversationsFlow()` returning `Conversation` with `snippet` (Task 2); `FakeConversationRepository` and `FakeClock` from `:shared:testing` (Task 1).
@@ -758,7 +763,7 @@ The module gains Hilt, KSP, the screenshot plugin and the Compose lifecycle arti
 - Produces: `ConversationListItemUiState(id: Long, title: String, snippet: String?, relativeTime: RelativeTime)`.
 - Produces: `RelativeTime(unitRes: Int, value: Int)` and `fun Instant.relativeTo(now: Instant): RelativeTime`.
 - Produces: `ConversationListViewModel.uiState: StateFlow<ConversationListUiState>`.
-- Produces: internal `const val SUBSCRIPTION_TIMEOUT_MILLIS = 5_000L`, in `ConversationListViewModel.kt` beside its first user. Task 5's chat ViewModel reads the same constant.
+- Produces: `const val SUBSCRIPTION_TIMEOUT_MILLIS = 5_000L` in `:core:ui`, in `viewmodel/StateProduction.kt`. Task 5's chat ViewModel reads the same constant, and so does every later feature's, which is why it is public and lives in the one module every feature already depends on rather than beside its first user.
 - Produces: a `kotlin.time.Clock` binding in `SingletonComponent`.
 
 **Spec delta to report:** 005 writes `ConversationListUiState(isLoading, conversations: List<Conversation>)`. Relative timestamps have to be resolved against the injected clock, and the architecture skill forbids `Resources` inside a ViewModel, so the state carries a UI model with a `@StringRes` id instead of the domain `Conversation`. Everything else about the state is as specced.
@@ -946,11 +951,12 @@ Create `feature/conversation/src/main/res/values/strings.xml`. This file carries
 
 - [x] **Step 4: Write the failing relative-time tests**
 
-Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/RelativeTimeTest.kt`:
+Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/RelativeTimeTest.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
+import com.shayanaryan.chatbot.feature.conversation.R
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.days
@@ -959,8 +965,10 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
+private const val FIXED_NOW_MILLIS = 1_000_000_000L
+
 class RelativeTimeTest {
-    private val now = Instant.fromEpochMilliseconds(1_000_000_000L)
+    private val now = Instant.fromEpochMilliseconds(FIXED_NOW_MILLIS)
 
     private fun ago(duration: kotlin.time.Duration) = (now - duration).relativeTo(now)
 
@@ -1012,10 +1020,10 @@ Expected: FAIL to compile. `RelativeTime` and `relativeTo` are unresolved.
 
 - [x] **Step 6: Implement relative time**
 
-Create `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/RelativeTime.kt`:
+Create `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/RelativeTime.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
 import androidx.annotation.StringRes
 import kotlin.time.Duration.Companion.days
@@ -1091,11 +1099,12 @@ Expected: PASS.
 
 - [x] **Step 8: Write the failing list ViewModel tests**
 
-Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListViewModelTest.kt`:
+Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/ConversationListViewModelTest.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
+import com.shayanaryan.chatbot.feature.conversation.R
 import com.shayanaryan.chatbot.shared.FakeClock
 import com.shayanaryan.chatbot.shared.conversation.FakeConversationRepository
 import kotlinx.coroutines.Dispatchers
@@ -1115,10 +1124,12 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
+private const val FIXED_NOW_MILLIS = 1_000_000_000L
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ConversationListViewModelTest {
     private val dispatcher = StandardTestDispatcher()
-    private val clock = FakeClock(instant = Instant.fromEpochMilliseconds(1_000_000_000L))
+    private val clock = FakeClock(instant = Instant.fromEpochMilliseconds(FIXED_NOW_MILLIS))
 
     @BeforeTest
     fun installMainDispatcher() {
@@ -1145,7 +1156,7 @@ class ConversationListViewModelTest {
 
             assertTrue(viewModel.uiState.value.isLoading)
             assertEquals(
-                emptyList<ConversationListItemUiState>(),
+                emptyList(),
                 viewModel.uiState.value.conversations,
             )
         }
@@ -1213,7 +1224,7 @@ Expected: FAIL to compile. `ConversationListViewModel` is unresolved.
 Create `ConversationListUiState.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
 /**
  * @property isLoading true until Room's first emission.
@@ -1242,13 +1253,32 @@ data class ConversationListItemUiState(
 )
 ```
 
+Create `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/viewmodel/StateProduction.kt`. The timeout is
+not a conversation concern: every feature's `stateIn` pipeline wants the same number, and `:core:ui`
+is the one module they all already depend on.
+
+```kotlin
+package com.shayanaryan.chatbot.core.ui.viewmodel
+
+/**
+ * How long a `stateIn` pipeline keeps collecting after its last subscriber leaves. Long enough to
+ * survive a configuration change, short enough that a backgrounded screen stops reading its
+ * sources.
+ *
+ * Every feature's ViewModels share one value, so a screen's collection behaviour cannot drift from
+ * another's by nothing more than a differently written literal.
+ */
+const val SUBSCRIPTION_TIMEOUT_MILLIS: Long = 5_000L
+```
+
 Create `ConversationListViewModel.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.shayanaryan.chatbot.core.ui.viewmodel.SUBSCRIPTION_TIMEOUT_MILLIS
 import com.shayanaryan.chatbot.shared.conversation.Conversation
 import com.shayanaryan.chatbot.shared.conversation.ConversationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -1259,12 +1289,6 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import kotlin.time.Clock
 import kotlin.time.Instant
-
-/**
- * How long a `stateIn` pipeline keeps collecting after its last subscriber leaves. Long enough to
- * survive a configuration change, short enough that a backgrounded screen stops reading Room.
- */
-internal const val SUBSCRIPTION_TIMEOUT_MILLIS: Long = 5_000L
 
 /**
  * The conversation list. Read-only: every mutation belongs to the chat screen, so this holds no
@@ -1343,14 +1367,14 @@ Frames 2a, 2b, 2e and the light rendering 7b. Search and settings actions in the
 
 **Files:**
 - Modify: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/designsystem/icon/Glyphs.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ConversationListItem.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ConversationListEmpty.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ConversationListSkeleton.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListScreen.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListRoute.kt`
-- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListScreenTest.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/component/ConversationListItem.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/component/ConversationListEmpty.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/component/ConversationListSkeleton.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/ConversationListScreen.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/ConversationListRoute.kt`
+- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/ConversationListScreenTest.kt`
 - Create: `core/ui/src/main/kotlin/com/shayanaryan/chatbot/core/ui/preview/FormFactorPreviews.kt`
-- Test: `feature/conversation/src/screenshotTest/kotlin/com/shayanaryan/chatbot/feature/conversation/preview/ConversationListPreviews.kt`
+- Test: `feature/conversation/src/screenshotTest/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/preview/ConversationListPreviews.kt`
 
 **Interfaces:**
 - Consumes: `ConversationListUiState`, `ConversationListItemUiState`, `RelativeTime`, `ConversationListViewModel` (Task 3).
@@ -1384,10 +1408,10 @@ object Glyphs {
 
 - [x] **Step 2: Write the failing Compose UI tests**
 
-Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationListScreenTest.kt`:
+Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/conversationlist/ConversationListScreenTest.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -1395,6 +1419,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import com.shayanaryan.chatbot.feature.conversation.R
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -1465,14 +1490,14 @@ class ConversationListScreenTest {
     fun `shows the empty state when there is nothing stored`() {
         setScreen(ConversationListUiState(isLoading = false, conversations = emptyList()))
 
-        composeRule.onNodeWithText("no conversations yet").assertIsDisplayed()
+        composeRule.onNodeWithText("Hmmm, a bit quite here").assertIsDisplayed()
     }
 
     @Test
     fun `shows neither items nor the empty state while loading`() {
         setScreen(ConversationListUiState(isLoading = true, conversations = emptyList()))
 
-        composeRule.onNodeWithText("no conversations yet").assertDoesNotExist()
+        composeRule.onNodeWithText("Hmmm, a bit quite here").assertDoesNotExist()
     }
 
     @Test
@@ -1502,10 +1527,10 @@ Expected: FAIL to compile. `ConversationListScreen` is unresolved.
 
 - [x] **Step 4: Build the item**
 
-Create `component/ConversationListItem.kt`. The design file marks the last item with a `last` boolean so it drops its own divider; in Compose that is the call site drawing dividers *between* items, so the item itself carries none.
+Create `conversationlist/component/ConversationListItem.kt`. The design file marks the last item with a `last` boolean so it drops its own divider; in Compose that is the call site drawing dividers *between* items, so the item itself carries none.
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.conversationlist.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -1527,7 +1552,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.feature.conversation.R
-import com.shayanaryan.chatbot.feature.conversation.RelativeTime
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.RelativeTime
 
 /**
  * One conversation in the list: title and age on the first line, the last complete reply on the
@@ -1626,10 +1651,10 @@ private fun ConversationListItemSelectedPreview() {
 
 - [x] **Step 5: Build the empty and loading states**
 
-Create `component/ConversationListEmpty.kt`, frame 2b's centred tile, headline and body:
+Create `conversationlist/component/ConversationListEmpty.kt`, frame 2b's centred tile, headline and body:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.conversationlist.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -1704,10 +1729,10 @@ private fun ConversationListEmptyPreview() {
 }
 ```
 
-Create `component/ConversationListSkeleton.kt`, frame 2e's four placeholder items:
+Create `conversationlist/component/ConversationListSkeleton.kt`, frame 2e's four placeholder items:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.conversationlist.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -1834,7 +1859,7 @@ private fun ConversationListSkeletonPreview() {
 Create `ConversationListScreen.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -1855,9 +1880,9 @@ import com.shayanaryan.chatbot.core.ui.designsystem.component.DsButton
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
-import com.shayanaryan.chatbot.feature.conversation.component.ConversationListEmpty
-import com.shayanaryan.chatbot.feature.conversation.component.ConversationListItem
-import com.shayanaryan.chatbot.feature.conversation.component.ConversationListSkeleton
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.component.ConversationListEmpty
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.component.ConversationListItem
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.component.ConversationListSkeleton
 
 /**
  * The app's home screen: browse and resume conversations, or start one.
@@ -1985,7 +2010,7 @@ private fun ConversationListLoadingPreview() {
 Create `ConversationListRoute.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.conversationlist
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -2045,19 +2070,19 @@ import androidx.compose.ui.tooling.preview.Preview
 annotation class FormFactorPreviews
 ```
 
-Then create `.../preview/ConversationListPreviews.kt`, one `@PreviewTest` pair per built frame, dark and light:
+Then create `.../conversationlist/preview/ConversationListPreviews.kt`, one `@PreviewTest` pair per built frame, dark and light:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.preview
+package com.shayanaryan.chatbot.feature.conversation.conversationlist.preview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.preview.FormFactorPreviews
-import com.shayanaryan.chatbot.feature.conversation.ConversationListScreen
-import com.shayanaryan.chatbot.feature.conversation.ConversationListUiState
-import com.shayanaryan.chatbot.feature.conversation.PREVIEW_CONVERSATIONS
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.ConversationListScreen
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.ConversationListUiState
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.PREVIEW_CONVERSATIONS
 
 @Composable
 private fun ListScreen(uiState: ConversationListUiState) {
@@ -2075,45 +2100,52 @@ private val empty = ConversationListUiState(isLoading = false, conversations = e
 private val loading = ConversationListUiState(isLoading = true)
 
 @PreviewTest
-@Preview(name = "list-2a-populated-dark", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ListPopulatedDarkPreview() {
     ChatbotTheme(darkTheme = true) { ListScreen(populated) }
 }
 
 @PreviewTest
-@Preview(name = "list-2a-populated-light", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ListPopulatedLightPreview() {
     ChatbotTheme(darkTheme = false) { ListScreen(populated) }
 }
 
 @PreviewTest
-@Preview(name = "list-2b-empty-dark", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ListEmptyDarkPreview() {
     ChatbotTheme(darkTheme = true) { ListScreen(empty) }
 }
 
 @PreviewTest
-@Preview(name = "list-2b-empty-light", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ListEmptyLightPreview() {
     ChatbotTheme(darkTheme = false) { ListScreen(empty) }
 }
 
 @PreviewTest
-@Preview(name = "list-2e-loading-dark", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ListLoadingDarkPreview() {
     ChatbotTheme(darkTheme = true) { ListScreen(loading) }
 }
 
 @PreviewTest
-@Preview(name = "list-2e-loading-light", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ListLoadingLightPreview() {
     ChatbotTheme(darkTheme = false) { ListScreen(loading) }
+}
+
+@PreviewTest
+@FormFactorPreviews
+@Composable
+private fun ListFormFactorPreview() {
+    ChatbotTheme(darkTheme = true) { ListScreen(populated) }
 }
 ```
 
@@ -2135,7 +2167,7 @@ private fun ListFormFactorPreview() {
 ./gradlew :feature:conversation:validateDebugScreenshotTest
 ```
 
-Expected: the update task writes goldens under `feature/conversation/src/debug/screenshotTest/reference/`; the validate task then passes. Before moving on, show the user the populated and empty goldens and the four form-factor ones, and get them to confirm. A golden recorded from a wrong render is worse than no golden, and only a person can say whether the tablet width still looks right.
+Expected: the update task writes goldens under `feature/conversation/src/screenshotTestDebug/reference/`, in a directory mirroring the preview file's package; the validate task then passes. Before moving on, show the user the populated and empty goldens and the four form-factor ones, and get them to confirm. A golden recorded from a wrong render is worse than no golden, and only a person can say whether the tablet width still looks right.
 
 - [x] **Step 10: Checkpoint**
 
@@ -2153,30 +2185,31 @@ Expected: `BUILD SUCCESSFUL`. Report the frames covered and any off-grid values 
 Room and the in-memory turn are folded into one list so the `LazyColumn` has a single source and no composable has to reconcile two. This carries the most risk in the spec and gets the most cases.
 
 **Files:**
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationUiState.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatItems.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatViewModel.kt`
-- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatItemsTest.kt`
-- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatViewModelTest.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatUiState.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatItemMapper.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatViewModel.kt`
+- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatItemMapperTest.kt`
+- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatViewModelTest.kt`
 
 **Interfaces:**
 - Consumes: `ConversationRepository` (`getConversationFlow`, `getMessagesFlow`, `getTurnFlow`, `send`, `retry`, `cancel`, `setModel`, `delete`), `TurnState`, `Message`, `MessageStatus`, `ChatError`, `ClaudeModel`, `List<ContentBlock>.textContent()`.
 - Produces: `sealed interface ChatItem` with `Persisted(message: Message)`, `Thinking`, `Streaming(text: String)`, `Error(error: ChatError)`.
-- Produces: `internal fun chatItems(messages: List<Message>, turn: TurnState): List<ChatItem>`.
-- Produces: `ConversationUiState(conversationId: Long?, title: String?, model: ClaudeModel, items: List<ChatItem>, isStreaming: Boolean, deleteDialogVisible: Boolean, deleted: Boolean)`.
-- Produces: `ChatViewModel` with `uiState: StateFlow<ConversationUiState>`, `Factory.create(initialConversationId: Long?)`, and methods `onSend(String)`, `onCancel()`, `onRetry()`, `onModelSelected(ClaudeModel)`, `onDeleteRequested()`, `onDeleteDismissed()`, `onDeleteConfirmed()`.
+- Produces: `internal fun List<Message>.toChatItems(turn: TurnState): List<ChatItem>`, a mapper
+  in the shape `:shared`'s `toDomain()` already uses.
+- Produces: `ChatUiState(conversationId: Long?, title: String?, model: ClaudeModel, items: List<ChatItem>, isStreaming: Boolean, deleteDialogVisible: Boolean, deleted: Boolean)`.
+- Produces: `ChatViewModel` with `uiState: StateFlow<ChatUiState>`, `Factory.create(initialConversationId: Long?)`, and methods `onSend(String)`, `onCancel()`, `onRetry()`, `onModelSelected(ClaudeModel)`, `onDeleteRequested()`, `onDeleteDismissed()`, `onDeleteConfirmed()`.
 
 **Two spec deltas to report**, both forced by the spec's own prose:
 
-- `ConversationUiState` gains `conversationId`. 005 says the list's selected item reads the live id reported "through an `onConversationIdChanged` lambda driven by its `UiState`", and that the overflow button is hidden while the id is null. Both need the id in the state.
-- `ConversationUiState` gains `deleted`. 005 says confirming delete "pops to the list, or on a wide window returns the detail pane to the new-chat state", a navigation trigger, which the architecture skill requires be a state field the UI observes, never an event channel. Setting it only after `delete` returns is also what keeps `viewModelScope` alive long enough to finish the delete before the entry is popped.
+- `ChatUiState` gains `conversationId`. 005 says the list's selected item reads the live id reported "through an `onConversationIdChanged` lambda driven by its `UiState`", and that the overflow button is hidden while the id is null. Both need the id in the state.
+- `ChatUiState` gains `deleted`. 005 says confirming delete "pops to the list, or on a wide window returns the detail pane to the new-chat state", a navigation trigger, which the architecture skill requires be a state field the UI observes, never an event channel. Setting it only after `delete` returns is also what keeps `viewModelScope` alive long enough to finish the delete before the entry is popped.
 
-- [ ] **Step 1: Write the failing item-folding tests**
+- [x] **Step 1: Write the failing item-folding tests**
 
-The rule is pure, so it is tested as a pure function before any flow plumbing exists. Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatItemsTest.kt`:
+The rule is pure, so it is tested as a pure function before any flow plumbing exists. Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatItemMapperTest.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.chat
 
 import com.shayanaryan.chatbot.shared.chat.ChatError
 import com.shayanaryan.chatbot.shared.chat.ContentBlock
@@ -2190,7 +2223,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 
-class ChatItemsTest {
+class ChatItemMapperTest {
     private var nextId = 1L
 
     private fun message(
@@ -2215,7 +2248,7 @@ class ChatItemsTest {
 
     @Test
     fun `an idle conversation is only its persisted messages`() {
-        val items = chatItems(listOf(user("hi"), assistant("hello")), TurnState.Idle)
+        val items = listOf(user("hi"), assistant("hello")).toChatItems(TurnState.Idle)
 
         assertEquals(2, items.size)
         assertTrue(items.all { it is ChatItem.Persisted })
@@ -2223,42 +2256,42 @@ class ChatItemsTest {
 
     @Test
     fun `an empty streaming turn after a user message is the thinking item`() {
-        val items = chatItems(listOf(user("hi")), TurnState.Streaming(""))
+        val items = listOf(user("hi")).toChatItems(TurnState.Streaming(""))
 
         assertEquals(ChatItem.Thinking, items.last())
     }
 
     @Test
     fun `a streaming turn with text is the streaming item`() {
-        val items = chatItems(listOf(user("hi")), TurnState.Streaming("hel"))
+        val items = listOf(user("hi")).toChatItems(TurnState.Streaming("hel"))
 
         assertEquals(ChatItem.Streaming("hel"), items.last())
     }
 
     /**
-     * 004 stores the assistant row *before* the turn returns to Idle, so there is a window where
-     * Room has already emitted the finished message while the turn still reads Streaming.
-     * Rendering both would double the bubble for a frame.
+     * The repository stores the assistant row *before* the turn returns to Idle, so there is a
+     * window where the database has already emitted the finished message while the turn still
+     * reads Streaming. Rendering both would double the bubble for a frame.
      */
     @Test
     fun `a stale streaming turn behind a persisted reply adds no item`() {
-        val items = chatItems(listOf(user("hi"), assistant("hello")), TurnState.Streaming("hello"))
+        val items = listOf(user("hi"), assistant("hello")).toChatItems(TurnState.Streaming("hello"))
 
         assertEquals(2, items.size)
         assertTrue(items.all { it is ChatItem.Persisted })
     }
 
     /**
-     * 004 writes a Failed assistant row and keeps the turn entry until the next send, retry or
-     * delete, so the error renders *after* that row rather than instead of it.
+     * A failed turn writes a Failed assistant row and keeps the turn entry until the next send,
+     * retry or delete, so the error renders *after* that row rather than instead of it.
      */
     @Test
     fun `a failed turn keeps its persisted item and adds the error`() {
         val items =
-            chatItems(
-                listOf(user("hi"), assistant("half", MessageStatus.Failed)),
-                TurnState.Failed(ChatError.Network),
-            )
+            listOf(
+                user("hi"),
+                assistant("half", MessageStatus.Failed),
+            ).toChatItems(TurnState.Failed(ChatError.Network))
 
         assertEquals(3, items.size)
         assertIs<ChatItem.Persisted>(items[1])
@@ -2268,10 +2301,10 @@ class ChatItemsTest {
     @Test
     fun `a failed turn that produced no text still shows the error`() {
         val items =
-            chatItems(
-                listOf(user("hi"), assistant("", MessageStatus.Failed)),
-                TurnState.Failed(ChatError.Overloaded),
-            )
+            listOf(
+                user("hi"),
+                assistant("", MessageStatus.Failed),
+            ).toChatItems(TurnState.Failed(ChatError.Overloaded))
 
         assertEquals(2, items.size)
         assertEquals(ChatItem.Error(ChatError.Overloaded), items.last())
@@ -2279,7 +2312,7 @@ class ChatItemsTest {
 
     @Test
     fun `a blank message is not an item`() {
-        val items = chatItems(listOf(user("hi"), assistant("")), TurnState.Idle)
+        val items = listOf(user("hi"), assistant("")).toChatItems(TurnState.Idle)
 
         assertEquals(1, items.size)
     }
@@ -2287,10 +2320,10 @@ class ChatItemsTest {
     @Test
     fun `a cancelled reply keeps its partial text as an ordinary message`() {
         val items =
-            chatItems(
-                listOf(user("hi"), assistant("half a th", MessageStatus.Cancelled)),
-                TurnState.Idle,
-            )
+            listOf(
+                user("hi"),
+                assistant("half a th", MessageStatus.Cancelled),
+            ).toChatItems(TurnState.Idle)
 
         assertEquals(2, items.size)
         val persisted = assertIs<ChatItem.Persisted>(items.last())
@@ -2299,25 +2332,25 @@ class ChatItemsTest {
 
     @Test
     fun `an empty conversation with an idle turn has no items at all`() {
-        assertEquals(emptyList<ChatItem>(), chatItems(emptyList(), TurnState.Idle))
+        assertEquals(emptyList<ChatItem>(), emptyList<Message>().toChatItems(TurnState.Idle))
     }
 }
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 ```bash
-./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatItemsTest*"
+./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatItemMapperTest*"
 ```
 
-Expected: FAIL to compile. `chatItems` and `ChatItem` are unresolved.
+Expected: FAIL to compile. `toChatItems` and `ChatItem` are unresolved.
 
-- [ ] **Step 3: Write the item model and the fold**
+- [x] **Step 3: Write the item model and the fold**
 
-Create `ConversationUiState.kt`:
+Create `ChatUiState.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.chat
 
 import com.shayanaryan.chatbot.shared.chat.ChatError
 import com.shayanaryan.chatbot.shared.conversation.Message
@@ -2357,7 +2390,7 @@ sealed interface ChatItem {
  * @property deleted true once a confirmed delete has finished, which is the navigation trigger
  *   `:app` reads to pop or to reset the detail pane.
  */
-data class ConversationUiState(
+data class ChatUiState(
     val conversationId: Long? = null,
     val title: String? = null,
     val model: ClaudeModel = ClaudeModel.Default,
@@ -2368,10 +2401,10 @@ data class ConversationUiState(
 )
 ```
 
-Create `ChatItems.kt`:
+Create `ChatItemMapper.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.chat
 
 import com.shayanaryan.chatbot.shared.chat.Role
 import com.shayanaryan.chatbot.shared.chat.textContent
@@ -2379,27 +2412,19 @@ import com.shayanaryan.chatbot.shared.conversation.Message
 import com.shayanaryan.chatbot.shared.conversation.TurnState
 
 /**
- * Folds stored messages and the turn in flight into the one list the message list renders.
+ * Maps stored messages and the turn in flight into the one list the message list renders.
+ * Blank messages are dropped (an empty bubble is noise).
  *
- * Blank messages are dropped for the same reason 004 drops them on the way into a request: a turn
- * that produced no text still stores its row, and an empty bubble is noise.
- *
- * The live item is gated on the last *stored* message still being the user's. 004 guarantees the
- * assistant row is inserted before the turn returns to [TurnState.Idle], so there is a window
- * where Room has already emitted the finished message while the turn still reads
- * [TurnState.Streaming]; once an assistant message is the last stored row, any live text is stale
- * by definition. [TurnState.Failed] is exempt, because 004 writes a failed assistant row and keeps
- * the turn entry until the next send, retry or delete.
+ * @param turn the reply in flight, which contributes at most one trailing item.
+ * @return every message worth rendering, oldest first, with the live item last when there is one.
  */
-internal fun chatItems(
-    messages: List<Message>,
-    turn: TurnState,
-): List<ChatItem> {
-    val items = messages.filter { it.content.textContent().isNotBlank() }.map(ChatItem::Persisted)
-    val awaitingReply = messages.lastOrNull()?.role == Role.User
+internal fun List<Message>.toChatItems(turn: TurnState): List<ChatItem> {
+    val items = filter { it.content.textContent().isNotBlank() }.map(ChatItem::Persisted)
+    val awaitingReply = lastOrNull()?.role == Role.User
     val trailing =
         when {
             turn is TurnState.Failed -> ChatItem.Error(turn.error)
+            // The reply already landed in the database, so any live text is stale.
             !awaitingReply -> null
             turn is TurnState.Streaming && turn.text.isEmpty() -> ChatItem.Thinking
             turn is TurnState.Streaming -> ChatItem.Streaming(turn.text)
@@ -2409,28 +2434,30 @@ internal fun chatItems(
 }
 ```
 
-- [ ] **Step 4: Run the fold tests to verify they pass**
+- [x] **Step 4: Run the fold tests to verify they pass**
 
 ```bash
-./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatItemsTest*"
+./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatItemMapperTest*"
 ```
 
 Expected: PASS, all nine.
 
-- [ ] **Step 5: Write the failing ViewModel tests**
+- [x] **Step 5: Write the failing ViewModel tests**
 
-Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatViewModelTest.kt`:
+Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatViewModelTest.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.chat
 
 import androidx.lifecycle.SavedStateHandle
 import com.shayanaryan.chatbot.shared.FakeClock
 import com.shayanaryan.chatbot.shared.chat.ChatError
+import com.shayanaryan.chatbot.shared.conversation.Conversation
 import com.shayanaryan.chatbot.shared.conversation.FakeConversationRepository
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -2444,6 +2471,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
+
+private const val UNKNOWN_CONVERSATION_ID = 404L
+private const val RETRY_AFTER_SECONDS = 30
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ChatViewModelTest {
@@ -2520,15 +2551,26 @@ class ChatViewModelTest {
             collecting(viewModel)
             viewModel.onSend("hello")
             advanceUntilIdle()
-            assertEquals(ChatItem.Thinking, viewModel.uiState.value.items.last())
+            assertEquals(
+                ChatItem.Thinking,
+                viewModel.uiState.value.items
+                    .last(),
+            )
 
             repository.emitDelta(1L, "hel")
             advanceUntilIdle()
-            assertEquals(ChatItem.Streaming("hel"), viewModel.uiState.value.items.last())
+            assertEquals(
+                ChatItem.Streaming("hel"),
+                viewModel.uiState.value.items
+                    .last(),
+            )
 
             repository.completeTurn(1L)
             advanceUntilIdle()
-            assertTrue(viewModel.uiState.value.items.last() is ChatItem.Persisted)
+            assertTrue(
+                viewModel.uiState.value.items
+                    .last() is ChatItem.Persisted,
+            )
             assertEquals(false, viewModel.uiState.value.isStreaming)
         }
 
@@ -2539,12 +2581,13 @@ class ChatViewModelTest {
             collecting(viewModel)
             viewModel.onSend("hello")
             advanceUntilIdle()
-            repository.failTurn(1L, ChatError.RateLimited(retryAfterSeconds = 30))
+            repository.failTurn(1L, ChatError.RateLimited(retryAfterSeconds = RETRY_AFTER_SECONDS))
             advanceUntilIdle()
 
             assertEquals(
-                ChatItem.Error(ChatError.RateLimited(30)),
-                viewModel.uiState.value.items.last(),
+                ChatItem.Error(ChatError.RateLimited(RETRY_AFTER_SECONDS)),
+                viewModel.uiState.value.items
+                    .last(),
             )
         }
 
@@ -2561,7 +2604,11 @@ class ChatViewModelTest {
             viewModel.onRetry()
             advanceUntilIdle()
 
-            assertEquals(ChatItem.Thinking, viewModel.uiState.value.items.last())
+            assertEquals(
+                ChatItem.Thinking,
+                viewModel.uiState.value.items
+                    .last(),
+            )
         }
 
     @Test
@@ -2576,7 +2623,9 @@ class ChatViewModelTest {
             viewModel.onCancel()
             advanceUntilIdle()
 
-            val last = viewModel.uiState.value.items.last()
+            val last =
+                viewModel.uiState.value.items
+                    .last()
             assertTrue(last is ChatItem.Persisted && last.message.content.isNotEmpty())
             assertEquals(false, viewModel.uiState.value.isStreaming)
         }
@@ -2609,7 +2658,11 @@ class ChatViewModelTest {
 
             assertEquals(
                 ClaudeModel.Opus,
-                repository.getConversationsFlow().first().single().model,
+                repository
+                    .getConversationsFlow()
+                    .first()
+                    .single()
+                    .model,
             )
         }
 
@@ -2650,13 +2703,14 @@ class ChatViewModelTest {
         }
 
     /**
-     * 010's notification for a conversation deleted between scheduling and firing is this case in
-     * production: the id arrives from outside the app with no guarantee the row still exists.
+     * A reminder notification for a conversation deleted between scheduling and firing is this
+     * case in production: the id arrives from outside the app with no guarantee the row still
+     * exists.
      */
     @Test
     fun `an id that names no conversation falls back to a new chat`() =
         runTest(dispatcher) {
-            val viewModel = viewModel(initialConversationId = 404L)
+            val viewModel = viewModel(initialConversationId = UNKNOWN_CONVERSATION_ID)
             collecting(viewModel)
             advanceUntilIdle()
 
@@ -2668,7 +2722,7 @@ class ChatViewModelTest {
 
 Add `import kotlinx.coroutines.flow.first`, `import kotlin.time.Duration.Companion.milliseconds` and `import com.shayanaryan.chatbot.shared.conversation.Conversation`.
 
-- [ ] **Step 6: Run them to verify they fail**
+- [x] **Step 6: Run them to verify they fail**
 
 ```bash
 ./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatViewModelTest*"
@@ -2676,16 +2730,17 @@ Add `import kotlinx.coroutines.flow.first`, `import kotlin.time.Duration.Compani
 
 Expected: FAIL to compile. `ChatViewModel` is unresolved.
 
-- [ ] **Step 7: Write the ViewModel**
+- [x] **Step 7: Write the ViewModel**
 
 Create `ChatViewModel.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.chat
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.shayanaryan.chatbot.core.ui.viewmodel.SUBSCRIPTION_TIMEOUT_MILLIS
 import com.shayanaryan.chatbot.shared.conversation.ConversationRepository
 import com.shayanaryan.chatbot.shared.conversation.TurnState
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
@@ -2706,11 +2761,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** Where the live conversation id survives process death; the nav key never learns it. */
 private const val KEY_CONVERSATION_ID = "conversationId"
 
-/** The slice of the state that comes from the repository, for one conversation or for none. */
-private data class ChatSlice(
+/** The state read from the repository, for one conversation or for none. */
+private data class ChatState(
     val conversationId: Long? = null,
     val title: String? = null,
     val model: ClaudeModel? = null,
@@ -2718,7 +2772,7 @@ private data class ChatSlice(
     val isStreaming: Boolean = false,
 )
 
-/** The slice this ViewModel owns outright, with no flow behind it. */
+/** The state the ViewModel writes itself. */
 private data class LocalState(
     val pendingModel: ClaudeModel = ClaudeModel.Default,
     val deleteDialogVisible: Boolean = false,
@@ -2726,17 +2780,7 @@ private data class LocalState(
 )
 
 /**
- * One chat screen.
- *
- * The conversation id is owned here rather than by the navigation key. A new chat keeps
- * `ChatKey(null)` for its whole life: replacing the top of the back stack would recreate the entry
- * and therefore this ViewModel, mid-stream, resetting scroll. The first send writes the created id
- * to [SavedStateHandle], which is what survives process death: the restored back stack still says
- * `ChatKey(null)`, and without that write the user would return to an empty new chat instead of
- * the conversation they were in.
- *
- * @param initialConversationId the id the navigation key carried, null for a new chat. The saved
- *   value wins over it when present.
+ * @param initialConversationId the id the navigation key carried, null for a new chat.
  */
 @HiltViewModel(assistedFactory = ChatViewModel.Factory::class)
 class ChatViewModel
@@ -2751,6 +2795,10 @@ class ChatViewModel
             fun create(initialConversationId: Long?): ChatViewModel
         }
 
+        // Owned here rather than by the navigation key: a new chat keeps `ChatKey(null)` for its
+        // whole life, because replacing the top of the back stack would recreate the entry and
+        // therefore this ViewModel, mid-stream, resetting scroll. The saved value wins over the
+        // key's, since only it survives process death.
         private val conversationId =
             MutableStateFlow(
                 savedStateHandle.get<Long>(KEY_CONVERSATION_ID) ?: initialConversationId,
@@ -2759,53 +2807,53 @@ class ChatViewModel
         private val localState = MutableStateFlow(LocalState())
 
         @OptIn(ExperimentalCoroutinesApi::class)
-        val uiState: StateFlow<ConversationUiState> =
+        val uiState: StateFlow<ChatUiState> =
             combine(
-                conversationId.flatMapLatest(::chatSlice),
+                conversationId.flatMapLatest(::chatState),
                 localState,
-            ) { slice, local ->
-                ConversationUiState(
-                    conversationId = slice.conversationId,
-                    title = slice.title,
-                    model = slice.model ?: local.pendingModel,
-                    items = slice.items,
-                    isStreaming = slice.isStreaming,
+            ) { repo, local ->
+                ChatUiState(
+                    conversationId = repo.conversationId,
+                    title = repo.title,
+                    model = repo.model ?: local.pendingModel,
+                    items = repo.items,
+                    isStreaming = repo.isStreaming,
                     deleteDialogVisible = local.deleteDialogVisible,
                     deleted = local.deleted,
                 )
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MILLIS),
-                initialValue = ConversationUiState(),
+                initialValue = ChatUiState(),
             )
 
-        /**
-         * A null id subscribes to nothing, so no flow is ever opened on a conversation that does
-         * not exist. A conversation that disappears under the screen clears the id and falls back
-         * to the same new-chat state.
-         */
-        private fun chatSlice(id: Long?): Flow<ChatSlice> =
-            if (id == null) {
-                flowOf(ChatSlice())
-            } else {
-                combine(
-                    repository.getConversationFlow(id).onEach { if (it == null) forgetConversation() },
-                    repository.getMessagesFlow(id),
-                    repository.getTurnFlow(id),
-                ) { conversation, messages, turn ->
-                    if (conversation == null) {
-                        ChatSlice()
-                    } else {
-                        ChatSlice(
-                            conversationId = id,
-                            title = conversation.title,
-                            model = conversation.model,
-                            items = chatItems(messages, turn),
-                            isStreaming = turn is TurnState.Streaming,
-                        )
-                    }
+        private fun chatState(id: Long?): Flow<ChatState> {
+            // A new chat subscribes to nothing, so no flow is opened on a conversation that
+            // does not exist.
+            if (id == null) return flowOf(ChatState())
+            val conversations =
+                repository.getConversationFlow(id).onEach { conversation ->
+                    // The conversation was deleted under the screen, so fall back to a new chat.
+                    if (conversation == null) forgetConversation()
+                }
+            return combine(
+                conversations,
+                repository.getMessagesFlow(id),
+                repository.getTurnFlow(id),
+            ) { conversation, messages, turn ->
+                if (conversation == null) {
+                    ChatState()
+                } else {
+                    ChatState(
+                        conversationId = id,
+                        title = conversation.title,
+                        model = conversation.model,
+                        items = messages.toChatItems(turn),
+                        isStreaming = turn is TurnState.Streaming,
+                    )
                 }
             }
+        }
 
         fun onSend(text: String) {
             if (text.isBlank() || uiState.value.isStreaming) return
@@ -2854,6 +2902,11 @@ class ChatViewModel
             }
         }
 
+        /**
+         * Writes the created id where it survives process death: the restored back stack still
+         * says `ChatKey(null)`, and without this the user would come back to an empty new chat
+         * instead of the conversation they were in.
+         */
         private fun rememberConversation(id: Long) {
             savedStateHandle[KEY_CONVERSATION_ID] = id
             conversationId.value = id
@@ -2866,7 +2919,7 @@ class ChatViewModel
     }
 ```
 
-- [ ] **Step 8: Run the ViewModel tests to verify they pass**
+- [x] **Step 8: Run the ViewModel tests to verify they pass**
 
 ```bash
 ./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatViewModelTest*"
@@ -2874,14 +2927,14 @@ class ChatViewModel
 
 Expected: PASS, all twelve.
 
-- [ ] **Step 9: Checkpoint**
+- [x] **Step 9: Checkpoint**
 
 ```bash
 ./gradlew spotlessApply
 ./gradlew :feature:conversation:testDebugUnitTest :app:assembleDebug spotlessCheck
 ```
 
-Expected: `BUILD SUCCESSFUL`. Report the two `ConversationUiState` fields added beyond the spec's listing and why. Stop for review.
+Expected: `BUILD SUCCESSFUL`. Report the two `ChatUiState` fields added beyond the spec's listing and why. Stop for review.
 
 ---
 
@@ -2890,12 +2943,12 @@ Expected: `BUILD SUCCESSFUL`. Report the two `ConversationUiState` fields added 
 Everything that renders inside the message list: the bubble (3b), the thinking indicator (3f), the inline error with retry (3g, 3h), and the new-chat empty state (3a). Suggested prompt chips in 3a and tool chips in 3c/3d are **not built**.
 
 **Files:**
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ChatErrorText.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/MessageBubble.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ThinkingIndicator.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ErrorItem.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/NewChatEmptyState.kt`
-- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ErrorItemTest.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatErrorText.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/MessageBubble.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/ThinkingIndicator.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/ErrorItem.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/NewChatEmptyState.kt`
+- Test: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/ErrorItemTest.kt`
 
 **Interfaces:**
 - Consumes: `ChatError`, `Role`, `Glyphs`, `ComponentShapes.bubbleUser` / `.bubbleAssistant`, `Motion.caretBlinkMillis`, the error strings from Task 3.
@@ -2907,10 +2960,10 @@ Everything that renders inside the message list: the bubble (3b), the thinking i
 
 - [ ] **Step 1: Write the failing error-copy test**
 
-Every `ChatError` case must resolve to distinct copy, and the rate-limited case must change when the server sent a hint. Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ErrorItemTest.kt`:
+Every `ChatError` case must resolve to distinct copy, and the rate-limited case must change when the server sent a hint. Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/ErrorItemTest.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.chat.component
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -2918,13 +2971,15 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-import com.shayanaryan.chatbot.feature.conversation.text
+import com.shayanaryan.chatbot.feature.conversation.chat.text
 import com.shayanaryan.chatbot.shared.chat.ChatError
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+
+private const val RETRY_AFTER_SECONDS = 30
 
 @RunWith(AndroidJUnit4::class)
 class ErrorItemTest {
@@ -2935,7 +2990,7 @@ class ErrorItemTest {
         listOf(
             ChatError.Authentication,
             ChatError.RateLimited(retryAfterSeconds = null),
-            ChatError.RateLimited(retryAfterSeconds = 30),
+            ChatError.RateLimited(retryAfterSeconds = RETRY_AFTER_SECONDS),
             ChatError.Overloaded,
             ChatError.InvalidRequest,
             ChatError.Server,
@@ -2961,10 +3016,12 @@ class ErrorItemTest {
     fun `a rate limit with a retry hint names the wait`() {
         var text = ""
         composeRule.setContent {
-            ChatbotTheme(darkTheme = true) { text = ChatError.RateLimited(30).text() }
+            ChatbotTheme(darkTheme = true) {
+                text = ChatError.RateLimited(RETRY_AFTER_SECONDS).text()
+            }
         }
 
-        assertTrue(text.contains("30"))
+        assertTrue(text.contains(RETRY_AFTER_SECONDS.toString()))
     }
 
     @Test
@@ -3009,7 +3066,7 @@ Expected: FAIL to compile. `ErrorItem` and `ChatError.text` are unresolved.
 Create `ChatErrorText.kt`. This is the whole reason `ChatError` carries no prose: typed errors cross the module boundary, copy stops here.
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.chat
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
@@ -3040,10 +3097,10 @@ fun ChatError.text(): String =
 
 - [ ] **Step 4: Build the bubble**
 
-Create `component/MessageBubble.kt`. The Design System's `MessageBubble` contract gives the two corner shapes, the two colour pairs and the blinking caret; `:core:ui` already carries the shapes as `ComponentShapes.bubbleUser` / `.bubbleAssistant` and the blink period as `Motion.caretBlinkMillis`.
+Create `chat/component/MessageBubble.kt`. The Design System's `MessageBubble` contract gives the two corner shapes, the two colour pairs and the blinking caret; `:core:ui` already carries the shapes as `ComponentShapes.bubbleUser` / `.bubbleAssistant` and the blink period as `Motion.caretBlinkMillis`.
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.chat.component
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -3185,10 +3242,10 @@ Fix the imports the compiler asks for: `Arrangement`, `height`, `wrapContentWidt
 
 - [ ] **Step 5: Build the thinking indicator**
 
-Create `component/ThinkingIndicator.kt`, frame 3f's three staggered dots in an assistant-shaped bubble:
+Create `chat/component/ThinkingIndicator.kt`, frame 3f's three staggered dots in an assistant-shaped bubble:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.chat.component
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
@@ -3271,10 +3328,10 @@ private fun ThinkingIndicatorPreview() {
 
 - [ ] **Step 6: Build the error item**
 
-Create `component/ErrorItem.kt`, frames 3g and 3h, which differ only in copy:
+Create `chat/component/ErrorItem.kt`, frames 3g and 3h, which differ only in copy:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.chat.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -3298,7 +3355,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
-import com.shayanaryan.chatbot.feature.conversation.text
+import com.shayanaryan.chatbot.feature.conversation.chat.text
 import com.shayanaryan.chatbot.shared.chat.ChatError
 
 private const val ERROR_MAX_WIDTH_FRACTION = 0.86f
@@ -3363,10 +3420,10 @@ private fun ErrorItemNetworkPreview() {
 
 - [ ] **Step 7: Build the new-chat empty state**
 
-Create `component/NewChatEmptyState.kt`, frame 3a's body, minus the suggested prompt chips (M4). `:app` also uses this as the detail pane's placeholder on a wide window, which is why it is public.
+Create `chat/component/NewChatEmptyState.kt`, frame 3a's body, minus the suggested prompt chips (M4). `:app` also uses this as the detail pane's placeholder on a wide window, which is why it is public.
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.chat.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -3458,16 +3515,16 @@ Expected: `BUILD SUCCESSFUL`. Screenshot goldens for these come with the whole s
 The chrome around the items (top bar, composer, model picker, overflow menu, delete dialog), and the stateless screen and route that assemble it. Frames 3a, 3b, 3e, 3f, 3g, 3h, 3i, 3j.
 
 **Files:**
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/Composer.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/ModelPickerChip.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/component/DeleteChatDialog.kt`
-- Replace: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationScreen.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationRoute.kt`
-- Replace: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationScreenTest.kt`
-- Create: `feature/conversation/src/screenshotTest/kotlin/com/shayanaryan/chatbot/feature/conversation/preview/ChatPreviews.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/Composer.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/ModelPickerChip.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/DeleteChatDialog.kt`
+- Replace: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ConversationScreen.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ConversationRoute.kt`
+- Replace: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ConversationScreenTest.kt`
+- Create: `feature/conversation/src/screenshotTest/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/preview/ChatPreviews.kt`
 
 **Interfaces:**
-- Consumes: `ConversationUiState`, `ChatItem`, `MessageBubble`, `ThinkingIndicator`, `ErrorItem`, `NewChatEmptyState`, `textContent()`.
+- Consumes: `ChatUiState`, `ChatItem`, `MessageBubble`, `ThinkingIndicator`, `ErrorItem`, `NewChatEmptyState`, `textContent()`.
 - Produces: `ConversationScreen(uiState, onBack, onSend, onCancel, onRetry, onModelSelected, onDeleteRequested, onDeleteDismissed, onDeleteConfirmed, modifier, composerState)`, stateless; `composerState` defaults to `rememberTextFieldState()`.
 - Produces: `internal object ChatPreviewData`, the fixture the colocated previews and the screenshot goldens share.
 - Produces: `ConversationRoute(conversationId, onBack, onDeleted, onConversationIdChanged, modifier, viewModel)`, stateful, what `:app` calls.
@@ -3479,10 +3536,10 @@ The chrome around the items (top bar, composer, model picker, overflow menu, del
 
 - [ ] **Step 1: Write the failing screen tests**
 
-Replace `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/ConversationScreenTest.kt`. The M0 placeholder test goes with the placeholder screen:
+Replace `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ConversationScreenTest.kt`. The M0 placeholder test goes with the placeholder screen:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.chat
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -3528,7 +3585,7 @@ class ConversationScreenTest {
     )
 
     private val openChat =
-        ConversationUiState(
+        ChatUiState(
             conversationId = 1L,
             title = "Weekend trip to Portland",
             model = ClaudeModel.Sonnet,
@@ -3540,7 +3597,7 @@ class ConversationScreenTest {
         )
 
     private fun setScreen(
-        uiState: ConversationUiState,
+        uiState: ChatUiState,
         onBack: (() -> Unit)? = {},
         onSend: (String) -> Unit = {},
         onCancel: () -> Unit = {},
@@ -3578,7 +3635,7 @@ class ConversationScreenTest {
 
     @Test
     fun `a chat with no first message shows the new-chat copy`() {
-        setScreen(ConversationUiState())
+        setScreen(ChatUiState())
 
         composeRule.onNodeWithText("new chat").assertIsDisplayed()
         composeRule.onNodeWithText("How's it going?").assertIsDisplayed()
@@ -3651,7 +3708,7 @@ class ConversationScreenTest {
 
     @Test
     fun `the overflow button is hidden on a chat with nothing to delete`() {
-        setScreen(ConversationUiState())
+        setScreen(ChatUiState())
 
         composeRule.onNodeWithContentDescription("More").assertDoesNotExist()
     }
@@ -3698,10 +3755,10 @@ Expected: FAIL. The placeholder `ConversationScreen()` takes no arguments.
 
 - [ ] **Step 3: Build the composer**
 
-Create `component/Composer.kt`. The composer is a token-styled `<div>` in the mockup, not a catalog component, so it is built here rather than reaching for `DsTextField`, and its text is held in a saveable `TextFieldState`, so it survives rotation without ever entering `UiState`.
+Create `chat/component/Composer.kt`. The composer is a token-styled `<div>` in the mockup, not a catalog component, so it is built here rather than reaching for `DsTextField`, and its text is held in a saveable `TextFieldState`, so it survives rotation without ever entering `UiState`.
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.chat.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -3832,10 +3889,10 @@ Drop the `RowScope` and `TextStyle` imports if the compiler reports them unused,
 
 - [ ] **Step 4: Build the model picker chip**
 
-Create `component/ModelPickerChip.kt`, frame 3e's chip and menu. The per-model blurbs the mockup draws are M4; only the names are built, and they come from `ClaudeModel.displayName` so every screen reads one source.
+Create `chat/component/ModelPickerChip.kt`, frame 3e's chip and menu. The per-model blurbs the mockup draws are M4; only the names are built, and they come from `ClaudeModel.displayName` so every screen reads one source.
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.chat.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -3952,10 +4009,10 @@ The test asserts `assertIsNotEnabled()` on the chip's text node, so the `Row` ne
 
 - [ ] **Step 5: Build the delete dialog**
 
-Create `component/DeleteChatDialog.kt`, frame 3j, a straight `DsDialog` call:
+Create `chat/component/DeleteChatDialog.kt`, frame 3j, a straight `DsDialog` call:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.component
+package com.shayanaryan.chatbot.feature.conversation.chat.component
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
@@ -3995,7 +4052,7 @@ private fun DeleteChatDialogPreview() {
 Replace `ConversationScreen.kt` entirely:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.chat
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -4031,13 +4088,13 @@ import com.shayanaryan.chatbot.core.ui.designsystem.icon.DsIcon
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
-import com.shayanaryan.chatbot.feature.conversation.component.Composer
-import com.shayanaryan.chatbot.feature.conversation.component.DeleteChatDialog
-import com.shayanaryan.chatbot.feature.conversation.component.ErrorItem
-import com.shayanaryan.chatbot.feature.conversation.component.MessageBubble
-import com.shayanaryan.chatbot.feature.conversation.component.ModelPickerChip
-import com.shayanaryan.chatbot.feature.conversation.component.NewChatEmptyState
-import com.shayanaryan.chatbot.feature.conversation.component.ThinkingIndicator
+import com.shayanaryan.chatbot.feature.conversation.chat.component.Composer
+import com.shayanaryan.chatbot.feature.conversation.chat.component.DeleteChatDialog
+import com.shayanaryan.chatbot.feature.conversation.chat.component.ErrorItem
+import com.shayanaryan.chatbot.feature.conversation.chat.component.MessageBubble
+import com.shayanaryan.chatbot.feature.conversation.chat.component.ModelPickerChip
+import com.shayanaryan.chatbot.feature.conversation.chat.component.NewChatEmptyState
+import com.shayanaryan.chatbot.feature.conversation.chat.component.ThinkingIndicator
 import com.shayanaryan.chatbot.shared.chat.textContent
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
 
@@ -4055,7 +4112,7 @@ import com.shayanaryan.chatbot.shared.model.ClaudeModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConversationScreen(
-    uiState: ConversationUiState,
+    uiState: ChatUiState,
     onBack: (() -> Unit)?,
     onSend: (String) -> Unit,
     onCancel: () -> Unit,
@@ -4224,10 +4281,10 @@ internal object ChatPreviewData {
         ),
     )
 
-    val newChat = ConversationUiState()
+    val newChat = ChatUiState()
 
     val openChat =
-        ConversationUiState(
+        ChatUiState(
             conversationId = 1L,
             title = "Weekend trip to Portland",
             model = ClaudeModel.Sonnet,
@@ -4268,7 +4325,7 @@ internal object ChatPreviewData {
 
 @Composable
 private fun PreviewChat(
-    uiState: ConversationUiState,
+    uiState: ChatUiState,
     onBack: (() -> Unit)? = {},
 ) {
     ConversationScreen(
@@ -4340,7 +4397,7 @@ Add `ChatError`, `ContentBlock`, `Message`, `MessageStatus`, `Role` and `kotlin.
 Create `ConversationRoute.kt`:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.feature.conversation.chat
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -4400,23 +4457,23 @@ Expected: PASS, all twelve. If `waitForIdle` hangs, the test that hangs is missi
 
 - [ ] **Step 10: Record the chat screenshot goldens**
 
-Create `feature/conversation/src/screenshotTest/kotlin/com/shayanaryan/chatbot/feature/conversation/preview/ChatPreviews.kt`, one `@PreviewTest` pair per built frame, dark and light, driving the stateless screen with the fixture from Step 7:
+Create `feature/conversation/src/screenshotTest/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/preview/ChatPreviews.kt`, one `@PreviewTest` pair per built frame, dark and light, driving the stateless screen with the fixture from Step 7:
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.preview
+package com.shayanaryan.chatbot.feature.conversation.chat.preview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.preview.FormFactorPreviews
-import com.shayanaryan.chatbot.feature.conversation.ChatPreviewData
-import com.shayanaryan.chatbot.feature.conversation.ConversationScreen
-import com.shayanaryan.chatbot.feature.conversation.ConversationUiState
+import com.shayanaryan.chatbot.feature.conversation.chat.ChatPreviewData
+import com.shayanaryan.chatbot.feature.conversation.chat.ConversationScreen
+import com.shayanaryan.chatbot.feature.conversation.chat.ChatUiState
 
 @Composable
 private fun Chat(
-    uiState: ConversationUiState,
+    uiState: ChatUiState,
     onBack: (() -> Unit)? = {},
 ) {
     ConversationScreen(
@@ -4433,117 +4490,117 @@ private fun Chat(
 }
 
 @PreviewTest
-@Preview(name = "chat-3a-new-dark", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatNewDarkPreview() {
     ChatbotTheme(darkTheme = true) { Chat(ChatPreviewData.newChat) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3a-new-light", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatNewLightPreview() {
     ChatbotTheme(darkTheme = false) { Chat(ChatPreviewData.newChat) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3b-streaming-dark", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatStreamingDarkPreview() {
     ChatbotTheme(darkTheme = true) { Chat(ChatPreviewData.streaming) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3b-streaming-light", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatStreamingLightPreview() {
     ChatbotTheme(darkTheme = false) { Chat(ChatPreviewData.streaming) }
 }
 
-// 3e's menu is driven by the chip's own state, which a preview cannot open, so the golden
-// captures the chip in its collapsed state on an idle chat. The open menu is covered by the
+// The picker's menu is driven by the chip's own state, which a preview cannot open, so the
+// golden captures the chip collapsed on an idle chat. The open menu is covered by the
 // Compose test instead.
 @PreviewTest
-@Preview(name = "chat-3e-picker-dark", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatPickerDarkPreview() {
     ChatbotTheme(darkTheme = true) { Chat(ChatPreviewData.openChat) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3e-picker-light", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatPickerLightPreview() {
     ChatbotTheme(darkTheme = false) { Chat(ChatPreviewData.openChat) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3f-thinking-dark", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatThinkingDarkPreview() {
     ChatbotTheme(darkTheme = true) { Chat(ChatPreviewData.thinking) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3f-thinking-light", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatThinkingLightPreview() {
     ChatbotTheme(darkTheme = false) { Chat(ChatPreviewData.thinking) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3g-rate-limited-dark", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatRateLimitedDarkPreview() {
     ChatbotTheme(darkTheme = true) { Chat(ChatPreviewData.rateLimited) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3g-rate-limited-light", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatRateLimitedLightPreview() {
     ChatbotTheme(darkTheme = false) { Chat(ChatPreviewData.rateLimited) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3h-network-dark", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatNetworkDarkPreview() {
     ChatbotTheme(darkTheme = true) { Chat(ChatPreviewData.network) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3h-network-light", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatNetworkLightPreview() {
     ChatbotTheme(darkTheme = false) { Chat(ChatPreviewData.network) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3j-delete-dark", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatDeleteDarkPreview() {
     ChatbotTheme(darkTheme = true) { Chat(ChatPreviewData.deleting) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3j-delete-light", heightDp = 780)
+@Preview(heightDp = 780)
 @Composable
 private fun ChatDeleteLightPreview() {
     ChatbotTheme(darkTheme = false) { Chat(ChatPreviewData.deleting) }
 }
 
-// 3k: the same screen rendered as the detail pane, which is the whole visual difference:
-// no back arrow. The two-pane composition itself lives in :app and is covered by the journey.
+// The same screen rendered as the detail pane, where the whole visual difference is the
+// missing back arrow. The two-pane composition itself lives in :app, covered by the journey.
 @PreviewTest
-@Preview(name = "chat-3k-detail-pane-dark", heightDp = 700, widthDp = 664)
+@Preview(heightDp = 700, widthDp = 664)
 @Composable
 private fun ChatDetailPaneDarkPreview() {
     ChatbotTheme(darkTheme = true) { Chat(ChatPreviewData.openChat, onBack = null) }
 }
 
 @PreviewTest
-@Preview(name = "chat-3k-detail-pane-light", heightDp = 700, widthDp = 664)
+@Preview(heightDp = 700, widthDp = 664)
 @Composable
 private fun ChatDetailPaneLightPreview() {
     ChatbotTheme(darkTheme = false) { Chat(ChatPreviewData.openChat, onBack = null) }
@@ -4709,10 +4766,10 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * The developer's own key, for debug builds only. 006 replaces this with the real provider over
- * the encrypted store, and until then a release build has no [ApiKeyProvider] binding and does not
- * assemble. That is deliberate, since the alternative is a release-only stub that has to be remembered
- * and removed. The M1 sideload checkpoint is a debug build.
+ * The developer's own key, for debug builds only. Until onboarding contributes the real provider
+ * over the encrypted store, a release build has no [ApiKeyProvider] binding and does not assemble.
+ * That is deliberate, since the alternative is a release-only stub that has to be remembered and
+ * removed.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -4829,9 +4886,9 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import com.shayanaryan.chatbot.feature.conversation.ConversationListRoute
-import com.shayanaryan.chatbot.feature.conversation.ConversationRoute
-import com.shayanaryan.chatbot.feature.conversation.component.NewChatEmptyState
+import com.shayanaryan.chatbot.feature.conversation.conversationlist.ConversationListRoute
+import com.shayanaryan.chatbot.feature.conversation.chat.ConversationRoute
+import com.shayanaryan.chatbot.feature.conversation.chat.component.NewChatEmptyState
 
 /**
  * Maps every key to its route and lets the adaptive scene arrange them.
@@ -4973,7 +5030,7 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        /** Set by 010's reminder notification to reopen the conversation that scheduled it. */
+        /** Set by a reminder notification to reopen the conversation that scheduled it. */
         const val EXTRA_CONVERSATION_ID: String = "com.shayanaryan.chatbot.extra.CONVERSATION_ID"
     }
 }
@@ -5215,7 +5272,7 @@ android emulator start <the tablet AVD name from Step 1>
 
 Evaluate `journeys/m1-two-pane.xml`. Expected: pass.
 
-- [ ] **Step 5: Correct the two lines 005 owes**
+- [ ] **Step 5: Correct the three things 005 owes**
 
 `specs/005-conversation-shell.md:15` currently reads "Two changes to 004's contract, which that spec is amended to carry." 004 defers them to 005 instead, matching how the rest of its deferral table works. Replace with:
 
@@ -5227,6 +5284,23 @@ Two additions to 004's contract, which that spec defers to this one.
 
 ```markdown
 `hilt-lifecycle-viewmodel-compose` rather than `hilt-navigation-compose`: the latter declares `navigation-compose` as a compile dependency, which would put Navigation 2 on the classpath. The `hiltViewModel` overload taking a `creationCallback` lives in the former either way.
+```
+
+005's **State / Chat** block names the state `ConversationUiState`. The built type is `ChatUiState`,
+named for the screen it belongs to now that the feature is split into a `chat` and a
+`conversationlist` package, and it carries the two extra fields Task 5 reported. Replace the block's
+data class with:
+
+```markdown
+data class ChatUiState(
+  val conversationId: Long?,
+  val title: String?,
+  val model: ClaudeModel,
+  val items: List<ChatItem>,
+  val isStreaming: Boolean,
+  val deleteDialogVisible: Boolean,
+  val deleted: Boolean,
+)
 ```
 
 - [ ] **Step 6: Record the two new libraries in 001**

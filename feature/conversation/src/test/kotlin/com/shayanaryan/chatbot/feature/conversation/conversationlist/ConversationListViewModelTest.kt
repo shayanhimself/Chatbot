@@ -20,10 +20,12 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
+private const val FIXED_NOW_MILLIS = 1_000_000_000L
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ConversationListViewModelTest {
     private val dispatcher = StandardTestDispatcher()
-    private val clock = FakeClock(instant = Instant.fromEpochMilliseconds(1_000_000_000L))
+    private val clock = FakeClock(instant = Instant.fromEpochMilliseconds(FIXED_NOW_MILLIS))
 
     @BeforeTest
     fun installMainDispatcher() {

@@ -18,10 +18,14 @@ internal fun List<Message>.toChatItems(turn: TurnState): List<ChatItem> {
     val trailing =
         when {
             turn is TurnState.Failed -> ChatItem.Error(turn.error)
+
             // The reply already landed in the database, so any live text is stale.
             !awaitingReply -> null
+
             turn is TurnState.Streaming && turn.text.isEmpty() -> ChatItem.Thinking
+
             turn is TurnState.Streaming -> ChatItem.Streaming(turn.text)
+
             else -> null
         }
     return if (trailing == null) items else items + trailing

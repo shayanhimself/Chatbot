@@ -9,10 +9,10 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * The developer's own key, for debug builds only. 006 replaces this with the real provider over
- * the encrypted store, and until then a release build has no [ApiKeyProvider] binding and does not
- * assemble. That is deliberate, since the alternative is a release-only stub that has to be remembered
- * and removed. The M1 sideload checkpoint is a debug build.
+ * The developer's own key, for debug builds only. Until onboarding contributes the real provider
+ * over the encrypted store, a release build has no [ApiKeyProvider] binding and does not assemble.
+ * That is deliberate, since the alternative is a release-only stub that has to be remembered and
+ * removed.
  */
 @Module
 @InstallIn(SingletonComponent::class)

@@ -56,7 +56,9 @@ How they're accessed:
   only CompositionLocal-backed set.
 - Everything else is a plain constant, read directly — no theme lookup, usable
   outside composition (`Spacing`, `Elevation`, `ComponentShapes`, `Motion`, `MonoTextStyle`).
-- Touch targets: `Modifier.minimumInteractiveComponentSize()`, not a spacing value.
+- Touch targets: `--touch-target-min` as a width, height or min-height is
+  `Spacing.touchTargetMin`, applied through whichever `Modifier` sizes the element
+  (`size`, `defaultMinSize`, `heightIn`). Never a spacing step, never a raw `.dp`.
 
 ## Which token / component to use = the design decides
 

@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.designsystem.component.DsIconButton
 import com.shayanaryan.chatbot.core.ui.designsystem.component.IconButtonVariant
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
@@ -59,7 +58,7 @@ fun Composer(
             modifier =
                 Modifier
                     .weight(1f)
-                    .defaultMinSize(minHeight = 48.dp)
+                    .defaultMinSize(minHeight = Spacing.touchTargetMin)
                     .background(
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
                         shape = MaterialTheme.shapes.extraLarge,
@@ -91,7 +90,7 @@ fun Composer(
                 glyph = Glyphs.STOP,
                 contentDescription = stringResource(R.string.conversation_stop),
                 onClick = onCancel,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(Spacing.touchTargetMin),
                 variant = IconButtonVariant.Filled,
             )
         } else {
@@ -102,7 +101,7 @@ fun Composer(
                     onSend(state.text.toString())
                     state.clearText()
                 },
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(Spacing.touchTargetMin),
                 variant = IconButtonVariant.Filled,
                 enabled = canSend,
             )

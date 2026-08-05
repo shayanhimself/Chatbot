@@ -3878,7 +3878,7 @@ fun Composer(
             modifier =
                 Modifier
                     .weight(1f)
-                    .defaultMinSize(minHeight = 48.dp)
+                    .defaultMinSize(minHeight = Spacing.touchTargetMin)
                     .background(
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
                         shape = MaterialTheme.shapes.extraLarge,

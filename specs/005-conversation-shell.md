@@ -74,7 +74,7 @@ Every edge points one way. The arrangement only looks circular if a project is t
 
 `:feature:conversation` gains Hilt and KSP, `lifecycle-viewmodel-compose`, `lifecycle-runtime-compose`, `hilt-navigation-compose`, and the Compose screenshot plugin with the same `enableScreenshotTest` experimental property `:core:ui` sets. It takes **no Navigation 3 dependency**: the nav graph belongs to `:app`, so the feature exports composables and ViewModels and knows nothing about keys.
 
-Each feature screen ships as a pair. `ConversationRoute` is stateful, resolves its ViewModel with `hiltViewModel()`, and is what `:app` calls. `ConversationScreen` is stateless, takes `uiState` plus event lambdas, and is what previews, screenshot tests, and Compose UI tests drive. The same split applies to the list.
+Each feature screen ships as a pair. `ChatRoute` is stateful, resolves its ViewModel with `hiltViewModel()`, and is what `:app` calls. `ChatScreen` is stateless, takes `uiState` plus event lambdas, and is what previews, screenshot tests, and Compose UI tests drive. The same split applies to the list.
 
 `:app` gains `navigation3-runtime`, `navigation3-ui`, `lifecycle-viewmodel-navigation3`, `adaptive-navigation3`, the kotlin-serialization plugin, and `buildConfig = true`.
 
@@ -87,13 +87,13 @@ Each feature screen ships as a pair. `ConversationRoute` is stateful, resolves i
 
 A `NavDisplay` over `rememberNavBackStack(ConversationListKey)`, which persists across process death because the keys are serializable. `rememberListDetailSceneStrategy()` supplies the adaptive layout, and the two entries carry `listPane()` and `detailPane()` metadata.
 
-On a wide window both panes show and `ConversationScreen` receives a null `onBack`, which is what hides its back arrow; on a narrow window it is single-pane with the arrow shown. The back affordance is a parameter rather than an internal decision so the screen stays stateless and both states are screenshot-testable.
+On a wide window both panes show and `ChatScreen` receives a null `onBack`, which is what hides its back arrow; on a narrow window it is single-pane with the arrow shown. The back affordance is a parameter rather than an internal decision so the screen stays stateless and both states are screenshot-testable.
 
 **A new chat keeps `ChatKey(null)`.** The first `send` creates a conversation, but the key is not rewritten: replacing the top of the back stack recreates the entry and therefore the ViewModel, mid-stream, resetting scroll. The ViewModel owns the live id instead.
 
 It is seeded through an assisted-inject factory (`@HiltViewModel(assistedFactory = …)` with `hiltViewModel(creationCallback = …)`), since a Nav 3 key is not injected into `SavedStateHandle` the way a Nav 2 route argument was. After `send` returns a new id the ViewModel writes it to `SavedStateHandle`, which is what survives process death: the restored back stack still says `ChatKey(null)`, and without that write the user would return to an empty new chat instead of the conversation they were in. The saved value wins over the assisted parameter when present.
 
-**The list's selected item reads that id, not the key.** Mockup 3k highlights the open conversation in the list pane, so on a wide window something outside the chat screen does need the live id. `ConversationRoute` reports it upward through an `onConversationIdChanged` lambda driven by its `UiState`, and `:app` hands the reported value to the list as `selectedConversationId`. The key stays stable while the list still gets the truth, and `:app` needs no saved state of its own: the ViewModel's `SavedStateHandle` is the durable store, and the lambda fires again on the first composition after a restore.
+**The list's selected item reads that id, not the key.** Mockup 3k highlights the open conversation in the list pane, so on a wide window something outside the chat screen does need the live id. `ChatRoute` reports it upward through an `onConversationIdChanged` lambda driven by its `UiState`, and `:app` hands the reported value to the list as `selectedConversationId`. The key stays stable while the list still gets the truth, and `:app` needs no saved state of its own: the ViewModel's `SavedStateHandle` is the durable store, and the lambda fires again on the first composition after a restore.
 
 Switching to a *different* conversation is the opposite case and does rewrite the key, which is correct: a different conversation should get a different ViewModel. Only the null-to-new-id transition is exempt, because there the ViewModel being replaced is the one that owns the in-flight turn.
 

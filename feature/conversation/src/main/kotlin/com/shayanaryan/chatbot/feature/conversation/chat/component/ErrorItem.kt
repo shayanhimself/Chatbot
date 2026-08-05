@@ -22,6 +22,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
+import com.shayanaryan.chatbot.feature.conversation.chat.CHAT_PREVIEW_WIDTH_DP
 import com.shayanaryan.chatbot.shared.chat.ChatError
 import com.shayanaryan.chatbot.core.ui.R as CoreUiR
 

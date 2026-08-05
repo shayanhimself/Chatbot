@@ -6,12 +6,15 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import com.shayanaryan.chatbot.feature.conversation.R
+import com.shayanaryan.chatbot.feature.conversation.string
 import com.shayanaryan.chatbot.shared.chat.ChatError
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import com.shayanaryan.chatbot.core.ui.R as CoreUiR
 
 private const val RETRY_AFTER_SECONDS = 30
 
@@ -67,7 +70,7 @@ class ErrorItemTest {
             }
         }
 
-        composeRule.onNodeWithText("Retry").performClick()
+        composeRule.onNodeWithText(string(CoreUiR.string.core_ui_retry)).performClick()
 
         assertEquals(true, retried)
     }
@@ -81,7 +84,7 @@ class ErrorItemTest {
         }
 
         composeRule
-            .onNodeWithText("Couldn't reach the API. Check your connection and try again.")
+            .onNodeWithText(string(R.string.conversation_error_network))
             .assertIsDisplayed()
     }
 }

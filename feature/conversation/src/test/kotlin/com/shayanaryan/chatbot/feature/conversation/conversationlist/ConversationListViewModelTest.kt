@@ -21,6 +21,9 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 private const val FIXED_NOW_MILLIS = 1_000_000_000L
+private const val CONVERSATION_TITLE = "plan a weekend"
+private const val SNIPPET = "Powell's Books first."
+private const val USER_MESSAGE = "hello"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ConversationListViewModelTest {
@@ -35,14 +38,6 @@ class ConversationListViewModelTest {
     @AfterTest
     fun removeMainDispatcher() {
         Dispatchers.resetMain()
-    }
-
-    /**
-     * `stateIn(WhileSubscribed)` produces nothing until something collects, so every test needs a
-     * collector before it reads `value`.
-     */
-    private fun TestScope.collecting(viewModel: ConversationListViewModel) {
-        backgroundScope.launch { viewModel.uiState.collect {} }
     }
 
     @Test
@@ -71,8 +66,8 @@ class ConversationListViewModelTest {
     fun `carries title, snippet and id from the repository`() =
         runTest(dispatcher) {
             val repository = FakeConversationRepository(clock)
-            val id = repository.send(null, "plan a weekend")
-            repository.emitDelta(id, "Powell's Books first.")
+            val id = repository.send(null, CONVERSATION_TITLE)
+            repository.emitDelta(id, SNIPPET)
             repository.completeTurn(id)
             val viewModel = ConversationListViewModel(repository, clock)
             collecting(viewModel)
@@ -83,15 +78,15 @@ class ConversationListViewModelTest {
                     .single()
 
             assertEquals(id, item.id)
-            assertEquals("plan a weekend", item.title)
-            assertEquals("Powell's Books first.", item.snippet)
+            assertEquals(CONVERSATION_TITLE, item.title)
+            assertEquals(SNIPPET, item.snippet)
         }
 
     @Test
     fun `formats the timestamp against the injected clock`() =
         runTest(dispatcher) {
             val repository = FakeConversationRepository(clock)
-            repository.send(null, "hello")
+            repository.send(null, USER_MESSAGE)
             clock.advanceBy(2.hours)
             val viewModel = ConversationListViewModel(repository, clock)
             collecting(viewModel)
@@ -104,4 +99,12 @@ class ConversationListViewModelTest {
                     .relativeTime,
             )
         }
+
+    /**
+     * `stateIn(WhileSubscribed)` produces nothing until something collects, so every test needs a
+     * collector before it reads `value`.
+     */
+    private fun TestScope.collecting(viewModel: ConversationListViewModel) {
+        backgroundScope.launch { viewModel.uiState.collect {} }
+    }
 }

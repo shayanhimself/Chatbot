@@ -22,6 +22,8 @@ We use **`android` CLI** for project creation, SDK/emulator management, running 
 - **A comment sits with what it explains.** A class KDoc says what the class is, and stops there. Reasoning about one property, function, or branch goes above that property, function, or branch, never accumulated into the block on top of the class. Constructor `@param` lines are the exception, since the language gives them nowhere else to live.
 - **Never name a document in code.** Comments and KDoc say what the code does, in its own terms. A spec number (`004 writes…`), a plan task, or a design frame id (`2e`, `3k`) is document-side: it goes stale, and means nothing to a reader who does not have that file open. Name the thing that behaves the way you are describing (`the repository writes…`) instead.
 - **Test function names use backtick spaced form** (`` fun `does the thing`() ``).
+- **Tests never spell out a string the code owns.** Copy the app ships is read from its resource through the module's test helper, and an identifier the domain owns.
+- **A test's own fixture strings are named.** Every value a test builds its fixture from gets a file-level `private const val`. The name says what the string stands for, which a literal cannot, and a value the test also asserts on then cannot drift from the fixture it came from.
 - **Public composables ship colocated previews.** Every `public @Composable` gets at least one plain `@Preview` in its own file, one per distinct visual state, each wrapped in `ChatbotTheme`.
 
 ## Writing — specs, docs, comments

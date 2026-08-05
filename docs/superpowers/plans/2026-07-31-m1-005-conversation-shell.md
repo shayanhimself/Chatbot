@@ -16,7 +16,7 @@
 - **`CLAUDE.md`'s code style and writing rules apply in full** and are not repeated here. What follows is only what is specific to this plan.
 - **No em dashes in prose** (specs, docs, comments). The exception is user-facing copy lifted verbatim from a mockup, which stays exactly as the design wrote it.
 - **Import order is ktlint_official's**: everything else first (including `kotlinx.*`), then `java.*`, `javax.*`, `kotlin.*`. So `javax.inject.Inject` sits *above* `kotlin.time.Clock`. `spotlessApply` fixes it either way; writing it right keeps the diff honest.
-- **Every public composable ships a colocated plain `@Preview`** in its own file, one per distinct visual state, wrapped in `ChatbotTheme(darkTheme = true)`: the app is dark-first, and an unqualified `ChatbotTheme` renders light because the preview renderer defaults `uiMode` to `UI_MODE_NIGHT_NO`. Wrap the content in a `Surface` whenever the composable paints no background of its own, since `showBackground = true` paints white underneath it. Screenshot goldens live separately in `src/screenshotTest/`.
+- **Every public composable ships a colocated plain `@Preview`** in its own file, one per distinct visual state, wrapped in `ChatbotTheme(darkTheme = true)`: the app is dark-first, and an unqualified `ChatbotTheme` renders light because the preview renderer defaults `uiMode` to `UI_MODE_NIGHT_NO`. Wrap the content in a `Surface` whenever the composable paints no background of its own, since `showBackground = true` paints white underneath it. A composable that sizes itself as a fraction of the width it is given also needs an explicit `widthDp`: a preview that wraps its content hands down an unbounded width, which makes `fillMaxWidth(fraction)` a no-op and renders nothing like the screen. Screenshot goldens live separately in `src/screenshotTest/`.
 - **`:feature:conversation` is split by screen.** Chat code sits in
   `com.shayanaryan.chatbot.feature.conversation.chat` (with `chat.component` and `chat.preview`), the
   list in `…conversation.conversationlist` (with `conversationlist.component` and
@@ -1658,7 +1658,6 @@ package com.shayanaryan.chatbot.feature.conversation.conversationlist.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -1687,7 +1686,14 @@ fun ConversationListEmpty(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(Spacing.s4, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
+        DsIcon(
+            glyph = Glyphs.BRAND,
+            contentDescription = null,
+            size = 46.dp,
+            filled = true,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            // DsIcon centers its glyph in whatever box the modifier gives it, so the tile is a
+            // background on the icon rather than a wrapper around it.
             modifier =
                 Modifier
                     .size(88.dp)
@@ -1695,16 +1701,7 @@ fun ConversationListEmpty(modifier: Modifier = Modifier) {
                         color = MaterialTheme.colorScheme.primaryContainer,
                         shape = MaterialTheme.shapes.extraLarge,
                     ),
-            contentAlignment = Alignment.Center,
-        ) {
-            DsIcon(
-                glyph = Glyphs.BRAND,
-                contentDescription = null,
-                size = 46.dp,
-                filled = true,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
-        }
+        )
         Text(
             text = stringResource(R.string.conversation_list_empty_title),
             style = MaterialTheme.typography.titleLarge,
@@ -2943,7 +2940,8 @@ Expected: `BUILD SUCCESSFUL`. Report the two `ChatUiState` fields added beyond t
 Everything that renders inside the message list: the bubble (3b), the thinking indicator (3f), the inline error with retry (3g, 3h), and the new-chat empty state (3a). Suggested prompt chips in 3a and tool chips in 3c/3d are **not built**.
 
 **Files:**
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatErrorText.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/ChatErrorText.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/ChatPreviewWidth.kt`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/MessageBubble.kt`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/ThinkingIndicator.kt`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/ErrorItem.kt`
@@ -2952,7 +2950,7 @@ Everything that renders inside the message list: the bubble (3b), the thinking i
 
 **Interfaces:**
 - Consumes: `ChatError`, `Role`, `Glyphs`, `ComponentShapes.bubbleUser` / `.bubbleAssistant`, `Motion.caretBlinkMillis`, the error strings from Task 3.
-- Produces: `@Composable fun ChatError.text(): String`.
+- Produces: `@Composable fun ChatError.text(): String`, in `…chat.component` beside its one consumer.
 - Produces: `MessageBubble(text: String, role: Role, modifier, streaming: Boolean = false)`.
 - Produces: `ThinkingIndicator(modifier)`.
 - Produces: `ErrorItem(error: ChatError, onRetry: () -> Unit, modifier)`.
@@ -2971,7 +2969,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-import com.shayanaryan.chatbot.feature.conversation.chat.text
 import com.shayanaryan.chatbot.shared.chat.ChatError
 import org.junit.Rule
 import org.junit.Test
@@ -3063,13 +3060,14 @@ Expected: FAIL to compile. `ErrorItem` and `ChatError.text` are unresolved.
 
 - [x] **Step 3: Map errors to copy**
 
-Create `ChatErrorText.kt`. This is the whole reason `ChatError` carries no prose: typed errors cross the module boundary, copy stops here.
+Create `chat/component/ChatErrorText.kt`. This is the whole reason `ChatError` carries no prose: typed errors cross the module boundary, copy stops here.
 
 ```kotlin
-package com.shayanaryan.chatbot.feature.conversation.chat
+package com.shayanaryan.chatbot.feature.conversation.chat.component
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import com.shayanaryan.chatbot.feature.conversation.R
 import com.shayanaryan.chatbot.shared.chat.ChatError
 
 /**
@@ -3080,12 +3078,15 @@ import com.shayanaryan.chatbot.shared.chat.ChatError
 fun ChatError.text(): String =
     when (this) {
         ChatError.Authentication -> stringResource(R.string.conversation_error_authentication)
-        is ChatError.RateLimited ->
-            if (retryAfterSeconds == null) {
+        is ChatError.RateLimited -> {
+            // A property from another module cannot smart cast, so the hint is read once here.
+            val seconds = retryAfterSeconds
+            if (seconds == null) {
                 stringResource(R.string.conversation_error_rate_limited)
             } else {
-                stringResource(R.string.conversation_error_rate_limited_after, retryAfterSeconds)
+                stringResource(R.string.conversation_error_rate_limited_after, seconds)
             }
+        }
         ChatError.Overloaded -> stringResource(R.string.conversation_error_overloaded)
         ChatError.InvalidRequest -> stringResource(R.string.conversation_error_invalid_request)
         ChatError.Server -> stringResource(R.string.conversation_error_server)
@@ -3096,6 +3097,18 @@ fun ChatError.text(): String =
 ```
 
 - [x] **Step 4: Build the bubble**
+
+Every item below sizes itself as a fraction of the width it is given, so each preview pins one. Create `chat/component/ChatPreviewWidth.kt`, which the four component files share:
+
+```kotlin
+package com.shayanaryan.chatbot.feature.conversation.chat.component
+
+/**
+ * The width every chat item renders at in a preview. Each of them sizes itself as a fraction of the
+ * width it is given, so without one they wrap to their content and read nothing like the screen.
+ */
+internal const val CHAT_PREVIEW_WIDTH_DP = 360
+```
 
 Create `chat/component/MessageBubble.kt`. The Design System's `MessageBubble` contract gives the two corner shapes, the two colour pairs and the blinking caret; `:core:ui` already carries the shapes as `ComponentShapes.bubbleUser` / `.bubbleAssistant` and the blink period as `Motion.caretBlinkMillis`.
 
@@ -3132,6 +3145,9 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.shared.chat.Role
 
 private const val BUBBLE_MAX_WIDTH_FRACTION = 0.82f
+
+// The caret blinks on and off within one period, so each direction takes half of it.
+private const val CARET_HALF_PERIOD_DIVISOR = 2
 
 /**
  * One chat turn.
@@ -3194,7 +3210,11 @@ private fun StreamingCaret(modifier: Modifier = Modifier) {
         targetValue = 0f,
         animationSpec =
             infiniteRepeatable(
-                animation = tween(Motion.caretBlinkMillis / 2, easing = Motion.easingStandard),
+                animation =
+                    tween(
+                        durationMillis = Motion.caretBlinkMillis / CARET_HALF_PERIOD_DIVISOR,
+                        easing = Motion.easingStandard,
+                    ),
                 repeatMode = RepeatMode.Reverse,
             ),
         label = "streaming-caret-alpha",
@@ -3208,37 +3228,53 @@ private fun StreamingCaret(modifier: Modifier = Modifier) {
     )
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = CHAT_PREVIEW_WIDTH_DP)
 @Composable
 private fun MessageBubbleUserPreview() {
-    ChatbotTheme(darkTheme = true) { MessageBubble(text = "help me plan a weekend in portland", role = Role.User) }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MessageBubbleAssistantPreview() {
     ChatbotTheme(darkTheme = true) {
-        MessageBubble(
-            text = "Love it. Two nights? I'd do Powell's Books + a food-cart lunch Saturday.",
-            role = Role.Assistant,
-        )
+        Surface {
+            MessageBubble(
+                text = "help me plan a weekend in portland",
+                role = Role.User,
+                modifier = Modifier.padding(Spacing.gutter),
+            )
+        }
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = CHAT_PREVIEW_WIDTH_DP)
+@Composable
+private fun MessageBubbleAssistantPreview() {
+    ChatbotTheme(darkTheme = true) {
+        Surface {
+            MessageBubble(
+                text = "Love it. Two nights? I'd do Powell's Books + a food-cart lunch Saturday.",
+                role = Role.Assistant,
+                modifier = Modifier.padding(Spacing.gutter),
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = CHAT_PREVIEW_WIDTH_DP)
 @Composable
 private fun MessageBubbleStreamingPreview() {
     ChatbotTheme(darkTheme = true) {
-        MessageBubble(
-            text = "Love it. Two nights? I'd do Powell's Books + a food-cart lunch Saturday, then Forest Park in the",
-            role = Role.Assistant,
-            streaming = true,
-        )
+        Surface {
+            MessageBubble(
+                text = "Love it. Two nights? I'd do Powell's Books + a food-cart lunch",
+                role = Role.Assistant,
+                streaming = true,
+                modifier = Modifier.padding(Spacing.gutter),
+            )
+        }
     }
 }
 ```
 
-Fix the imports the compiler asks for: `Arrangement`, `height`, `wrapContentWidth`. Drop `size` and `layout` if unused.
+Fix the imports the compiler asks for: `Arrangement`, `height`, `wrapContentWidth`, `Surface`. Drop `size` and `layout` if unused. The preview strings stay short enough to keep the line under ktlint's 100-character limit, which it cannot wrap for you.
+
+`fillMaxWidth(fraction)` fixes the width rather than capping it; the `wrapContentWidth` that follows relaxes the minimum back to zero, which is what lets a short message hug its text inside that 82%. `weight(1f, fill = false)` on the `Text` is the same idea one level down: the text may take the space the caret left, but is not forced to fill it.
 
 - [x] **Step 5: Build the thinking indicator**
 
@@ -3261,6 +3297,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -3280,6 +3317,9 @@ private const val DOT_COUNT = 3
 private const val DOT_CYCLE_MILLIS = 1200
 private const val DOT_STAGGER_MILLIS = 200
 private const val DOT_MIN_ALPHA = 0.25f
+
+// Each dot fades up and back down within one cycle, so a fade takes half of it.
+private const val DOT_HALF_CYCLE_DIVISOR = 2
 
 /** The turn has started but no token has arrived yet. */
 @Composable
@@ -3303,7 +3343,7 @@ fun ThinkingIndicator(modifier: Modifier = Modifier) {
                 targetValue = 1f,
                 animationSpec =
                     infiniteRepeatable(
-                        animation = tween(DOT_CYCLE_MILLIS / 2),
+                        animation = tween(DOT_CYCLE_MILLIS / DOT_HALF_CYCLE_DIVISOR),
                         repeatMode = RepeatMode.Reverse,
                         initialStartOffset = StartOffset(index * DOT_STAGGER_MILLIS),
                     ),
@@ -3319,10 +3359,14 @@ fun ThinkingIndicator(modifier: Modifier = Modifier) {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = CHAT_PREVIEW_WIDTH_DP)
 @Composable
 private fun ThinkingIndicatorPreview() {
-    ChatbotTheme(darkTheme = true) { ThinkingIndicator() }
+    ChatbotTheme(darkTheme = true) {
+        Surface {
+            ThinkingIndicator(modifier = Modifier.padding(Spacing.gutter))
+        }
+    }
 }
 ```
 
@@ -3340,6 +3384,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -3355,7 +3400,6 @@ import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
-import com.shayanaryan.chatbot.feature.conversation.chat.text
 import com.shayanaryan.chatbot.shared.chat.ChatError
 
 private const val ERROR_MAX_WIDTH_FRACTION = 0.86f
@@ -3405,16 +3449,32 @@ fun ErrorItem(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = CHAT_PREVIEW_WIDTH_DP)
 @Composable
 private fun ErrorItemRateLimitedPreview() {
-    ChatbotTheme(darkTheme = true) { ErrorItem(error = ChatError.RateLimited(retryAfterSeconds = null), onRetry = {}) }
+    ChatbotTheme(darkTheme = true) {
+        Surface {
+            ErrorItem(
+                error = ChatError.RateLimited(retryAfterSeconds = null),
+                onRetry = {},
+                modifier = Modifier.padding(Spacing.gutter),
+            )
+        }
+    }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = CHAT_PREVIEW_WIDTH_DP)
 @Composable
 private fun ErrorItemNetworkPreview() {
-    ChatbotTheme(darkTheme = true) { ErrorItem(error = ChatError.Network, onRetry = {}) }
+    ChatbotTheme(darkTheme = true) {
+        Surface {
+            ErrorItem(
+                error = ChatError.Network,
+                onRetry = {},
+                modifier = Modifier.padding(Spacing.gutter),
+            )
+        }
+    }
 }
 ```
 
@@ -3427,13 +3487,13 @@ package com.shayanaryan.chatbot.feature.conversation.chat.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -3457,7 +3517,12 @@ fun NewChatEmptyState(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(Spacing.s3, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
+        DsIcon(
+            glyph = Glyphs.BRAND,
+            contentDescription = null,
+            size = 30.dp,
+            filled = true,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier =
                 Modifier
                     .size(56.dp)
@@ -3465,16 +3530,7 @@ fun NewChatEmptyState(modifier: Modifier = Modifier) {
                         color = MaterialTheme.colorScheme.primaryContainer,
                         shape = RoundedCornerShape(RadiusPrimitives.radius5),
                     ),
-            contentAlignment = Alignment.Center,
-        ) {
-            DsIcon(
-                glyph = Glyphs.BRAND,
-                contentDescription = null,
-                size = 30.dp,
-                filled = true,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
-        }
+        )
         Text(
             text = stringResource(R.string.conversation_new_chat_greeting),
             style = MaterialTheme.typography.bodyLarge,
@@ -3484,10 +3540,14 @@ fun NewChatEmptyState(modifier: Modifier = Modifier) {
     }
 }
 
-@Preview(showBackground = true, heightDp = 400)
+@Preview(showBackground = true, widthDp = CHAT_PREVIEW_WIDTH_DP, heightDp = 400)
 @Composable
 private fun NewChatEmptyStatePreview() {
-    ChatbotTheme(darkTheme = true) { NewChatEmptyState() }
+    ChatbotTheme(darkTheme = true) {
+        Surface {
+            NewChatEmptyState()
+        }
+    }
 }
 ```
 
@@ -3518,25 +3578,25 @@ The chrome around the items (top bar, composer, model picker, overflow menu, del
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/Composer.kt`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/ModelPickerChip.kt`
 - Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/DeleteChatDialog.kt`
-- Replace: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ConversationScreen.kt`
-- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ConversationRoute.kt`
-- Replace: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ConversationScreenTest.kt`
+- Replace: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatScreen.kt`
+- Create: `feature/conversation/src/main/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatRoute.kt`
+- Replace: `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatScreenTest.kt`
 - Create: `feature/conversation/src/screenshotTest/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/preview/ChatPreviews.kt`
 
 **Interfaces:**
 - Consumes: `ChatUiState`, `ChatItem`, `MessageBubble`, `ThinkingIndicator`, `ErrorItem`, `NewChatEmptyState`, `textContent()`.
-- Produces: `ConversationScreen(uiState, onBack, onSend, onCancel, onRetry, onModelSelected, onDeleteRequested, onDeleteDismissed, onDeleteConfirmed, modifier, composerState)`, stateless; `composerState` defaults to `rememberTextFieldState()`.
+- Produces: `ChatScreen(uiState, onBack, onSend, onCancel, onRetry, onModelSelected, onDeleteRequested, onDeleteDismissed, onDeleteConfirmed, modifier, composerState)`, stateless; `composerState` defaults to `rememberTextFieldState()`.
 - Produces: `internal object ChatPreviewData`, the fixture the colocated previews and the screenshot goldens share.
-- Produces: `ConversationRoute(conversationId, onBack, onDeleted, onConversationIdChanged, modifier, viewModel)`, stateful, what `:app` calls.
+- Produces: `ChatRoute(conversationId, onBack, onDeleted, onConversationIdChanged, modifier, viewModel)`, stateful, what `:app` calls.
 - Produces: `Composer(state: TextFieldState, isStreaming: Boolean, onSend: (String) -> Unit, onCancel: () -> Unit, modifier)`.
 - Produces: `ModelPickerChip(model: ClaudeModel, enabled: Boolean, onModelSelected: (ClaudeModel) -> Unit, modifier)`.
 - Produces: `DeleteChatDialog(onConfirm: () -> Unit, onDismiss: () -> Unit)`.
 
 **Test note that will otherwise cost an hour:** `ThinkingIndicator` and the streaming caret use `rememberInfiniteTransition`, which never lets the Compose test clock go idle. Any test that puts a thinking or streaming item on screen must set `composeRule.mainClock.autoAdvance = false` **before** `setContent`, or `waitForIdle` hangs.
 
-- [ ] **Step 1: Write the failing screen tests**
+- [x] **Step 1: Write the failing screen tests**
 
-Replace `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ConversationScreenTest.kt`. The M0 placeholder test goes with the placeholder screen:
+Replace `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/ChatScreenTest.kt`. The M0 placeholder test goes with the placeholder screen:
 
 ```kotlin
 package com.shayanaryan.chatbot.feature.conversation.chat
@@ -3565,7 +3625,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 @RunWith(AndroidJUnit4::class)
-class ConversationScreenTest {
+class ChatScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -3609,7 +3669,7 @@ class ConversationScreenTest {
     ) {
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
-                ConversationScreen(
+                ChatScreen(
                     uiState = uiState,
                     onBack = onBack,
                     onSend = onSend,
@@ -3745,15 +3805,15 @@ class ConversationScreenTest {
 
 Add `import androidx.compose.ui.test.assertDoesNotExist`.
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 ```bash
-./gradlew :feature:conversation:testDebugUnitTest --tests "*ConversationScreenTest*"
+./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatScreenTest*"
 ```
 
-Expected: FAIL. The placeholder `ConversationScreen()` takes no arguments.
+Expected: FAIL. The placeholder `ChatScreen()` takes no arguments.
 
-- [ ] **Step 3: Build the composer**
+- [x] **Step 3: Build the composer**
 
 Create `chat/component/Composer.kt`. The composer is a token-styled `<div>` in the mockup, not a catalog component, so it is built here rather than reaching for `DsTextField`, and its text is held in a saveable `TextFieldState`, so it survives rotation without ever entering `UiState`.
 
@@ -3887,7 +3947,7 @@ private fun ComposerStreamingPreview() {
 
 Drop the `RowScope` and `TextStyle` imports if the compiler reports them unused, and hoist `SolidColor` to a proper import.
 
-- [ ] **Step 4: Build the model picker chip**
+- [x] **Step 4: Build the model picker chip**
 
 Create `chat/component/ModelPickerChip.kt`, frame 3e's chip and menu. The per-model blurbs the mockup draws are M4; only the names are built, and they come from `ClaudeModel.displayName` so every screen reads one source.
 
@@ -4007,7 +4067,7 @@ private fun ModelPickerChipDisabledPreview() {
 
 The test asserts `assertIsNotEnabled()` on the chip's text node, so the `Row` needs its disabled state in semantics. `Modifier.clickable(enabled = …)` already reports it; if the assertion targets the wrong node, add `.semantics(mergeDescendants = true) {}` to the `Row` and keep the assertion on the model name.
 
-- [ ] **Step 5: Build the delete dialog**
+- [x] **Step 5: Build the delete dialog**
 
 Create `chat/component/DeleteChatDialog.kt`, frame 3j, a straight `DsDialog` call:
 
@@ -4047,9 +4107,9 @@ private fun DeleteChatDialogPreview() {
 }
 ```
 
-- [ ] **Step 6: Build the stateless screen**
+- [x] **Step 6: Build the stateless screen**
 
-Replace `ConversationScreen.kt` entirely:
+Replace `ChatScreen.kt` entirely:
 
 ```kotlin
 package com.shayanaryan.chatbot.feature.conversation.chat
@@ -4111,7 +4171,7 @@ import com.shayanaryan.chatbot.shared.model.ClaudeModel
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ConversationScreen(
+fun ChatScreen(
     uiState: ChatUiState,
     onBack: (() -> Unit)?,
     onSend: (String) -> Unit,
@@ -4256,9 +4316,9 @@ private fun MessageList(
 
 Add the imports the compiler asks for (`androidx.compose.foundation.background`, `androidx.compose.foundation.lazy.items`, `Role`) and replace the fully-qualified `Role.Assistant` with the import.
 
-- [ ] **Step 7: Add the shared preview fixture and the colocated previews**
+- [x] **Step 7: Add the shared preview fixture and the colocated previews**
 
-One fixture, used by both the colocated previews below and the screenshot goldens in Step 10. Append to `ConversationScreen.kt`:
+One fixture, used by both the colocated previews below and the screenshot goldens in Step 10. Append to `ChatScreen.kt`:
 
 ```kotlin
 /**
@@ -4328,7 +4388,7 @@ private fun PreviewChat(
     uiState: ChatUiState,
     onBack: (() -> Unit)? = {},
 ) {
-    ConversationScreen(
+    ChatScreen(
         uiState = uiState,
         onBack = onBack,
         onSend = {},
@@ -4392,9 +4452,9 @@ private fun ChatTwoPanePreview() {
 
 Add `ChatError`, `ContentBlock`, `Message`, `MessageStatus`, `Role` and `kotlin.time.Instant` to the file's imports.
 
-- [ ] **Step 8: Build the stateful route**
+- [x] **Step 8: Build the stateful route**
 
-Create `ConversationRoute.kt`:
+Create `ChatRoute.kt`:
 
 ```kotlin
 package com.shayanaryan.chatbot.feature.conversation.chat
@@ -4416,7 +4476,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  *   window, or returns the detail pane to a new chat on a wide one.
  */
 @Composable
-fun ConversationRoute(
+fun ChatRoute(
     conversationId: Long?,
     onBack: (() -> Unit)?,
     onDeleted: () -> Unit,
@@ -4432,7 +4492,7 @@ fun ConversationRoute(
     LaunchedEffect(uiState.conversationId) { onConversationIdChanged(uiState.conversationId) }
     LaunchedEffect(uiState.deleted) { if (uiState.deleted) onDeleted() }
 
-    ConversationScreen(
+    ChatScreen(
         uiState = uiState,
         onBack = onBack,
         onSend = viewModel::onSend,
@@ -4447,15 +4507,15 @@ fun ConversationRoute(
 }
 ```
 
-- [ ] **Step 9: Run the screen tests to verify they pass**
+- [x] **Step 9: Run the screen tests to verify they pass**
 
 ```bash
-./gradlew :feature:conversation:testDebugUnitTest --tests "*ConversationScreenTest*"
+./gradlew :feature:conversation:testDebugUnitTest --tests "*ChatScreenTest*"
 ```
 
 Expected: PASS, all twelve. If `waitForIdle` hangs, the test that hangs is missing `composeRule.mainClock.autoAdvance = false` before `setContent`.
 
-- [ ] **Step 10: Record the chat screenshot goldens**
+- [x] **Step 10: Record the chat screenshot goldens**
 
 Create `feature/conversation/src/screenshotTest/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/preview/ChatPreviews.kt`, one `@PreviewTest` pair per built frame, dark and light, driving the stateless screen with the fixture from Step 7:
 
@@ -4468,7 +4528,7 @@ import com.android.tools.screenshot.PreviewTest
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.preview.FormFactorPreviews
 import com.shayanaryan.chatbot.feature.conversation.chat.ChatPreviewData
-import com.shayanaryan.chatbot.feature.conversation.chat.ConversationScreen
+import com.shayanaryan.chatbot.feature.conversation.chat.ChatScreen
 import com.shayanaryan.chatbot.feature.conversation.chat.ChatUiState
 
 @Composable
@@ -4476,7 +4536,7 @@ private fun Chat(
     uiState: ChatUiState,
     onBack: (() -> Unit)? = {},
 ) {
-    ConversationScreen(
+    ChatScreen(
         uiState = uiState,
         onBack = onBack,
         onSend = {},
@@ -4632,7 +4692,7 @@ Expected: goldens written, then validated. Show the user the streaming and think
 ./gradlew :feature:conversation:testDebugUnitTest :feature:conversation:validateDebugScreenshotTest spotlessCheck
 ```
 
-Expected: `BUILD SUCCESSFUL`. `:app` does not compile yet: `MainActivity` still calls the old no-argument `ConversationScreen()`. Task 8 replaces it; do not patch it here. Stop for review.
+Expected: `BUILD SUCCESSFUL`. `:app` does not compile yet: `MainActivity` still calls the old no-argument `ChatScreen()`. Task 8 replaces it; do not patch it here. Stop for review.
 
 ---
 
@@ -4649,7 +4709,7 @@ Expected: `BUILD SUCCESSFUL`. `:app` does not compile yet: `MainActivity` still 
 - Create: `app/src/debug/kotlin/com/shayanaryan/chatbot/di/DevApiKeyModule.kt`
 
 **Interfaces:**
-- Consumes: `ConversationListRoute` (Task 4) and `ConversationRoute` (Task 7), `NewChatEmptyState` (Task 6).
+- Consumes: `ConversationListRoute` (Task 4) and `ChatRoute` (Task 7), `NewChatEmptyState` (Task 6).
 - Produces: `ConversationListKey`, `ChatKey(conversationId: Long? = null)`.
 - Produces: `ChatbotApp(deepLinkConversationId: Long?, onDeepLinkHandled: () -> Unit, modifier)`, which owns the back stack.
 - Produces: `ChatbotNavDisplay(backStack: NavBackStack<NavKey>, modifier)`, which owns the graph.
@@ -4887,7 +4947,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.shayanaryan.chatbot.feature.conversation.conversationlist.ConversationListRoute
-import com.shayanaryan.chatbot.feature.conversation.chat.ConversationRoute
+import com.shayanaryan.chatbot.feature.conversation.chat.ChatRoute
 import com.shayanaryan.chatbot.feature.conversation.chat.component.NewChatEmptyState
 
 /**
@@ -4962,7 +5022,7 @@ fun ChatbotNavDisplay(
                     )
                 }
                 entry<ChatKey>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
-                    ConversationRoute(
+                    ChatRoute(
                         conversationId = key.conversationId,
                         onBack = if (twoPane) null else popChat,
                         // One path for both windows: popping the chat leaves the list, which on a

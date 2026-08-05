@@ -29,6 +29,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ComponentShapes
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Motion
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
+import com.shayanaryan.chatbot.feature.conversation.chat.CHAT_PREVIEW_WIDTH_DP
 import com.shayanaryan.chatbot.shared.chat.Role
 
 private const val BUBBLE_MAX_WIDTH_FRACTION = 0.82f

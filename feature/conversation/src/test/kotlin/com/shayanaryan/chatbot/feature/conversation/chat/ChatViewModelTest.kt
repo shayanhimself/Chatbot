@@ -27,6 +27,11 @@ import kotlin.time.Duration.Companion.milliseconds
 private const val UNKNOWN_CONVERSATION_ID = 404L
 private const val RETRY_AFTER_SECONDS = 30
 
+private const val USER_MESSAGE = "hello"
+private const val CONVERSATION_TITLE = "plan a weekend"
+private const val PARTIAL_TEXT = "hel"
+private const val CANCELLED_TEXT = "half a th"
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ChatViewModelTest {
     private val dispatcher = StandardTestDispatcher()
@@ -71,11 +76,11 @@ class ChatViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel()
             collecting(viewModel)
-            viewModel.onSend("plan a weekend")
+            viewModel.onSend(CONVERSATION_TITLE)
             advanceUntilIdle()
 
             assertEquals(1L, viewModel.uiState.value.conversationId)
-            assertEquals("plan a weekend", viewModel.uiState.value.title)
+            assertEquals(CONVERSATION_TITLE, viewModel.uiState.value.title)
         }
 
     @Test
@@ -84,7 +89,7 @@ class ChatViewModelTest {
             val handle = SavedStateHandle()
             val first = viewModel(savedStateHandle = handle)
             collecting(first)
-            first.onSend("hello")
+            first.onSend(USER_MESSAGE)
             advanceUntilIdle()
 
             // The restored back stack still says ChatKey(null); only the handle remembers.
@@ -100,7 +105,7 @@ class ChatViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel()
             collecting(viewModel)
-            viewModel.onSend("hello")
+            viewModel.onSend(USER_MESSAGE)
             advanceUntilIdle()
             assertEquals(
                 ChatItem.Thinking,
@@ -108,10 +113,10 @@ class ChatViewModelTest {
                     .last(),
             )
 
-            repository.emitDelta(1L, "hel")
+            repository.emitDelta(1L, PARTIAL_TEXT)
             advanceUntilIdle()
             assertEquals(
-                ChatItem.Streaming("hel"),
+                ChatItem.Streaming(PARTIAL_TEXT),
                 viewModel.uiState.value.items
                     .last(),
             )
@@ -130,7 +135,7 @@ class ChatViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel()
             collecting(viewModel)
-            viewModel.onSend("hello")
+            viewModel.onSend(USER_MESSAGE)
             advanceUntilIdle()
             repository.failTurn(1L, ChatError.RateLimited(retryAfterSeconds = RETRY_AFTER_SECONDS))
             advanceUntilIdle()
@@ -147,7 +152,7 @@ class ChatViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel()
             collecting(viewModel)
-            viewModel.onSend("hello")
+            viewModel.onSend(USER_MESSAGE)
             advanceUntilIdle()
             repository.failTurn(1L, ChatError.Network)
             advanceUntilIdle()
@@ -167,9 +172,9 @@ class ChatViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel()
             collecting(viewModel)
-            viewModel.onSend("hello")
+            viewModel.onSend(USER_MESSAGE)
             advanceUntilIdle()
-            repository.emitDelta(1L, "half a th")
+            repository.emitDelta(1L, CANCELLED_TEXT)
 
             viewModel.onCancel()
             advanceUntilIdle()
@@ -190,7 +195,7 @@ class ChatViewModelTest {
             advanceUntilIdle()
             assertEquals(ClaudeModel.Haiku, viewModel.uiState.value.model)
 
-            viewModel.onSend("hello")
+            viewModel.onSend(USER_MESSAGE)
             advanceUntilIdle()
 
             assertEquals(ClaudeModel.Haiku, viewModel.uiState.value.model)
@@ -201,7 +206,7 @@ class ChatViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel()
             collecting(viewModel)
-            viewModel.onSend("hello")
+            viewModel.onSend(USER_MESSAGE)
             advanceUntilIdle()
 
             viewModel.onModelSelected(ClaudeModel.Opus)
@@ -222,7 +227,7 @@ class ChatViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel()
             collecting(viewModel)
-            viewModel.onSend("hello")
+            viewModel.onSend(USER_MESSAGE)
             advanceUntilIdle()
 
             // Every read of uiState needs an advance first: localState reaches it through
@@ -242,7 +247,7 @@ class ChatViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel()
             collecting(viewModel)
-            viewModel.onSend("hello")
+            viewModel.onSend(USER_MESSAGE)
             advanceUntilIdle()
 
             viewModel.onDeleteRequested()

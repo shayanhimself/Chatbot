@@ -7,10 +7,15 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.feature.conversation.R
+import com.shayanaryan.chatbot.feature.conversation.string
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertEquals
+
+private const val FIRST_TITLE = "Weekend trip to Portland"
+private const val FIRST_SNIPPET = "Powell's Books first."
+private const val SECOND_TITLE = "Miso glaze recipe"
 
 @RunWith(AndroidJUnit4::class)
 class ConversationListScreenTest {
@@ -21,13 +26,13 @@ class ConversationListScreenTest {
         listOf(
             ConversationListItemUiState(
                 id = 1L,
-                title = "Weekend trip to Portland",
-                snippet = "Powell's Books first.",
+                title = FIRST_TITLE,
+                snippet = FIRST_SNIPPET,
                 relativeTime = RelativeTime(R.string.conversation_time_hours, 2),
             ),
             ConversationListItemUiState(
                 id = 2L,
-                title = "Miso glaze recipe",
+                title = SECOND_TITLE,
                 snippet = null,
                 relativeTime = RelativeTime(R.string.conversation_time_days, 1),
             ),
@@ -54,10 +59,10 @@ class ConversationListScreenTest {
     fun `shows an item per conversation with its snippet and age`() {
         setScreen(ConversationListUiState(isLoading = false, conversations = items))
 
-        composeRule.onNodeWithText("Weekend trip to Portland").assertIsDisplayed()
-        composeRule.onNodeWithText("Powell's Books first.").assertIsDisplayed()
-        composeRule.onNodeWithText("2h").assertIsDisplayed()
-        composeRule.onNodeWithText("1d").assertIsDisplayed()
+        composeRule.onNodeWithText(FIRST_TITLE).assertIsDisplayed()
+        composeRule.onNodeWithText(FIRST_SNIPPET).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.conversation_time_hours, 2)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.conversation_time_days, 1)).assertIsDisplayed()
     }
 
     @Test
@@ -68,7 +73,7 @@ class ConversationListScreenTest {
             onConversationClick = { clicked = it },
         )
 
-        composeRule.onNodeWithText("Miso glaze recipe").performClick()
+        composeRule.onNodeWithText(SECOND_TITLE).performClick()
 
         assertEquals(2L, clicked)
     }
@@ -77,14 +82,20 @@ class ConversationListScreenTest {
     fun `shows the empty state when there is nothing stored`() {
         setScreen(ConversationListUiState(isLoading = false, conversations = emptyList()))
 
-        composeRule.onNodeWithText("Hmmm, a bit quite here").assertIsDisplayed()
+        composeRule
+            .onNodeWithText(
+                string(R.string.conversation_list_empty_title),
+            ).assertIsDisplayed()
     }
 
     @Test
     fun `shows neither items nor the empty state while loading`() {
         setScreen(ConversationListUiState(isLoading = true, conversations = emptyList()))
 
-        composeRule.onNodeWithText("Hmmm, a bit quite here").assertDoesNotExist()
+        composeRule
+            .onNodeWithText(
+                string(R.string.conversation_list_empty_title),
+            ).assertDoesNotExist()
     }
 
     @Test
@@ -95,7 +106,7 @@ class ConversationListScreenTest {
             onNewChat = { tapped = true },
         )
 
-        composeRule.onNodeWithText("new chat").performClick()
+        composeRule.onNodeWithText(string(R.string.conversation_list_new_chat)).performClick()
 
         assertEquals(true, tapped)
     }

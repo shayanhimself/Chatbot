@@ -46,4 +46,11 @@ data class ChatUiState(
     val isStreaming: Boolean = false,
     val deleteDialogVisible: Boolean = false,
     val deleted: Boolean = false,
-)
+) {
+    /**
+     * The item the message list follows while tokens arrive, null when there is nothing to render.
+     * Derived here rather than at render time, so the screen reads the list's shape instead of
+     * recomputing it.
+     */
+    val tailIndex: Int? = items.indices.lastOrNull()
+}

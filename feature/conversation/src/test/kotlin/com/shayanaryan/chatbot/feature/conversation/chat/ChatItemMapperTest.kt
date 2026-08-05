@@ -12,6 +12,17 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 
+private const val USER_MESSAGE = "hi"
+private const val ASSISTANT_MESSAGE = "hello"
+private const val PARTIAL_TEXT = "hel"
+private const val CANCELLED_TEXT = "half a th"
+private const val FAILED_TEXT = "half"
+
+// A turn that has started but produced no token, and a reply that finished with nothing to show,
+// are both an empty string to the mapper and two different cases to a reader.
+private const val NO_TOKEN_YET = ""
+private const val NO_TEXT = ""
+
 class ChatItemMapperTest {
     private var nextId = 1L
 
@@ -37,7 +48,11 @@ class ChatItemMapperTest {
 
     @Test
     fun `an idle conversation is only its persisted messages`() {
-        val items = listOf(user("hi"), assistant("hello")).toChatItems(TurnState.Idle)
+        val items =
+            listOf(
+                user(USER_MESSAGE),
+                assistant(ASSISTANT_MESSAGE),
+            ).toChatItems(TurnState.Idle)
 
         assertEquals(2, items.size)
         assertTrue(items.all { it is ChatItem.Persisted })
@@ -45,16 +60,16 @@ class ChatItemMapperTest {
 
     @Test
     fun `an empty streaming turn after a user message is the thinking item`() {
-        val items = listOf(user("hi")).toChatItems(TurnState.Streaming(""))
+        val items = listOf(user(USER_MESSAGE)).toChatItems(TurnState.Streaming(NO_TOKEN_YET))
 
         assertEquals(ChatItem.Thinking, items.last())
     }
 
     @Test
     fun `a streaming turn with text is the streaming item`() {
-        val items = listOf(user("hi")).toChatItems(TurnState.Streaming("hel"))
+        val items = listOf(user(USER_MESSAGE)).toChatItems(TurnState.Streaming(PARTIAL_TEXT))
 
-        assertEquals(ChatItem.Streaming("hel"), items.last())
+        assertEquals(ChatItem.Streaming(PARTIAL_TEXT), items.last())
     }
 
     /**
@@ -64,7 +79,11 @@ class ChatItemMapperTest {
      */
     @Test
     fun `a stale streaming turn behind a persisted reply adds no item`() {
-        val items = listOf(user("hi"), assistant("hello")).toChatItems(TurnState.Streaming("hello"))
+        val items =
+            listOf(
+                user(USER_MESSAGE),
+                assistant(ASSISTANT_MESSAGE),
+            ).toChatItems(TurnState.Streaming(ASSISTANT_MESSAGE))
 
         assertEquals(2, items.size)
         assertTrue(items.all { it is ChatItem.Persisted })
@@ -78,8 +97,8 @@ class ChatItemMapperTest {
     fun `a failed turn keeps its persisted item and adds the error`() {
         val items =
             listOf(
-                user("hi"),
-                assistant("half", MessageStatus.Failed),
+                user(USER_MESSAGE),
+                assistant(FAILED_TEXT, MessageStatus.Failed),
             ).toChatItems(TurnState.Failed(ChatError.Network))
 
         assertEquals(3, items.size)
@@ -91,8 +110,8 @@ class ChatItemMapperTest {
     fun `a failed turn that produced no text still shows the error`() {
         val items =
             listOf(
-                user("hi"),
-                assistant("", MessageStatus.Failed),
+                user(USER_MESSAGE),
+                assistant(NO_TEXT, MessageStatus.Failed),
             ).toChatItems(TurnState.Failed(ChatError.Overloaded))
 
         assertEquals(2, items.size)
@@ -101,7 +120,7 @@ class ChatItemMapperTest {
 
     @Test
     fun `a blank message is not an item`() {
-        val items = listOf(user("hi"), assistant("")).toChatItems(TurnState.Idle)
+        val items = listOf(user(USER_MESSAGE), assistant(NO_TEXT)).toChatItems(TurnState.Idle)
 
         assertEquals(1, items.size)
     }
@@ -110,8 +129,8 @@ class ChatItemMapperTest {
     fun `a cancelled reply keeps its partial text as an ordinary message`() {
         val items =
             listOf(
-                user("hi"),
-                assistant("half a th", MessageStatus.Cancelled),
+                user(USER_MESSAGE),
+                assistant(CANCELLED_TEXT, MessageStatus.Cancelled),
             ).toChatItems(TurnState.Idle)
 
         assertEquals(2, items.size)
@@ -121,6 +140,6 @@ class ChatItemMapperTest {
 
     @Test
     fun `an empty conversation with an idle turn has no items at all`() {
-        assertEquals(emptyList<ChatItem>(), emptyList<Message>().toChatItems(TurnState.Idle))
+        assertEquals(emptyList(), emptyList<Message>().toChatItems(TurnState.Idle))
     }
 }

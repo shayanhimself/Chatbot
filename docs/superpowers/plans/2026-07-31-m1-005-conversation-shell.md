@@ -2958,7 +2958,7 @@ Everything that renders inside the message list: the bubble (3b), the thinking i
 - Produces: `ErrorItem(error: ChatError, onRetry: () -> Unit, modifier)`.
 - Produces: `NewChatEmptyState(modifier)`.
 
-- [ ] **Step 1: Write the failing error-copy test**
+- [x] **Step 1: Write the failing error-copy test**
 
 Every `ChatError` case must resolve to distinct copy, and the rate-limited case must change when the server sent a hint. Create `feature/conversation/src/test/kotlin/com/shayanaryan/chatbot/feature/conversation/chat/component/ErrorItemTest.kt`:
 
@@ -3053,7 +3053,7 @@ class ErrorItemTest {
 }
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 ```bash
 ./gradlew :feature:conversation:testDebugUnitTest --tests "*ErrorItemTest*"
@@ -3061,7 +3061,7 @@ class ErrorItemTest {
 
 Expected: FAIL to compile. `ErrorItem` and `ChatError.text` are unresolved.
 
-- [ ] **Step 3: Map errors to copy**
+- [x] **Step 3: Map errors to copy**
 
 Create `ChatErrorText.kt`. This is the whole reason `ChatError` carries no prose: typed errors cross the module boundary, copy stops here.
 
@@ -3095,7 +3095,7 @@ fun ChatError.text(): String =
     }
 ```
 
-- [ ] **Step 4: Build the bubble**
+- [x] **Step 4: Build the bubble**
 
 Create `chat/component/MessageBubble.kt`. The Design System's `MessageBubble` contract gives the two corner shapes, the two colour pairs and the blinking caret; `:core:ui` already carries the shapes as `ComponentShapes.bubbleUser` / `.bubbleAssistant` and the blink period as `Motion.caretBlinkMillis`.
 
@@ -3240,7 +3240,7 @@ private fun MessageBubbleStreamingPreview() {
 
 Fix the imports the compiler asks for: `Arrangement`, `height`, `wrapContentWidth`. Drop `size` and `layout` if unused.
 
-- [ ] **Step 5: Build the thinking indicator**
+- [x] **Step 5: Build the thinking indicator**
 
 Create `chat/component/ThinkingIndicator.kt`, frame 3f's three staggered dots in an assistant-shaped bubble:
 
@@ -3326,7 +3326,7 @@ private fun ThinkingIndicatorPreview() {
 }
 ```
 
-- [ ] **Step 6: Build the error item**
+- [x] **Step 6: Build the error item**
 
 Create `chat/component/ErrorItem.kt`, frames 3g and 3h, which differ only in copy:
 
@@ -3418,7 +3418,7 @@ private fun ErrorItemNetworkPreview() {
 }
 ```
 
-- [ ] **Step 7: Build the new-chat empty state**
+- [x] **Step 7: Build the new-chat empty state**
 
 Create `chat/component/NewChatEmptyState.kt`, frame 3a's body, minus the suggested prompt chips (M4). `:app` also uses this as the detail pane's placeholder on a wide window, which is why it is public.
 
@@ -3491,7 +3491,7 @@ private fun NewChatEmptyStatePreview() {
 }
 ```
 
-- [ ] **Step 8: Run the error-item tests to verify they pass**
+- [x] **Step 8: Run the error-item tests to verify they pass**
 
 ```bash
 ./gradlew :feature:conversation:testDebugUnitTest --tests "*ErrorItemTest*"
@@ -3499,7 +3499,7 @@ private fun NewChatEmptyStatePreview() {
 
 Expected: PASS, all four.
 
-- [ ] **Step 9: Checkpoint**
+- [x] **Step 9: Checkpoint**
 
 ```bash
 ./gradlew spotlessApply

@@ -7,9 +7,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
+private const val USER_MESSAGE = "hi"
+private const val API_KEY = "sk-ant-test"
+
 class ClaudeChatEngineCancellationTest {
     private val request =
-        ChatRequest(messages = listOf(ChatMessage(Role.User, listOf(ContentBlock.Text("hi")))))
+        ChatRequest(
+            messages = listOf(ChatMessage(Role.User, listOf(ContentBlock.Text(USER_MESSAGE)))),
+        )
 
     @Test
     fun `cancelling mid stream emits no terminal event`() =
@@ -43,7 +48,7 @@ class ClaudeChatEngineCancellationTest {
 
     @Test
     fun `the factory builds an engine`() {
-        val engine = createChatEngine { "sk-ant-test" }
+        val engine = createChatEngine { API_KEY }
 
         assertIs<ChatEngine>(engine)
     }

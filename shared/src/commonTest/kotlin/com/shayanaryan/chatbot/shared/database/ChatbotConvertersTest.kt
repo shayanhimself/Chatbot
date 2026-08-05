@@ -8,6 +8,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
+private const val RETIRED_MODEL_NAME = "Sonnet4"
+private const val UNWRITTEN_STATUS_NAME = "Pending"
+private const val FIRST_BLOCK_TEXT = "one"
+private const val SECOND_BLOCK_TEXT = "two"
+
 class ChatbotConvertersTest {
     private val converters = ChatbotConverters()
 
@@ -20,7 +25,7 @@ class ChatbotConvertersTest {
 
     @Test
     fun `falls back to the default model for a name that no longer exists`() {
-        assertEquals(ClaudeModel.Default, converters.toModel("Sonnet4"))
+        assertEquals(ClaudeModel.Default, converters.toModel(RETIRED_MODEL_NAME))
     }
 
     @Test
@@ -39,12 +44,16 @@ class ChatbotConvertersTest {
 
     @Test
     fun `rejects a status the app never wrote`() {
-        assertFailsWith<IllegalArgumentException> { converters.toStatus("Pending") }
+        assertFailsWith<IllegalArgumentException> { converters.toStatus(UNWRITTEN_STATUS_NAME) }
     }
 
     @Test
     fun `round trips a multi block content list`() {
-        val content = listOf<ContentBlock>(ContentBlock.Text("one"), ContentBlock.Text("two"))
+        val content =
+            listOf<ContentBlock>(
+                ContentBlock.Text(FIRST_BLOCK_TEXT),
+                ContentBlock.Text(SECOND_BLOCK_TEXT),
+            )
 
         assertEquals(content, converters.toContent(converters.fromContent(content)))
     }

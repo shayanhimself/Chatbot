@@ -10,9 +10,16 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
+private const val USER_MESSAGE = "hi"
+private const val FIRST_DELTA = "one"
+private const val SECOND_DELTA = "two"
+private const val DELTA_AFTER_CLOSE = "late"
+
 class FakeManualChatEngineTest {
     private val request =
-        ChatRequest(messages = listOf(ChatMessage(Role.User, listOf(ContentBlock.Text("hi")))))
+        ChatRequest(
+            messages = listOf(ChatMessage(Role.User, listOf(ContentBlock.Text(USER_MESSAGE)))),
+        )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
@@ -23,10 +30,10 @@ class FakeManualChatEngineTest {
             val collector = launch { engine.stream(request).toList(collected) }
 
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("one"))
+            engine.send(ChatStreamEvent.Delta(FIRST_DELTA))
             runCurrent()
 
-            assertEquals(listOf<ChatStreamEvent>(ChatStreamEvent.Delta("one")), collected)
+            assertEquals(listOf<ChatStreamEvent>(ChatStreamEvent.Delta(FIRST_DELTA)), collected)
             assertTrue(collector.isActive)
 
             engine.send(ChatStreamEvent.Completed(StopReason.EndTurn, TokenUsage(1, 1)))
@@ -56,19 +63,19 @@ class FakeManualChatEngineTest {
             val first = mutableListOf<ChatStreamEvent>()
             val firstCollector = launch { engine.stream(request).toList(first) }
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("one"))
+            engine.send(ChatStreamEvent.Delta(FIRST_DELTA))
             engine.close()
             firstCollector.join()
 
             val second = mutableListOf<ChatStreamEvent>()
             val secondCollector = launch { engine.stream(request).toList(second) }
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("two"))
+            engine.send(ChatStreamEvent.Delta(SECOND_DELTA))
             engine.close()
             secondCollector.join()
 
-            assertEquals(listOf<ChatStreamEvent>(ChatStreamEvent.Delta("one")), first)
-            assertEquals(listOf<ChatStreamEvent>(ChatStreamEvent.Delta("two")), second)
+            assertEquals(listOf<ChatStreamEvent>(ChatStreamEvent.Delta(FIRST_DELTA)), first)
+            assertEquals(listOf<ChatStreamEvent>(ChatStreamEvent.Delta(SECOND_DELTA)), second)
             assertEquals(2, engine.requests.size)
         }
 
@@ -96,6 +103,8 @@ class FakeManualChatEngineTest {
             collector.cancel()
             collector.join()
 
-            assertFailsWith<IllegalStateException> { engine.send(ChatStreamEvent.Delta("late")) }
+            assertFailsWith<IllegalStateException> {
+                engine.send(ChatStreamEvent.Delta(DELTA_AFTER_CLOSE))
+            }
         }
 }

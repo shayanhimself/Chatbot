@@ -20,6 +20,24 @@ import kotlin.test.assertTrue
  */
 private const val UNKNOWN_CONVERSATION_ID = 404L
 
+private const val USER_MESSAGE = "hello"
+private const val FOLLOW_UP_MESSAGE = "again"
+private const val LONG_TITLE_SOURCE = "x"
+
+// Longer than the title cap, so the repository has something to truncate.
+private const val LONG_TITLE_LENGTH = 200
+private const val LISBON_MESSAGE = "plan a trip to Lisbon"
+private const val FIRST_DELTA = "Hi "
+private const val SECOND_DELTA = "there"
+private const val FULL_REPLY = "Hi there"
+private const val PARTIAL_REPLY = "Hi th"
+private const val LOWERCASE_REPLY = "hi there"
+private const val SNIPPET_REPLY = "a reply"
+private const val FAILED_PARTIAL_REPLY = "half"
+private const val NO_TOKEN_YET = ""
+private const val FIRST_CONVERSATION_MESSAGE = "one"
+private const val SECOND_CONVERSATION_MESSAGE = "two"
+
 class FakeConversationRepositoryTest {
     private val repository = FakeConversationRepository()
 
@@ -28,18 +46,18 @@ class FakeConversationRepositoryTest {
     @Test
     fun `sending with no id creates a conversation titled from the message`() =
         runTest {
-            val id = repository.send(null, "plan a trip to Lisbon")
+            val id = repository.send(null, LISBON_MESSAGE)
 
             val conversation = repository.getConversationsFlow().first().single()
             assertEquals(id, conversation.id)
-            assertEquals("plan a trip to Lisbon", conversation.title)
+            assertEquals(LISBON_MESSAGE, conversation.title)
             assertEquals(ClaudeModel.Default, conversation.model)
         }
 
     @Test
     fun `a long first message is truncated into the title`() =
         runTest {
-            val id = repository.send(null, "x".repeat(200))
+            val id = repository.send(null, LONG_TITLE_SOURCE.repeat(LONG_TITLE_LENGTH))
 
             val title =
                 repository
@@ -53,34 +71,37 @@ class FakeConversationRepositoryTest {
     @Test
     fun `sending persists the user message and opens a turn`() =
         runTest {
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
 
-            assertEquals(listOf("hello"), repository.getMessagesFlow(id).first().map { it.text() })
-            assertEquals(TurnState.Streaming(""), repository.getTurnFlow(id).first())
+            assertEquals(
+                listOf(USER_MESSAGE),
+                repository.getMessagesFlow(id).first().map { it.text() },
+            )
+            assertEquals(TurnState.Streaming(NO_TOKEN_YET), repository.getTurnFlow(id).first())
         }
 
     @Test
     fun `deltas accumulate into the turn state`() =
         runTest {
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
 
-            repository.emitDelta(id, "Hi ")
-            repository.emitDelta(id, "there")
+            repository.emitDelta(id, FIRST_DELTA)
+            repository.emitDelta(id, SECOND_DELTA)
 
-            assertEquals(TurnState.Streaming("Hi there"), repository.getTurnFlow(id).first())
+            assertEquals(TurnState.Streaming(FULL_REPLY), repository.getTurnFlow(id).first())
         }
 
     @Test
     fun `completing a turn persists the reply and returns to idle`() =
         runTest {
-            val id = repository.send(null, "hello")
-            repository.emitDelta(id, "Hi there")
+            val id = repository.send(null, USER_MESSAGE)
+            repository.emitDelta(id, FULL_REPLY)
 
             repository.completeTurn(id)
 
             val messages = repository.getMessagesFlow(id).first()
             assertEquals(listOf(Role.User, Role.Assistant), messages.map { it.role })
-            assertEquals("Hi there", messages.last().text())
+            assertEquals(FULL_REPLY, messages.last().text())
             assertEquals(MessageStatus.Complete, messages.last().status)
             assertEquals(TurnState.Idle, repository.getTurnFlow(id).first())
         }
@@ -88,13 +109,13 @@ class FakeConversationRepositoryTest {
     @Test
     fun `failing a turn persists the partial reply and keeps the error readable`() =
         runTest {
-            val id = repository.send(null, "hello")
-            repository.emitDelta(id, "Hi th")
+            val id = repository.send(null, USER_MESSAGE)
+            repository.emitDelta(id, PARTIAL_REPLY)
 
             repository.failTurn(id, ChatError.Overloaded)
 
             val last = repository.getMessagesFlow(id).first().last()
-            assertEquals("Hi th", last.text())
+            assertEquals(PARTIAL_REPLY, last.text())
             assertEquals(MessageStatus.Failed, last.status)
             assertEquals(TurnState.Failed(ChatError.Overloaded), repository.getTurnFlow(id).first())
         }
@@ -102,42 +123,42 @@ class FakeConversationRepositoryTest {
     @Test
     fun `a second send on a live turn is rejected`() =
         runTest {
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
 
-            assertFailsWith<IllegalStateException> { repository.send(id, "again") }
+            assertFailsWith<IllegalStateException> { repository.send(id, FOLLOW_UP_MESSAGE) }
         }
 
     @Test
     fun `cancelling persists the partial reply and returns to idle`() =
         runTest {
-            val id = repository.send(null, "hello")
-            repository.emitDelta(id, "Hi th")
+            val id = repository.send(null, USER_MESSAGE)
+            repository.emitDelta(id, PARTIAL_REPLY)
 
             repository.cancel(id)
 
             val last = repository.getMessagesFlow(id).first().last()
             assertEquals(MessageStatus.Cancelled, last.status)
-            assertEquals("Hi th", last.text())
+            assertEquals(PARTIAL_REPLY, last.text())
             assertEquals(TurnState.Idle, repository.getTurnFlow(id).first())
         }
 
     @Test
     fun `retrying drops the unfinished reply and reopens the turn`() =
         runTest {
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             repository.failTurn(id, ChatError.Network)
 
             repository.retry(id)
 
             assertEquals(listOf(Role.User), repository.getMessagesFlow(id).first().map { it.role })
-            assertEquals(TurnState.Streaming(""), repository.getTurnFlow(id).first())
+            assertEquals(TurnState.Streaming(NO_TOKEN_YET), repository.getTurnFlow(id).first())
         }
 
     @Test
     fun `retrying with nothing to retry does nothing`() =
         runTest {
-            val id = repository.send(null, "hello")
-            repository.emitDelta(id, "hi there")
+            val id = repository.send(null, USER_MESSAGE)
+            repository.emitDelta(id, LOWERCASE_REPLY)
             repository.completeTurn(id)
 
             repository.retry(id)
@@ -149,7 +170,7 @@ class FakeConversationRepositoryTest {
     @Test
     fun `changing the model rewrites the conversation`() =
         runTest {
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
 
             repository.setModel(id, ClaudeModel.Opus)
 
@@ -166,7 +187,7 @@ class FakeConversationRepositoryTest {
     @Test
     fun `deleting removes the conversation, its messages and its turn`() =
         runTest {
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             repository.failTurn(id, ChatError.Network)
 
             repository.delete(id)
@@ -179,9 +200,9 @@ class FakeConversationRepositoryTest {
     @Test
     fun `a second conversation sorts ahead of the first`() =
         runTest {
-            val first = repository.send(null, "one")
+            val first = repository.send(null, FIRST_CONVERSATION_MESSAGE)
             repository.completeTurn(first)
-            val second = repository.send(null, "two")
+            val second = repository.send(null, SECOND_CONVERSATION_MESSAGE)
 
             assertEquals(
                 listOf(second, first),
@@ -192,12 +213,12 @@ class FakeConversationRepositoryTest {
     @Test
     fun `sending into an older conversation floats it back to the head`() =
         runTest {
-            val older = repository.send(null, "one")
+            val older = repository.send(null, FIRST_CONVERSATION_MESSAGE)
             repository.completeTurn(older)
-            val newer = repository.send(null, "two")
+            val newer = repository.send(null, SECOND_CONVERSATION_MESSAGE)
             repository.completeTurn(newer)
 
-            repository.send(older, "again")
+            repository.send(older, FOLLOW_UP_MESSAGE)
 
             assertEquals(
                 listOf(older, newer),
@@ -208,7 +229,7 @@ class FakeConversationRepositoryTest {
     @Test
     fun `each write gets a distinct timestamp`() =
         runTest {
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             repository.completeTurn(id)
 
             val timestamps = repository.getMessagesFlow(id).first().map { it.createdAt }
@@ -222,7 +243,7 @@ class FakeConversationRepositoryTest {
             assertFailsWith<IllegalArgumentException> {
                 repository.send(
                     UNKNOWN_CONVERSATION_ID,
-                    "hello",
+                    USER_MESSAGE,
                 )
             }
 
@@ -232,23 +253,23 @@ class FakeConversationRepositoryTest {
     @Test
     fun `sending into a deleted conversation is rejected`() =
         runTest {
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             repository.completeTurn(id)
             repository.delete(id)
 
-            assertFailsWith<IllegalArgumentException> { repository.send(id, "again") }
+            assertFailsWith<IllegalArgumentException> { repository.send(id, FOLLOW_UP_MESSAGE) }
         }
 
     @Test
     fun `the snippet follows the last complete message`() =
         runTest {
             val repository = FakeConversationRepository()
-            val id = repository.send(null, "hello")
-            repository.emitDelta(id, "a reply")
+            val id = repository.send(null, USER_MESSAGE)
+            repository.emitDelta(id, SNIPPET_REPLY)
             repository.completeTurn(id)
 
             assertEquals(
-                "a reply",
+                SNIPPET_REPLY,
                 repository
                     .getConversationsFlow()
                     .first()
@@ -261,12 +282,12 @@ class FakeConversationRepositoryTest {
     fun `a failed reply leaves the snippet on the user's own message`() =
         runTest {
             val repository = FakeConversationRepository()
-            val id = repository.send(null, "hello")
-            repository.emitDelta(id, "half")
+            val id = repository.send(null, USER_MESSAGE)
+            repository.emitDelta(id, FAILED_PARTIAL_REPLY)
             repository.failTurn(id, ChatError.Network)
 
             assertEquals(
-                "hello",
+                USER_MESSAGE,
                 repository
                     .getConversationsFlow()
                     .first()
@@ -279,7 +300,7 @@ class FakeConversationRepositoryTest {
     fun `the single-conversation flow emits null after delete`() =
         runTest {
             val repository = FakeConversationRepository()
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             repository.delete(id)
 
             assertNull(repository.getConversationFlow(id).first())

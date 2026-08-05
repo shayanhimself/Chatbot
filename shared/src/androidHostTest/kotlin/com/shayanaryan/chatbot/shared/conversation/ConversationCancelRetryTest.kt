@@ -27,6 +27,11 @@ import kotlin.test.assertTrue
 /** An id no test ever creates, so a call naming it can only be reaching a conversation that is gone. */
 private const val UNKNOWN_CONVERSATION_ID = 404L
 
+private const val USER_MESSAGE = "hello"
+private const val FOLLOW_UP_MESSAGE = "again"
+private const val CANCELLED_REPLY = "half way"
+private const val FAILED_PARTIAL_REPLY = "half"
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ConversationCancelRetryTest {
@@ -44,15 +49,15 @@ class ConversationCancelRetryTest {
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("half way"))
+            engine.send(ChatStreamEvent.Delta(CANCELLED_REPLY))
             runCurrent()
 
             repository.cancel(id)
 
             val last = repository.getMessagesFlow(id).first().last()
-            assertEquals("half way", last.text())
+            assertEquals(CANCELLED_REPLY, last.text())
             assertEquals(MessageStatus.Cancelled, last.status)
             assertEquals(Role.Assistant, last.role)
             assertEquals(TurnState.Idle, repository.getTurnFlow(id).first())
@@ -66,7 +71,7 @@ class ConversationCancelRetryTest {
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
@@ -85,20 +90,20 @@ class ConversationCancelRetryTest {
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("half"))
+            engine.send(ChatStreamEvent.Delta(FAILED_PARTIAL_REPLY))
             runCurrent()
             repository.cancel(id)
 
-            repository.send(id, "again")
+            repository.send(id, FOLLOW_UP_MESSAGE)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
             advanceUntilIdle()
 
             assertEquals(
-                listOf("hello", "again"),
+                listOf(USER_MESSAGE, FOLLOW_UP_MESSAGE),
                 engine.requests.last().messages.map {
                     (it.content.single() as ContentBlock.Text).text
                 },
@@ -113,11 +118,11 @@ class ConversationCancelRetryTest {
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
             repository.cancel(id)
 
-            repository.send(id, "again")
+            repository.send(id, FOLLOW_UP_MESSAGE)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
@@ -134,9 +139,9 @@ class ConversationCancelRetryTest {
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("half"))
+            engine.send(ChatStreamEvent.Delta(FAILED_PARTIAL_REPLY))
             engine.send(ChatStreamEvent.Failed(ChatError.Overloaded))
             engine.close()
             advanceUntilIdle()
@@ -163,9 +168,9 @@ class ConversationCancelRetryTest {
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("half"))
+            engine.send(ChatStreamEvent.Delta(FAILED_PARTIAL_REPLY))
             runCurrent()
             repository.cancel(id)
 
@@ -186,7 +191,7 @@ class ConversationCancelRetryTest {
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
@@ -222,9 +227,9 @@ class ConversationCancelRetryTest {
             val turnScope = scope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("half"))
+            engine.send(ChatStreamEvent.Delta(FAILED_PARTIAL_REPLY))
             runCurrent()
 
             repository.delete(id)

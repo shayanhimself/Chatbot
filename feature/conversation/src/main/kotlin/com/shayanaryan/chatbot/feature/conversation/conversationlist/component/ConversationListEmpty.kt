@@ -2,7 +2,6 @@ package com.shayanaryan.chatbot.feature.conversation.conversationlist.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -30,7 +29,12 @@ fun ConversationListEmpty(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(Spacing.s4, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
+        DsIcon(
+            glyph = Glyphs.BRAND,
+            contentDescription = null,
+            size = 46.dp,
+            filled = true,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier =
                 Modifier
                     .size(88.dp)
@@ -38,16 +42,7 @@ fun ConversationListEmpty(modifier: Modifier = Modifier) {
                         color = MaterialTheme.colorScheme.primaryContainer,
                         shape = MaterialTheme.shapes.extraLarge,
                     ),
-            contentAlignment = Alignment.Center,
-        ) {
-            DsIcon(
-                glyph = Glyphs.BRAND,
-                contentDescription = null,
-                size = 46.dp,
-                filled = true,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
-        }
+        )
         Text(
             text = stringResource(R.string.conversation_list_empty_title),
             style = MaterialTheme.typography.titleLarge,

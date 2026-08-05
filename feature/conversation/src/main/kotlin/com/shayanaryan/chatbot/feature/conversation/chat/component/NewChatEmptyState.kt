@@ -2,7 +2,6 @@ package com.shayanaryan.chatbot.feature.conversation.chat.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -42,12 +41,13 @@ fun NewChatEmptyState(modifier: Modifier = Modifier) {
             size = 30.dp,
             filled = true,
             tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier
-                .size(56.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(RadiusPrimitives.radius5),
-                ),
+            modifier =
+                Modifier
+                    .size(56.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = RoundedCornerShape(RadiusPrimitives.radius5),
+                    ),
         )
         Text(
             text = stringResource(R.string.conversation_new_chat_greeting),

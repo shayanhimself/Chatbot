@@ -1,4 +1,4 @@
-package com.shayanaryan.chatbot.feature.conversation
+package com.shayanaryan.chatbot.core.testing
 
 import android.content.Context
 import androidx.annotation.StringRes

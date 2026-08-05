@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     ksp(libs.hilt.compiler)
 
+    testImplementation(projects.core.testing)
     testImplementation(projects.shared.testing)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)
@@ -68,6 +69,7 @@ dependencies {
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    screenshotTestImplementation(projects.core.testing)
     // Provides the @PreviewTest annotation; screenshot plugin does not add it to the classpath itself.
     screenshotTestImplementation(libs.screenshot.validation.api)
 }

@@ -9,9 +9,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.shayanaryan.chatbot.core.testing.string
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.feature.conversation.R
-import com.shayanaryan.chatbot.feature.conversation.string
 import com.shayanaryan.chatbot.shared.chat.ChatError
 import com.shayanaryan.chatbot.shared.chat.ContentBlock
 import com.shayanaryan.chatbot.shared.chat.Role

@@ -3,8 +3,8 @@ package com.shayanaryan.chatbot.feature.conversation.conversationlist.preview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
+import com.shayanaryan.chatbot.core.testing.preview.FormFactorPreviews
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-import com.shayanaryan.chatbot.core.ui.preview.FormFactorPreviews
 import com.shayanaryan.chatbot.feature.conversation.conversationlist.ConversationListScreen
 import com.shayanaryan.chatbot.feature.conversation.conversationlist.ConversationListUiState
 import com.shayanaryan.chatbot.feature.conversation.conversationlist.PREVIEW_CONVERSATIONS

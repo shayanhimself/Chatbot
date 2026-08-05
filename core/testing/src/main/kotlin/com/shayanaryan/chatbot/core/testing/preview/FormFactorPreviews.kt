@@ -1,4 +1,4 @@
-package com.shayanaryan.chatbot.core.ui.preview
+package com.shayanaryan.chatbot.core.testing.preview
 
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview

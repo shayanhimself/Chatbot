@@ -5,9 +5,9 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.shayanaryan.chatbot.core.testing.string
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.feature.conversation.R
-import com.shayanaryan.chatbot.feature.conversation.string
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,23 +37,6 @@ class ConversationListScreenTest {
                 relativeTime = RelativeTime(R.string.conversation_time_days, 1),
             ),
         )
-
-    private fun setScreen(
-        uiState: ConversationListUiState,
-        onConversationClick: (Long) -> Unit = {},
-        onNewChat: () -> Unit = {},
-    ) {
-        composeRule.setContent {
-            ChatbotTheme(darkTheme = true) {
-                ConversationListScreen(
-                    uiState = uiState,
-                    selectedConversationId = null,
-                    onConversationClick = onConversationClick,
-                    onNewChat = onNewChat,
-                )
-            }
-        }
-    }
 
     @Test
     fun `shows an item per conversation with its snippet and age`() {
@@ -109,5 +92,22 @@ class ConversationListScreenTest {
         composeRule.onNodeWithText(string(R.string.conversation_list_new_chat)).performClick()
 
         assertEquals(true, tapped)
+    }
+
+    private fun setScreen(
+        uiState: ConversationListUiState,
+        onConversationClick: (Long) -> Unit = {},
+        onNewChat: () -> Unit = {},
+    ) {
+        composeRule.setContent {
+            ChatbotTheme(darkTheme = true) {
+                ConversationListScreen(
+                    uiState = uiState,
+                    selectedConversationId = null,
+                    onConversationClick = onConversationClick,
+                    onNewChat = onNewChat,
+                )
+            }
+        }
     }
 }

@@ -31,6 +31,7 @@ rootProject.name = "chatbot"
 include(
     ":app",
     ":core:ui",
+    ":core:testing",
     ":shared",
     ":shared:testing",
     ":feature:conversation",

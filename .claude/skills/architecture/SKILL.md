@@ -53,6 +53,8 @@ inside, not sub-modules.
 |---|---|
 | `:shared` (KMP) | **commonMain:** `ChatEngine`, Ktor client + SSE parsing, agentic tool-use loop + tool definitions, repositories, Room (entities, DAOs, database), domain models and logic. **androidMain:** Ktor OkHttp engine, Keystore/Tink crypto `actual`s |
 | `:core:ui` | Theme, design system, shared composables, generic strings (OK/Cancel/retry) |
+| `:shared:testing` (KMP) | Test helpers for `:shared`: the `FakeX` repositories, usable from any target's tests |
+| `:core:testing` | Android-side test helpers every module's tests reuse |
 | `:feature:onboarding` | First-launch flow: API key entry + validation, then straight into chat |
 | `:feature:conversation` | Chat screen, ChatViewModel, streaming UI, in-conversation model picker |
 | `:feature:settings` | API key management (view/update/remove), memory management UI, permission flows |
@@ -64,6 +66,9 @@ Dependency rules (hard):
 - `:feature:*` depends on `:shared` + `:core:ui` only. **Never feature → feature**;
   cross-feature navigation goes through the `:app` nav graph.
 - `:core:ui` depends on nothing in the project (not even `:shared`).
+- `:core:testing` depends on nothing in the project, and is only ever a
+  `testImplementation` / `screenshotTestImplementation` dependency — never a
+  production one. Same for `:shared:testing`.
 - `:app` depends on everything; it is the only module that sees all features.
 - `:shared` depends on nothing in the project.
 - **commonMain stays pure** — no `android.*` import ever. Platform access via

@@ -16,6 +16,13 @@ Beyond chat, the assistant acts on your behalf within a conversation:
 
 No backend server and no project-owned key: conversations, reminders, memories and the key all live on-device.
 
+| | | |
+|:-:|:-:|:-:|
+| <img src="docs/images/onboarding.png" width="240"> | <img src="docs/images/conversation-list.png" width="240"> | <img src="docs/images/chat-reminder.png" width="240"> |
+| Bring your own key | Chats | Reminder set in chat |
+| <img src="docs/images/reminders.png" width="240"> | <img src="docs/images/memory.png" width="240"> | <img src="docs/images/settings.png" width="240"> |
+| Reminders | Memory | Settings |
+
 ## Tech stack
 The purpose of this project is to try out the latest Android tech stack.
 

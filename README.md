@@ -1,16 +1,69 @@
 # Chatbot
+> **Work in progress.** Not yet ready for use.
 
-> **Work in progress.** Under active development, not yet ready for use.
+A native Android chatbot powered by Claude, using your own Anthropic API key.
 
-This is a native Android chatbot powered by Claude, using your own Anthropic API key.
-As an offline-first app, everything stays on your device, synced to your Google Drive.
+## Product
 
-Beyond chat, it acts on your behalf within a conversation:
+You pick the Claude model per conversation.
 
-- **Reminders**: Ask it to remind you of something, one-off or recurring; at the scheduled time you get a notification that starts a conversation. (As of today, no chatbot has this ability)
-- **Memory**: It remembers facts you approve across conversations. You can manage them anytime.
+As an offline-first app, everything stays on your device.
 
----
+Beyond chat, the assistant acts on your behalf within a conversation:
 
-The purpose of this project is to try out the latest Android tech stack: Kotlin Multiplatform, Jetpack Compose, Material 3, Navigation 3, Ktor, Room, DataStore, Hilt.
-iOS target can be added later.
+- **Proactive reminders**: ask it to remind you of something, *"Check in with me on Monday mornings about my weekly goals"*. No other chatbot offers this feature so far.
+- **Memory**: it remembers facts you approve across conversations, shaping future chats. You can review and delete them anytime.
+
+No backend server and no project-owned key: conversations, reminders, memories and the key all live on-device.
+
+## Tech stack
+The purpose of this project is to try out the latest Android tech stack.
+
+| Area              | Choice                                                                                             |
+|-------------------|----------------------------------------------------------------------------------------------------|
+| Language          | Kotlin 2.4                                                                                         |
+| UI                | Jetpack Compose, Material 3                                                                        |
+| Navigation        | Jetpack Navigation 3 with adaptive scenes                                                          |
+| Multiplatform     | KMP-first: Android target now, iOS later                                                           |
+| DI                | Hilt                                                                                               |
+| Async             | Coroutines                                                                                         |
+| Storage           | Room, DataStore                                                                                    |
+| Encrypted Storage | Android Keystore, Tink AEAD                                                                        |
+| AI engine         | Ktor client, Anthropic Messages API                      |
+| Background        | AlarmManager, WorkManager |
+| Formatting        | Spotless + ktlint                                                           |
+
+## Architecture
+
+Google's official guidance, feature-modularized.
+
+```
+:app  →  :feature  →  :core
+              ↓
+           :shared            (KMP: data + domain)
+```
+
+- **Layers:** UI → optional domain → data, dependencies point one way only.
+- **SSOT:** Offline-first app, so Room owns all persisted state.
+- **UDF:** immutable state down, events up. MVVM.
+
+## Testing
+
+**TDD is mandatory:** red → green → refactor, every step. No mocking libraries; fakes and real objects only.
+
+| Kind                                               | Where | Tools                                |
+|----------------------------------------------------|---|--------------------------------------|
+| Unit                                               | `commonTest`, module `test/` | JUnit4, coroutines-test              |
+| Integration | `androidHostTest` | Room in-memory, Robolectric          |
+| Compose UI                 | module `test/` | Compose testing APIs v2, Robolectric |
+| Screenshot                                         | `screenshotTest/` | Compose Preview Screenshot Testing   |
+| Acceptance / E2E                                   | `journeys/*.xml` | Android Journeys                     |
+
+## Workflow
+
+Spec-driven and agent-native. Nothing is coded before it is specified.
+
+- **Specs are the source of truth.** Numbered specs in [`specs/`](specs/) describe the current system.
+- **Pipeline:** brainstorm → spec → plan → TDD implementation.
+- **Skills over prompts.** Recurring rules live in `.claude/skills/` as versioned project skills (`architecture`, `design-system`, plus Google's official Android skills) and in `CLAUDE.md`, so the agent reads them instead of being told each time.
+

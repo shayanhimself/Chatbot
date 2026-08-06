@@ -1,0 +1,117 @@
+package com.shayanaryan.chatbot.feature.conversation.chat
+
+import androidx.compose.runtime.Composable
+import com.shayanaryan.chatbot.shared.chat.ChatError
+import com.shayanaryan.chatbot.shared.chat.ContentBlock
+import com.shayanaryan.chatbot.shared.chat.Role
+import com.shayanaryan.chatbot.shared.conversation.Message
+import com.shayanaryan.chatbot.shared.conversation.MessageStatus
+import com.shayanaryan.chatbot.shared.model.ClaudeModel
+import kotlin.time.Instant
+
+/**
+ * The width every chat item renders at in a preview. Each of them sizes itself as a fraction of
+ * the width it is given, so without one they wrap to their content and read nothing like the
+ * screen.
+ */
+internal const val CHAT_PREVIEW_WIDTH_DP = 360
+
+/** A phone's height, which is what the whole-screen previews and goldens are drawn at. */
+internal const val CHAT_PREVIEW_HEIGHT_DP = 780
+
+/** The detail pane of a two-pane window, the one width the chat is drawn at beside the list. */
+internal const val CHAT_DETAIL_PANE_WIDTH_DP = 664
+
+internal const val CHAT_DETAIL_PANE_HEIGHT_DP = 700
+
+/**
+ * The states as one fixture the colocated previews and the screenshot goldens both read.
+ */
+internal object ChatPreviewData {
+    private fun message(
+        id: Long,
+        role: Role,
+        text: String,
+    ) = ChatItem.Persisted(
+        Message(
+            id = id,
+            conversationId = 1L,
+            role = role,
+            content = listOf(ContentBlock.Text(text)),
+            status = MessageStatus.Complete,
+            createdAt = Instant.fromEpochMilliseconds(id),
+        ),
+    )
+
+    val newChat = ChatUiState()
+
+    val openChat =
+        ChatUiState(
+            conversationId = 1L,
+            title = "Weekend trip to Portland",
+            model = ClaudeModel.Sonnet,
+            items =
+                listOf(
+                    message(1L, Role.User, "help me plan a weekend in portland"),
+                    message(
+                        2L,
+                        Role.Assistant,
+                        "Powell's Books + a food-cart lunch Saturday, then Forest Park in the morning.",
+                    ),
+                ),
+        )
+
+    val thinking =
+        openChat.copy(
+            items = listOf(openChat.items.first()) + ChatItem.Thinking,
+            isStreaming = true,
+        )
+
+    val streaming =
+        openChat.copy(
+            items =
+                listOf(openChat.items.first()) +
+                    ChatItem.Streaming(
+                        "Love it. Two nights? I'd do Powell's Books + a food-cart lunch " +
+                            "Saturday, then Forest Park in the",
+                    ),
+            isStreaming = true,
+        )
+
+    val rateLimited =
+        openChat.copy(
+            items =
+                openChat.items +
+                    ChatItem.Error(
+                        ChatError.RateLimited(retryAfterSeconds = null),
+                    ),
+        )
+
+    val network = openChat.copy(items = openChat.items + ChatItem.Error(ChatError.Network))
+
+    val deleting = openChat.copy(deleteDialogVisible = true)
+}
+
+/**
+ * [ChatScreen] with every event lambda stubbed out, so a preview or a golden only has to name the
+ * state it renders.
+ *
+ * @param onBack null renders the detail pane, which is the same screen without its back arrow.
+ */
+@Composable
+internal fun PreviewChat(
+    uiState: ChatUiState,
+    onBack: (() -> Unit)? = {},
+) {
+    ChatScreen(
+        uiState = uiState,
+        onBack = onBack,
+        onSend = {},
+        onCancel = {},
+        onRetry = {},
+        onModelSelected = {},
+        onDeleteRequested = {},
+        onDeleteDismissed = {},
+        onDeleteConfirmed = {},
+    )
+}

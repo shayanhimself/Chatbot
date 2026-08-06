@@ -1,9 +1,31 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+/**
+ * The developer's own key, from local.properties. Will be removed when onboarding is implemented.
+ */
+val devApiKey: Provider<String> =
+    providers
+        .environmentVariable("ANTHROPIC_API_KEY")
+        .orElse(
+            providers
+                .fileContents(layout.projectDirectory.file("../local.properties"))
+                .asText
+                .map { contents ->
+                    contents
+                        .lineSequence()
+                        .map(String::trim)
+                        .firstOrNull { it.startsWith("anthropic.api.key=") }
+                        ?.substringAfter('=')
+                        ?.trim()
+                        .orEmpty()
+                },
+        ).orElse("")
 
 android {
     namespace = "com.shayanaryan.chatbot"
@@ -18,6 +40,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "DEV_API_KEY", "\"${devApiKey.get()}\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -33,7 +58,7 @@ android {
     buildFeatures {
         compose = true
         aidl = false
-        buildConfig = false
+        buildConfig = true
         shaders = false
     }
 
@@ -49,12 +74,12 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":shared"))
-    implementation(project(":core:ui"))
-    implementation(project(":feature:conversation"))
-    implementation(project(":feature:onboarding"))
-    implementation(project(":feature:settings"))
-    implementation(project(":feature:reminders"))
+    implementation(projects.shared)
+    implementation(projects.core.ui)
+    implementation(projects.feature.conversation)
+    implementation(projects.feature.onboarding)
+    implementation(projects.feature.settings)
+    implementation(projects.feature.reminders)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
@@ -62,6 +87,10 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+    implementation(libs.androidx.adaptive.navigation3)
     implementation(libs.kotlinx.coroutines.core)
 
     implementation(libs.hilt.android)

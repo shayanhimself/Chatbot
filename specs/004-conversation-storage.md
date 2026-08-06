@@ -254,6 +254,7 @@ No journey XMLs: 004 has no UI. Persist, resume, and delete are proven end to en
 | Piece | Owner | What it adds |
 |---|---|---|
 | Chat UI and ViewModel | 005 | Collects `getMessagesFlow` and `getTurnFlow`, folds them into `UiState`, renders streaming text, calls `send` / `retry` / `cancel` / `setModel` / `delete`. Owns the journey XMLs for persist, resume, and delete |
+| `getConversationFlow(id)` and `Conversation.snippet` | 005 | The chat screen needs a single-conversation read for its title, and the list needs a second line. `snippet` is a correlated subquery for the last `Complete` message on the query that already backs the list, so neither addition changes the schema |
 | Conversation rename, search | future | The schema supports both; no UI is specced |
 | AI-generated titles | future | A cheap model call summarizing the first exchange, replacing the truncated first message |
 | `ContentBlock.ToolUse` / `ToolResult` persistence | 008 | New `@Serializable` subtypes in the existing JSON column; no schema change. The agentic loop drives multiple engine turns per user message |

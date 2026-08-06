@@ -1,10 +1,15 @@
 package com.shayanaryan.chatbot.core.ui.designsystem.icon
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -22,6 +27,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.R
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.RadiusPrimitives
 
 // OpenType variation-axis tags the Material Symbols variable font exposes.
 // outline ↔ solid
@@ -81,23 +87,29 @@ fun DsIcon(
         }
     // convert the Dp icon size into the sp Text needs, in a way that keeps the glyph a fixed dp regardless of the user's font scale.
     val fontSize = with(LocalDensity.current) { size.toSp() }
-    Text(
-        text = glyph,
-        modifier =
-            modifier.clearAndSetSemantics {
-                if (contentDescription != null) {
-                    this.contentDescription = contentDescription
-                    this.role = Role.Image
-                }
-            },
-        color = tint,
-        fontFamily = fontFamily,
-        fontSize = fontSize,
-        lineHeight = fontSize,
-        textAlign = TextAlign.Center,
-        maxLines = 1,
-        softWrap = false,
-    )
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = glyph,
+            modifier =
+                Modifier.clearAndSetSemantics {
+                    if (contentDescription != null) {
+                        this.contentDescription = contentDescription
+                        this.role = Role.Image
+                    }
+                },
+            color = tint,
+            fontFamily = fontFamily,
+            fontSize = fontSize,
+            lineHeight = fontSize,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
 }
 
 @Preview(showBackground = true)

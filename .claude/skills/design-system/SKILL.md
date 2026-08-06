@@ -56,7 +56,9 @@ How they're accessed:
   only CompositionLocal-backed set.
 - Everything else is a plain constant, read directly — no theme lookup, usable
   outside composition (`Spacing`, `Elevation`, `ComponentShapes`, `Motion`, `MonoTextStyle`).
-- Touch targets: `Modifier.minimumInteractiveComponentSize()`, not a spacing value.
+- Touch targets: `--touch-target-min` as a width, height or min-height is
+  `Spacing.touchTargetMin`, applied through whichever `Modifier` sizes the element
+  (`size`, `defaultMinSize`, `heightIn`). Never a spacing step, never a raw `.dp`.
 
 ## Which token / component to use = the design decides
 
@@ -82,20 +84,24 @@ frame.
   `var(--success)` → `ChatbotExtendedTheme.colors.success`. Never a hex; Never
   primitives (`ColorPrimitives`), unless the role doesn't exist.
   The theme already resolves dark/light.
-- **Type — exact, but written as px.** Mockup writes raw px + weight
-  (`font:500 22px Roboto`), *not* a role name. The M3 scale is a closed set, so
-  size+weight resolves to exactly one role — **find it in `Type.kt`** by matching
-  size and weight; never write `22.sp` at a call site. Monospace px → `MonoTextStyle`.
-- **Spacing & radius — token role or raw px; check which.** `Spacing` is for padding /
-  margin / gaps, *not* component size.
-  - **Token role — exact, 1:1.** Spacing: `var(--space-4)` → `Spacing.s4`.
-    Radius, is either: component-scoped (`--radius-full`
-    → `CircleShape`, `--radius-card` → `ComponentShapes.card`),
-    or the numeric scale on a plain surface (`--radius-N`
-    → `RoundedCornerShape(RadiusPrimitives.radiusN)`; slotted values `1/2/3/4/7` may use
-    `MaterialTheme.shapes.*` instead).
-  - **Raw px — snap AND log**. Snap to nearest (`16`→`Spacing.s4`, pill/`999`→`CircleShape`); report every off-grid px
-    (`11`, `14`, `18`) at the end — a human decides drift vs. new token, never silently absorb.
+- **Type — exact, 1:1.** Mockup puts a role class on the element:
+  `class="type-title-large"` → `MaterialTheme.typography.titleLarge` (kebab → camel),
+  same shape as the color rule. `class="type-mono"` → `MonoTextStyle`. The class
+  carries family, weight, size, line-height and tracking as one unit, so never author
+  a `FontWeight`, a `.sp` size or a `letterSpacing` at a call site. An element with no
+  `type-*` class inherits one from an ancestor — walk up before deciding.
+  `font-size` on a `.msy` span is an icon size, not type (see Icons/glyphs).
+  A frame that still writes raw px + weight (`font:500 22px Roboto`) is stale,
+  flag it and report it to the user, to update the design.
+- **Spacing & radius — exact, 1:1.** `Spacing` is for padding / margin / gaps,
+  *not* component size. `var(--space-4)` → `Spacing.s4`.
+  Radius is component-scoped where the design names a component (`--radius-full`
+  → `CircleShape`, `--radius-card` → `ComponentShapes.card`). On a plain surface,
+  `--radius-N` takes the `MaterialTheme.shapes.*` slot holding that radius, and falls
+  back to `RoundedCornerShape(RadiusPrimitives.radiusN)` only for a radius no slot carries.
+  - Raw px in app UI is stale, report it so the design gets
+    tokenized. Never silently absorb an off-grid or untokenized value.
+  - Exception: Phone-frame chrome keeps raw px because it is never built.
 - **Explicit size — px is dp, use `.dp` directly.** A fixed width/height/icon size
   (`width:40px`, `size:24px`) is *not* spacing. 1 px in design = 1 dp in Android, so write it as a plain `.dp`.
   `Spacing` is padding/margin/gaps only.

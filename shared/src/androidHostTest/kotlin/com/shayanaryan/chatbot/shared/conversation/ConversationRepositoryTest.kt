@@ -28,6 +28,17 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
+private const val USER_MESSAGE = "hello"
+private const val FOLLOW_UP_MESSAGE = "again"
+private const val LONG_TITLE_SOURCE = "y"
+
+// Longer than the title cap, so the repository has something to truncate.
+private const val LONG_TITLE_LENGTH = 120
+private const val FIRST_CONVERSATION_MESSAGE = "one"
+private const val SECOND_CONVERSATION_MESSAGE = "two"
+private const val TARGET_MESSAGE = "target"
+private const val OTHER_MESSAGE = "other"
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ConversationRepositoryTest {
@@ -71,12 +82,17 @@ class ConversationRepositoryTest {
             val clock = FakeClock(Instant.fromEpochMilliseconds(1_000))
             val repository = repository(database, scope, clock)
 
-            val id = repository.send(null, "y".repeat(120), ClaudeModel.Opus)
+            val id =
+                repository.send(
+                    conversationId = null,
+                    text = LONG_TITLE_SOURCE.repeat(LONG_TITLE_LENGTH),
+                    model = ClaudeModel.Opus,
+                )
             advanceUntilIdle()
 
             val conversation = repository.getConversationsFlow().first().single()
             assertEquals(id, conversation.id)
-            assertEquals(MAX_TITLE_LENGTH, conversation.title.length)
+            assertEquals(ConversationRepository.MAX_TITLE_LENGTH, conversation.title.length)
             assertEquals(ClaudeModel.Opus, conversation.model)
             assertEquals(Instant.fromEpochMilliseconds(1_000), conversation.createdAt)
         }
@@ -88,10 +104,10 @@ class ConversationRepositoryTest {
             val clock = FakeClock(Instant.fromEpochMilliseconds(1_000))
             val repository = repository(database, scope, clock)
 
-            val first = repository.send(null, "one")
+            val first = repository.send(null, FIRST_CONVERSATION_MESSAGE)
             advanceUntilIdle()
             clock.advanceBy(60.seconds)
-            val second = repository.send(null, "two")
+            val second = repository.send(null, SECOND_CONVERSATION_MESSAGE)
             advanceUntilIdle()
 
             assertEquals(
@@ -107,12 +123,12 @@ class ConversationRepositoryTest {
             val clock = FakeClock(Instant.fromEpochMilliseconds(1_000))
             val repository = repository(database, scope, clock)
 
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             advanceUntilIdle()
 
             val first = repository.getMessagesFlow(id).first().first()
             assertEquals(Role.User, first.role)
-            assertEquals("hello", (first.content.single() as ContentBlock.Text).text)
+            assertEquals(USER_MESSAGE, (first.content.single() as ContentBlock.Text).text)
             assertEquals(MessageStatus.Complete, first.status)
             assertEquals(Instant.fromEpochMilliseconds(1_000), first.createdAt)
             assertEquals(id, first.conversationId)
@@ -135,7 +151,7 @@ class ConversationRepositoryTest {
             val repository = repository(database, scope)
             val unknownId = 1_000L
 
-            assertFailsWith<IllegalArgumentException> { repository.send(unknownId, "hello") }
+            assertFailsWith<IllegalArgumentException> { repository.send(unknownId, USER_MESSAGE) }
         }
 
     @Test
@@ -143,11 +159,11 @@ class ConversationRepositoryTest {
         runDatabaseTest { database ->
             val scope = turnScope()
             val repository = repository(database, scope)
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             advanceUntilIdle()
             repository.delete(id)
 
-            assertFailsWith<IllegalArgumentException> { repository.send(id, "again") }
+            assertFailsWith<IllegalArgumentException> { repository.send(id, FOLLOW_UP_MESSAGE) }
         }
 
     @Test
@@ -155,9 +171,9 @@ class ConversationRepositoryTest {
         runDatabaseTest { database ->
             val scope = turnScope()
             val repository = repository(database, scope)
-            val target = repository.send(null, "target")
+            val target = repository.send(null, TARGET_MESSAGE)
             advanceUntilIdle()
-            val other = repository.send(null, "other")
+            val other = repository.send(null, OTHER_MESSAGE)
             advanceUntilIdle()
 
             repository.setModel(target, ClaudeModel.Haiku)
@@ -172,7 +188,7 @@ class ConversationRepositoryTest {
         runDatabaseTest { database ->
             val scope = turnScope()
             val repository = repository(database, scope)
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             advanceUntilIdle()
 
             repository.delete(id)

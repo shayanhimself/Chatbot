@@ -11,6 +11,10 @@ import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+private const val CONVERSATION_TITLE = "plan a trip"
+private const val FIRST_BLOCK_TEXT = "one"
+private const val SECOND_BLOCK_TEXT = "two"
+
 @RunWith(RobolectricTestRunner::class)
 class ChatbotDatabaseTest {
     @Test
@@ -19,7 +23,7 @@ class ChatbotDatabaseTest {
             val conversationId =
                 database.conversationDao().insert(
                     ConversationEntity(
-                        title = "plan a trip",
+                        title = CONVERSATION_TITLE,
                         model = ClaudeModel.Opus,
                         createdAt = 10L,
                         updatedAt = 10L,
@@ -29,7 +33,11 @@ class ChatbotDatabaseTest {
                 MessageEntity(
                     conversationId = conversationId,
                     role = Role.User,
-                    content = listOf(ContentBlock.Text("one"), ContentBlock.Text("two")),
+                    content =
+                        listOf(
+                            ContentBlock.Text(FIRST_BLOCK_TEXT),
+                            ContentBlock.Text(SECOND_BLOCK_TEXT),
+                        ),
                     status = MessageStatus.Complete,
                     createdAt = 10L,
                 ),
@@ -39,9 +47,12 @@ class ChatbotDatabaseTest {
             val messages = database.messageDao().completeForConversation(conversationId)
 
             assertEquals(ClaudeModel.Opus, conversation?.model)
-            assertEquals("plan a trip", conversation?.title)
+            assertEquals(CONVERSATION_TITLE, conversation?.title)
             assertEquals(
-                listOf<ContentBlock>(ContentBlock.Text("one"), ContentBlock.Text("two")),
+                listOf<ContentBlock>(
+                    ContentBlock.Text(FIRST_BLOCK_TEXT),
+                    ContentBlock.Text(SECOND_BLOCK_TEXT),
+                ),
                 messages.single().content,
             )
             assertEquals(Role.User, messages.single().role)

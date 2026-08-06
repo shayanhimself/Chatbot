@@ -51,6 +51,7 @@ kotlin {
         }
         // No typed accessor exists for this source set.
         getByName("androidHostTest").dependencies {
+            implementation(projects.shared.testing)
             implementation(libs.junit)
             implementation(libs.robolectric)
             implementation(libs.androidx.test.core)

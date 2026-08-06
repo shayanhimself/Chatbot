@@ -35,7 +35,9 @@ The source organizes color in two tiers, and the Android layer mirrors it: a **p
 
 ### Typography
 
-Full 15-role M3 scale on **Roboto**, with per-role weights from the source.
+Full 15-role M3 scale on **Roboto**, with per-role weights from the source. Weight is part of the role, never chosen at a call site.
+
+The M3 Expressive **emphasized** variants are not adopted. Material 3 defines one per role, but the Compose accessors are internal, so no call site can read `MaterialTheme.typography.bodyLargeEmphasized`. Emphasis steps up a role instead (`bodyLarge` → `titleMedium`), which is what the upstream design system provides. Revisit when the API is public.
 
 A monospace style (`MonoTextStyle`) — API keys, model ids, code — is the one text style outside the M3 scale. It resolves to the device monospace via `FontFamily.Monospace`; bundling a Roboto Mono asset is deferred until fidelity demands it.
 
@@ -101,6 +103,8 @@ The design system remains the source of truth for their *appearance* regardless:
 ## Screenshot testing
 
 Compose Preview Screenshot Testing (`com.android.compose.screenshot` plugin, `@PreviewTest` + `@Preview`), wired into the version catalog and `:core:ui`. Each component ships previews covering its variants in **both** dark and light. Roborazzi is the documented fallback if the preview-channel tool blocks.
+
+The `preview` package carries what every module's screenshot tests share, currently the `FormFactorPreviews` multi-device preview annotation.
 
 ## Companion skill
 

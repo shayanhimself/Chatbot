@@ -1,0 +1,44 @@
+<resources>
+    <!-- Conversation list -->
+    <string name="conversation_list_title">Chats</string>
+    <string name="conversation_list_empty_title">Hmmm, a bit quite here</string>
+    <string name="conversation_list_empty_body">Let\'s chat…</string>
+    <string name="conversation_list_new_chat">new chat</string>
+
+    <!-- Relative timestamps. The "now" string takes no argument; the others take a count. -->
+    <string name="conversation_time_now">now</string>
+    <string name="conversation_time_minutes">%1$dm</string>
+    <string name="conversation_time_hours">%1$dh</string>
+    <string name="conversation_time_days">%1$dd</string>
+    <string name="conversation_time_weeks">%1$dw</string>
+
+    <!-- Chat -->
+    <string name="conversation_new_chat_title">new chat</string>
+    <string name="conversation_new_chat_greeting">How\'s it going?</string>
+    <string name="conversation_composer_placeholder">tell me…</string>
+    <string name="conversation_back">Back</string>
+    <string name="conversation_more">More</string>
+    <string name="conversation_send">Send</string>
+    <string name="conversation_stop">Stop</string>
+    <string name="conversation_thinking">Thinking</string>
+    <string name="conversation_model_picker">Model: %1$s</string>
+    <string name="conversation_model_selected">%1$s selected</string>
+
+    <!-- Delete -->
+    <string name="conversation_delete">Delete chat</string>
+    <string name="conversation_delete_title">Delete this chat?</string>
+    <string name="conversation_delete_body">It\'s stored only on this device, so it\'s gone for good.</string>
+    <string name="conversation_delete_confirm">Delete</string>
+    <string name="conversation_delete_cancel">Cancel</string>
+
+    <!-- Turn failures. One per ChatError case; the repository never carries prose. -->
+    <string name="conversation_error_authentication">Your API key was rejected. Check the key this build is using and try again.</string>
+    <string name="conversation_error_rate_limited">The API returned 429 (rate limited). Time for bathroom break?</string>
+    <string name="conversation_error_rate_limited_after">The API returned 429 (rate limited). Come back in %1$d seconds.</string>
+    <string name="conversation_error_overloaded">Claude is overloaded right now. Time for bathroom break?</string>
+    <string name="conversation_error_invalid_request">The API rejected the request as invalid. My bad.</string>
+    <string name="conversation_error_server">The API hit a server error. Whoopsy.</string>
+    <string name="conversation_error_network">Couldn\'t reach the API. Check your connection and try again.</string>
+    <string name="conversation_error_timeout">The request timed out before a reply arrived. Try again.</string>
+    <string name="conversation_error_unexpected">Something went wrong on the way to Claude. Whoopsy.</string>
+</resources>

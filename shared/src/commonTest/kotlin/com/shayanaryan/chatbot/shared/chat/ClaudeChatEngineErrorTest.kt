@@ -10,16 +10,34 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
+private const val USER_MESSAGE = "hi"
+private const val MAPPED_STATUS_DESCRIPTION = "mapped"
+private const val ERROR_BODY = """{"type":"error","error":{"type":"api_error","message":"boom"}}"""
+private const val EMPTY_BODY = ""
+private const val RETRY_AFTER_HEADER = "retry-after"
+private const val RETRY_AFTER_SECONDS = "42"
+private const val PARTIAL_REPLY = "Hel"
+
+// An error frame the server sends mid-stream, after some text has already arrived.
+private const val OVERLOADED_ERROR_FRAME =
+    "\n\nevent: error\ndata: " + """{"type":"error","error":{"type":"overloaded_error"}}""" + "\n\n"
+
+private const val UNREACHABLE_HOST_MESSAGE = "unreachable"
+private const val NO_KEY_STORED_MESSAGE = "no key stored"
+private const val STALLED_SOCKET_MESSAGE = "stalled"
+
 class ClaudeChatEngineErrorTest {
     private val request =
-        ChatRequest(messages = listOf(ChatMessage(Role.User, listOf(ContentBlock.Text("hi")))))
+        ChatRequest(
+            messages = listOf(ChatMessage(Role.User, listOf(ContentBlock.Text(USER_MESSAGE)))),
+        )
 
     private suspend fun errorFor(status: Int): ChatError {
         val events =
             testChatEngine {
                 respondError(
-                    HttpStatusCode(status, "mapped"),
-                    """{"type":"error","error":{"type":"api_error","message":"boom"}}""",
+                    HttpStatusCode(status, MAPPED_STATUS_DESCRIPTION),
+                    ERROR_BODY,
                 )
             }.stream(request).toList()
         return assertIs<ChatStreamEvent.Failed>(events.single()).error
@@ -56,8 +74,8 @@ class ClaudeChatEngineErrorTest {
                 testChatEngine {
                     respondError(
                         HttpStatusCode.TooManyRequests,
-                        "",
-                        headersOf("retry-after", "42"),
+                        EMPTY_BODY,
+                        headersOf(RETRY_AFTER_HEADER, RETRY_AFTER_SECONDS),
                     )
                 }.stream(request).toList()
 
@@ -79,7 +97,7 @@ class ClaudeChatEngineErrorTest {
             val events =
                 testChatEngine { respondSse(SseFixtures.MID_STREAM_ERROR) }.stream(request).toList()
 
-            assertEquals(ChatStreamEvent.Delta("Hel"), events.first())
+            assertEquals(ChatStreamEvent.Delta(PARTIAL_REPLY), events.first())
             assertEquals(ChatStreamEvent.Failed(ChatError.Overloaded), events.last())
             assertEquals(2, events.size)
         }
@@ -89,8 +107,7 @@ class ClaudeChatEngineErrorTest {
         runTest {
             val trailing =
                 SseFixtures.HAPPY_PATH +
-                    "\n\nevent: error\ndata: " +
-                    """{"type":"error","error":{"type":"overloaded_error"}}""" + "\n\n"
+                    OVERLOADED_ERROR_FRAME
             val events =
                 testChatEngine { respondSse(trailing) }.stream(request).toList()
 
@@ -116,7 +133,7 @@ class ClaudeChatEngineErrorTest {
             val events =
                 testChatEngine { respondSse(SseFixtures.TRUNCATED) }.stream(request).toList()
 
-            assertEquals(ChatStreamEvent.Delta("Hel"), events.first())
+            assertEquals(ChatStreamEvent.Delta(PARTIAL_REPLY), events.first())
             assertEquals(ChatStreamEvent.Failed(ChatError.Unexpected), events.last())
         }
 
@@ -124,7 +141,11 @@ class ClaudeChatEngineErrorTest {
     fun `lost connectivity is a network error`() =
         runTest {
             val events =
-                testChatEngine { throw IOException("unreachable") }.stream(request).toList()
+                testChatEngine {
+                    throw IOException(
+                        UNREACHABLE_HOST_MESSAGE,
+                    )
+                }.stream(request).toList()
 
             assertEquals(ChatStreamEvent.Failed(ChatError.Network), events.single())
         }
@@ -134,7 +155,7 @@ class ClaudeChatEngineErrorTest {
         runTest {
             val engine =
                 testChatEngine(
-                    keyProvider = ApiKeyProvider { error("no key stored") },
+                    keyProvider = ApiKeyProvider { error(NO_KEY_STORED_MESSAGE) },
                 ) { respondSse(SseFixtures.HAPPY_PATH) }
 
             val events = engine.stream(request).toList()
@@ -148,7 +169,7 @@ class ClaudeChatEngineErrorTest {
             val events =
                 testChatEngine {
                     throw io.ktor.client.network.sockets
-                        .SocketTimeoutException("stalled")
+                        .SocketTimeoutException(STALLED_SOCKET_MESSAGE)
                 }.stream(request).toList()
 
             assertEquals(ChatStreamEvent.Failed(ChatError.Timeout), events.single())

@@ -18,11 +18,12 @@ class TypographyTest {
     }
 
     @Test
-    fun `title and label are medium weight`() {
+    fun `title large is regular, title medium and labels are medium weight`() {
         assertEquals(22.sp, ChatbotTypography.titleLarge.fontSize)
-        assertEquals(FontWeight.Medium, ChatbotTypography.titleLarge.fontWeight)
+        assertEquals(FontWeight.Normal, ChatbotTypography.titleLarge.fontWeight)
         assertEquals(16.sp, ChatbotTypography.titleMedium.fontSize)
-        assertEquals(0.15.sp, ChatbotTypography.titleMedium.letterSpacing)
+        assertEquals(FontWeight.Medium, ChatbotTypography.titleMedium.fontWeight)
+        assertEquals(0.2.sp, ChatbotTypography.titleMedium.letterSpacing)
         assertEquals(14.sp, ChatbotTypography.labelLarge.fontSize)
         assertEquals(0.1.sp, ChatbotTypography.labelLarge.letterSpacing)
         assertEquals(FontWeight.Medium, ChatbotTypography.labelSmall.fontWeight)
@@ -35,7 +36,7 @@ class TypographyTest {
         assertEquals(24.sp, ChatbotTypography.bodyLarge.lineHeight)
         assertEquals(0.5.sp, ChatbotTypography.bodyLarge.letterSpacing)
         assertEquals(14.sp, ChatbotTypography.bodyMedium.fontSize)
-        assertEquals(0.25.sp, ChatbotTypography.bodyMedium.letterSpacing)
+        assertEquals(0.2.sp, ChatbotTypography.bodyMedium.letterSpacing)
         assertEquals(12.sp, ChatbotTypography.bodySmall.fontSize)
         assertEquals(0.4.sp, ChatbotTypography.bodySmall.letterSpacing)
     }

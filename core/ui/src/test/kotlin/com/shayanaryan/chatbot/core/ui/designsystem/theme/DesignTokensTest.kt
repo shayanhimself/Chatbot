@@ -25,6 +25,11 @@ class DesignTokensTest {
     }
 
     @Test
+    fun `minimum touch target is forty eight dp`() {
+        assertEquals(48.dp, Spacing.touchTargetMin)
+    }
+
+    @Test
     fun `component shapes match spec`() {
         assertEquals(CircleShape, ComponentShapes.button)
         assertEquals(RoundedCornerShape(8.dp), ComponentShapes.chip)

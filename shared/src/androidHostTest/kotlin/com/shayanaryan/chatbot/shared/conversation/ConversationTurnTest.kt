@@ -31,6 +31,29 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
+private const val USER_MESSAGE = "hello"
+private const val FOLLOW_UP_MESSAGE = "again"
+private const val SECOND_QUESTION = "are you there"
+private const val FIRST_CONVERSATION_MESSAGE = "one"
+private const val SECOND_CONVERSATION_MESSAGE = "two"
+private const val FIRST_DELTA = "Hi "
+private const val SECOND_DELTA = "there"
+private const val FULL_REPLY = "Hi there"
+private const val PARTIAL_REPLY = "Hi th"
+private const val FINISHED_REPLY = "done"
+private const val RESUMED_REPLY = "here you go"
+
+// Deltas that carry only whitespace, which the repository stores as no text at all.
+private const val BLANK_DELTA = "  \n "
+private const val NO_TEXT = ""
+
+private const val FIRST_HALF_DELTA = "already "
+private const val SECOND_HALF_DELTA = "here"
+private const val FULL_SECOND_REPLY = "already here"
+private const val CANCELLED_FIRST_DELTA = "par"
+private const val CANCELLED_SECOND_DELTA = "tial"
+private const val CANCELLED_REPLY = "partial"
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ConversationTurnTest {
@@ -49,15 +72,15 @@ class ConversationTurnTest {
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
 
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("Hi "))
+            engine.send(ChatStreamEvent.Delta(FIRST_DELTA))
             runCurrent()
-            assertEquals(TurnState.Streaming("Hi "), repository.getTurnFlow(id).first())
+            assertEquals(TurnState.Streaming(FIRST_DELTA), repository.getTurnFlow(id).first())
 
-            engine.send(ChatStreamEvent.Delta("there"))
+            engine.send(ChatStreamEvent.Delta(SECOND_DELTA))
             runCurrent()
-            assertEquals(TurnState.Streaming("Hi there"), repository.getTurnFlow(id).first())
+            assertEquals(TurnState.Streaming(FULL_REPLY), repository.getTurnFlow(id).first())
 
             engine.send(completed())
             engine.close()
@@ -65,7 +88,7 @@ class ConversationTurnTest {
 
             val messages = repository.getMessagesFlow(id).first()
             assertEquals(listOf(Role.User, Role.Assistant), messages.map { it.role })
-            assertEquals("Hi there", messages.last().text())
+            assertEquals(FULL_REPLY, messages.last().text())
             assertEquals(MessageStatus.Complete, messages.last().status)
             assertEquals(TurnState.Idle, repository.getTurnFlow(id).first())
         }
@@ -77,7 +100,7 @@ class ConversationTurnTest {
             val turnScope = turnScope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             val rowsWhenIdle = mutableListOf<Int>()
             val collector =
                 launch {
@@ -89,7 +112,7 @@ class ConversationTurnTest {
                 }
 
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("done"))
+            engine.send(ChatStreamEvent.Delta(FINISHED_REPLY))
             engine.send(completed())
             engine.close()
             advanceUntilIdle()
@@ -105,13 +128,13 @@ class ConversationTurnTest {
             val turnScope = turnScope()
             val clock = FakeClock(Instant.fromEpochMilliseconds(1_000))
             val repository = createConversationRepository(database, engine, turnScope, clock)
-            val first = repository.send(null, "one")
+            val first = repository.send(null, FIRST_CONVERSATION_MESSAGE)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
             advanceUntilIdle()
             clock.advanceBy(60.seconds)
-            val second = repository.send(null, "two")
+            val second = repository.send(null, SECOND_CONVERSATION_MESSAGE)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
@@ -123,13 +146,13 @@ class ConversationTurnTest {
             )
 
             clock.advanceBy(60.seconds)
-            repository.send(first, "again")
+            repository.send(first, FOLLOW_UP_MESSAGE)
             engine.awaitStream()
             // Moves the clock between the user message and the reply, so the assertion below
             // can only pass if the reply did the bumping. The reply has to carry text — a turn
             // that produces none stores no row and so bumps nothing.
             clock.advanceBy(60.seconds)
-            engine.send(ChatStreamEvent.Delta("here you go"))
+            engine.send(ChatStreamEvent.Delta(RESUMED_REPLY))
             engine.send(completed())
             engine.close()
             advanceUntilIdle()
@@ -147,7 +170,7 @@ class ConversationTurnTest {
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
 
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
@@ -159,7 +182,7 @@ class ConversationTurnTest {
             )
             assertEquals(TurnState.Idle, repository.getTurnFlow(id).first())
 
-            repository.send(id, "again")
+            repository.send(id, FOLLOW_UP_MESSAGE)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
@@ -182,14 +205,14 @@ class ConversationTurnTest {
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
 
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("  \n "))
+            engine.send(ChatStreamEvent.Delta(BLANK_DELTA))
             engine.send(completed())
             engine.close()
             advanceUntilIdle()
 
-            repository.send(id, "again")
+            repository.send(id, FOLLOW_UP_MESSAGE)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
@@ -216,7 +239,7 @@ class ConversationTurnTest {
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
 
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
             engine.send(ChatStreamEvent.Failed(ChatError.Network))
             engine.close()
@@ -225,7 +248,7 @@ class ConversationTurnTest {
             val last = repository.getMessagesFlow(id).first().last()
             assertEquals(Role.Assistant, last.role)
             assertEquals(MessageStatus.Failed, last.status)
-            assertEquals("", last.text())
+            assertEquals(NO_TEXT, last.text())
         }
 
     @Test
@@ -236,15 +259,15 @@ class ConversationTurnTest {
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
 
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("Hi th"))
+            engine.send(ChatStreamEvent.Delta(PARTIAL_REPLY))
             engine.send(ChatStreamEvent.Failed(ChatError.Overloaded))
             engine.close()
             advanceUntilIdle()
 
             val last = repository.getMessagesFlow(id).first().last()
-            assertEquals("Hi th", last.text())
+            assertEquals(PARTIAL_REPLY, last.text())
             assertEquals(MessageStatus.Failed, last.status)
             assertEquals(
                 TurnState.Failed(ChatError.Overloaded),
@@ -259,14 +282,14 @@ class ConversationTurnTest {
             val turnScope = turnScope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("Hi th"))
+            engine.send(ChatStreamEvent.Delta(PARTIAL_REPLY))
             engine.send(ChatStreamEvent.Failed(ChatError.Network))
             engine.close()
             advanceUntilIdle()
 
-            repository.send(id, "are you there")
+            repository.send(id, SECOND_QUESTION)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
@@ -275,7 +298,7 @@ class ConversationTurnTest {
             val history = engine.requests.last().messages
             assertEquals(listOf(Role.User, Role.User), history.map { it.role })
             assertEquals(
-                listOf("hello", "are you there"),
+                listOf(USER_MESSAGE, SECOND_QUESTION),
                 history.map { (it.content.single() as ContentBlock.Text).text },
             )
         }
@@ -287,14 +310,14 @@ class ConversationTurnTest {
             val turnScope = turnScope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello", ClaudeModel.Opus)
+            val id = repository.send(null, USER_MESSAGE, ClaudeModel.Opus)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
             advanceUntilIdle()
 
             repository.setModel(id, ClaudeModel.Haiku)
-            repository.send(id, "again")
+            repository.send(id, FOLLOW_UP_MESSAGE)
             engine.awaitStream()
             engine.send(completed())
             engine.close()
@@ -313,10 +336,10 @@ class ConversationTurnTest {
             val turnScope = turnScope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
 
-            assertFailsWith<IllegalStateException> { repository.send(id, "again") }
+            assertFailsWith<IllegalStateException> { repository.send(id, FOLLOW_UP_MESSAGE) }
 
             assertEquals(1, repository.getMessagesFlow(id).first().size)
             engine.send(completed())
@@ -331,13 +354,13 @@ class ConversationTurnTest {
             val turnScope = turnScope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("already "))
-            engine.send(ChatStreamEvent.Delta("here"))
+            engine.send(ChatStreamEvent.Delta(FIRST_HALF_DELTA))
+            engine.send(ChatStreamEvent.Delta(SECOND_HALF_DELTA))
             runCurrent()
 
-            assertEquals(TurnState.Streaming("already here"), repository.getTurnFlow(id).first())
+            assertEquals(TurnState.Streaming(FULL_SECOND_REPLY), repository.getTurnFlow(id).first())
 
             engine.send(completed())
             engine.close()
@@ -351,24 +374,24 @@ class ConversationTurnTest {
             val turnScope = turnScope()
             val repository =
                 createConversationRepository(database, engine, turnScope, FakeClock())
-            val id = repository.send(null, "hello")
+            val id = repository.send(null, USER_MESSAGE)
             val screenScope = CoroutineScope(StandardTestDispatcher(testScheduler) + Job())
             val seen = mutableListOf<TurnState>()
             screenScope.launch { repository.getTurnFlow(id).toList(seen) }
 
             engine.awaitStream()
-            engine.send(ChatStreamEvent.Delta("par"))
+            engine.send(ChatStreamEvent.Delta(CANCELLED_FIRST_DELTA))
             runCurrent()
             screenScope.cancel()
             runCurrent()
 
-            engine.send(ChatStreamEvent.Delta("tial"))
+            engine.send(ChatStreamEvent.Delta(CANCELLED_SECOND_DELTA))
             engine.send(completed())
             engine.close()
             advanceUntilIdle()
 
             val messages = repository.getMessagesFlow(id).first()
-            assertEquals("partial", messages.last().text())
+            assertEquals(CANCELLED_REPLY, messages.last().text())
             assertEquals(MessageStatus.Complete, messages.last().status)
             assertTrue(seen.none { it == TurnState.Idle })
         }

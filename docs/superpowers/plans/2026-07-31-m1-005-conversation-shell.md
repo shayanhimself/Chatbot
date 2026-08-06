@@ -4716,7 +4716,7 @@ Expected: `BUILD SUCCESSFUL`. `:app` does not compile yet: `MainActivity` still 
 - Produces: `MainActivity.EXTRA_CONVERSATION_ID`.
 - Produces: `BuildConfig.DEV_API_KEY` on debug builds, and an `ApiKeyProvider` binding in the debug source set only.
 
-- [ ] **Step 1: Give `:app` its dependencies and the dev key field**
+- [x] **Step 1: Give `:app` its dependencies and the dev key field**
 
 **Partly done in Task 3 Step 11a.** The `devApiKey` provider, `buildConfig = true` and the
 `debug { buildConfigField(…) }` block are already in place; only the serialization plugin and the
@@ -4808,7 +4808,7 @@ and in `dependencies`, after `libs.androidx.lifecycle.runtime.compose`:
 
 `local.properties` is already git-ignored, and the key never reaches a release build: `DEV_API_KEY` is declared on the debug build type only.
 
-- [ ] **Step 2: Bind the dev key, debug only**
+- [x] **Step 2: Bind the dev key, debug only**
 
 **Already done in Task 3 Step 11a.** Verify the file below exists and matches, then move on.
 
@@ -4852,7 +4852,7 @@ internal class DevApiKeyProvider(
 }
 ```
 
-- [ ] **Step 3: Declare the navigation keys**
+- [x] **Step 3: Declare the navigation keys**
 
 Create `app/src/main/kotlin/com/shayanaryan/chatbot/navigation/NavKeys.kt`:
 
@@ -4878,7 +4878,7 @@ data class ChatKey(
 ) : NavKey
 ```
 
-- [ ] **Step 4: Build the nav host, in two files**
+- [x] **Step 4: Build the nav host, in two files**
 
 Two responsibilities, so two files. `ChatbotApp` owns the back stack and the one thing that seeds it from outside the app; `ChatbotNavDisplay` owns what each key renders and how the panes arrange. The seam is one parameter wide, and `rememberNavBackStack` pins its return type to `NavBackStack<NavKey>` (the class delegates to `MutableList<NavKey>`), so the graph can push, replace and pop through it.
 
@@ -5037,7 +5037,7 @@ fun ChatbotNavDisplay(
 }
 ```
 
-- [ ] **Step 5: Replace `MainActivity`**
+- [x] **Step 5: Replace `MainActivity`**
 
 ```kotlin
 package com.shayanaryan.chatbot
@@ -5108,7 +5108,7 @@ private const val NO_CONVERSATION_ID: Long = -1L
 
 `ChatbotTheme` wraps here rather than inside `ChatbotApp`. It resolves the same light/dark bit that `enableEdgeToEdge`'s system bar style needs, and that call belongs to the Activity, not to the composition: one file holds both, so 007's theme setting cannot be read in two places that disagree. Leaving `ChatbotApp` unthemed also keeps it renderable in either theme by whatever hosts it, so a preview or a test of the shell needs no `darkTheme` parameter threaded through the navigation layer.
 
-- [ ] **Step 6: Build and install**
+- [x] **Step 6: Build and install**
 
 ```bash
 ./gradlew :app:assembleDebug
@@ -5122,7 +5122,7 @@ Expected: `BUILD SUCCESSFUL`.
 
 Expected: **FAIL**, with Dagger reporting no binding for `ApiKeyProvider`. That is the intended state: the chat ViewModel now injects `ConversationRepository`, which pulls `ChatEngine`, which needs a key, and only 006 supplies one for release. Record the exact error text in the report so the reviewer can see it is the expected failure and not something else. Every later verification uses debug tasks only.
 
-- [ ] **Step 7: Run the app on a phone emulator and click through it**
+- [x] **Step 7: Run the app on a phone emulator and click through it**
 
 ```bash
 android emulator start Pixel_10
@@ -5133,7 +5133,7 @@ Confirm by hand, and capture a screenshot of each: the list's empty state on fir
 
 If the reply fails with the `DevApiKeyProvider` check message, the key is not on the build machine. Set `ANTHROPIC_API_KEY` or add `anthropic.api.key` to `local.properties`, then rebuild.
 
-- [ ] **Step 8: Checkpoint**
+- [x] **Step 8: Checkpoint**
 
 ```bash
 ./gradlew spotlessApply

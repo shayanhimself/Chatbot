@@ -71,7 +71,7 @@ Google's official guidance, feature-modularized.
 
 Spec-driven and agent-native. Nothing is coded before it is specified.
 
-- **Specs are the source of truth.** Numbered specs in [`specs/`](specs/) describe the current system.
+- **Specs are the source of truth.** Numbered specs in `specs/` describe the current system.
 - **Pipeline:** brainstorm → spec → plan → TDD implementation.
 - **Skills over prompts.** Recurring rules live in `.claude/skills/` as versioned project skills (`architecture`, `design-system`, plus Google's official Android skills) and in `CLAUDE.md`, so the agent reads them instead of being told each time.
 

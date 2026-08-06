@@ -19,19 +19,20 @@ No backend server and no project-owned key: conversations, reminders, memories a
 ## Tech stack
 The purpose of this project is to try out the latest Android tech stack.
 
-| Area              | Choice                                                                                             |
-|-------------------|----------------------------------------------------------------------------------------------------|
-| Language          | Kotlin 2.4                                                                                         |
-| UI                | Jetpack Compose, Material 3                                                                        |
-| Navigation        | Jetpack Navigation 3 with adaptive scenes                                                          |
-| Multiplatform     | KMP-first: Android target now, iOS later                                                           |
-| DI                | Hilt                                                                                               |
-| Async             | Coroutines                                                                                         |
-| Storage           | Room, DataStore                                                                                    |
-| Encrypted Storage | Android Keystore, Tink AEAD                                                                        |
-| AI engine         | Ktor client, Anthropic Messages API                      |
-| Background        | AlarmManager, WorkManager |
-| Formatting        | Spotless + ktlint                                                           |
+| Area          | Choice                                    |
+|---------------|-------------------------------------------|
+| Language      | Kotlin 2.4                                |
+| SDK           | targetSdk 37, minSdk 31                   |
+| UI            | Jetpack Compose, Material 3               |
+| Navigation    | Jetpack Navigation 3 with adaptive scenes |
+| Multiplatform | KMP-first: Android target now, iOS later  |
+| DI            | Hilt                                      |
+| Async         | Coroutines                                |
+| Storage       | Room, DataStore                           |
+| Encryption    | Android Keystore, Tink                    |
+| AI engine     | Ktor client, Anthropic Messages API       |
+| Background    | AlarmManager, WorkManager                 |
+| Formatting    | Spotless + ktlint                         |
 
 ## Architecture
 

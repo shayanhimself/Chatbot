@@ -1,0 +1,18 @@
+<journey name="Send first message: a reply streams in">
+   <description>
+      A new user starts a conversation, sends a message, and watches the reply
+      stream in. The conversation then appears in the list with its snippet.
+   </description>
+   <actions>
+     <action>Open the "buddy" app</action>
+     <action>Verify the conversation list shows the empty state "Hmmm, a bit quite here"</action>
+     <action>Tap the "new chat" button</action>
+     <action>Type "Reply with exactly: Hello" into the message field</action>
+     <action>Tap the send button</action>
+     <action>Verify the typed message appears as a bubble on the right</action>
+     <action>Wait until a reply bubble appears on the left containing "Hello"</action>
+     <action>Tap the back arrow</action>
+     <action>Verify the list now shows one conversation whose title is the message that was sent</action>
+     <action>Verify that item's second line shows the reply text</action>
+   </actions>
+</journey>

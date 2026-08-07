@@ -12,7 +12,7 @@ Out, with owners: tool-call chips (008 onward), search and the unread indicator 
 
 ## Repository additions
 
-Two changes to 004's contract, which that spec is amended to carry.
+Two additions to 004's contract, which that spec defers to this one.
 
 ```
 fun getConversationFlow(conversationId: Long): Flow<Conversation?>
@@ -72,7 +72,9 @@ Every edge points one way. The arrangement only looks circular if a project is t
 
 ### Feature and app
 
-`:feature:conversation` gains Hilt and KSP, `lifecycle-viewmodel-compose`, `lifecycle-runtime-compose`, `hilt-navigation-compose`, and the Compose screenshot plugin with the same `enableScreenshotTest` experimental property `:core:ui` sets. It takes **no Navigation 3 dependency**: the nav graph belongs to `:app`, so the feature exports composables and ViewModels and knows nothing about keys.
+`:feature:conversation` gains Hilt and KSP, `lifecycle-viewmodel-compose`, `lifecycle-runtime-compose`, `hilt-lifecycle-viewmodel-compose`, and the Compose screenshot plugin with the same `enableScreenshotTest` experimental property `:core:ui` sets. It takes **no Navigation 3 dependency**: the nav graph belongs to `:app`, so the feature exports composables and ViewModels and knows nothing about keys.
+
+`hilt-lifecycle-viewmodel-compose` rather than `hilt-navigation-compose`: the latter declares `navigation-compose` as a compile dependency, which would put Navigation 2 on the classpath.
 
 Each feature screen ships as a pair. `ChatRoute` is stateful, resolves its ViewModel with `hiltViewModel()`, and is what `:app` calls. `ChatScreen` is stateless, takes `uiState` plus event lambdas, and is what previews, screenshot tests, and Compose UI tests drive. The same split applies to the list.
 
@@ -113,14 +115,18 @@ sealed interface ChatItem {
   data class Error(val error: ChatError) : ChatItem
 }
 
-data class ConversationUiState(
+data class ChatUiState(
+  val conversationId: Long?,
   val title: String?,
   val model: ClaudeModel,
   val items: List<ChatItem>,
   val isStreaming: Boolean,
   val deleteDialogVisible: Boolean,
+  val deleted: Boolean,
 )
 ```
+
+`conversationId` is null until the first send creates the conversation, and is what hides the overflow menu until then. `deleted` turns true once a confirmed delete finishes, and is the state `:app` reads to pop the back stack or reset the detail pane, since a ViewModel raises no events.
 
 A null `title` means a chat with no first message yet, which the screen renders as the new-chat copy. `getConversationFlow` emitting null resolves to that same state: the ViewModel clears its id and falls back to a new chat. The delete flow does not need this, since it pops or resets the pane itself. The deep link does: `ChatKey` can be seeded from an intent extra, so its id arrives from outside the app with no guarantee the row still exists, and 004's `send` rejects a missing conversation with `IllegalArgumentException`. 010's notification for a conversation deleted between scheduling and firing is that case in production.
 
@@ -210,12 +216,12 @@ New XML files in `journeys/`, covering the M1 exit gate:
 
 | Journey | Proves |
 |---|---|
-| First chat | New chat, send, reply streams in, conversation appears in the list with its snippet |
-| Resume | Kill and relaunch, reopen a conversation, history is intact |
-| Delete | Overflow, confirm, conversation is gone from the list |
-| Retry | A failed turn shows the error item, retry re-runs it |
-| Model switch | Picker changes the model and it persists across reopen |
-| Two-pane | On a tablet AVD both panes show and the chat pane has no back arrow |
+| `send-first-message` | New chat, send, reply streams in, conversation appears in the list with its snippet |
+| `resume-conversation` | Kill and relaunch, reopen a conversation, history is intact |
+| `delete-conversation` | Overflow, confirm, conversation is gone from the list |
+| `retry-failed-turn` | A failed turn shows the error item, retry re-runs it |
+| `switch-model` | Picker changes the model and it persists across reopen |
+| `two-pane-layout` | On a tablet AVD both panes show and the chat pane has no back arrow |
 
 ## Deferred to later specs
 

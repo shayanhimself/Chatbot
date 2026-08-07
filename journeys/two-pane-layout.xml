@@ -1,0 +1,16 @@
+<journey name="Two-pane layout: list and chat side by side on a tablet">
+   <description>
+      On an expanded window the conversation list and the chat share the screen,
+      the open conversation is highlighted in the list, and the chat pane has no
+      back arrow because there is nothing to go back to.
+   </description>
+   <actions>
+     <action>Open the "buddy" app</action>
+     <action>Tap the "new chat" button</action>
+     <action>Type "Reply with exactly: Hello" into the message field and tap send</action>
+     <action>Wait until a reply bubble appears containing "Hello"</action>
+     <action>Verify the conversation list and the chat are both visible at the same time</action>
+     <action>Verify the open conversation's item in the list is highlighted</action>
+     <action>Verify no back arrow is displayed in the chat pane's top bar</action>
+   </actions>
+</journey>

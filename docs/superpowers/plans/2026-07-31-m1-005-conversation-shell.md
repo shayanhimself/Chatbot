@@ -5162,7 +5162,7 @@ The M1 exit gate, plus the three documents this spec's implementation makes stal
 - Modify: `specs/001-tech-stack.md` (UI table)
 - Modify: `docs/roadmap.md` (Status table)
 
-- [ ] **Step 1: Create the tablet AVD**
+- [x] **Step 1: Create the tablet AVD**
 
 `android emulator list` reports only `Pixel_8_API_35` and `Pixel_10`, neither of which is a tablet, so the two-pane journey has nothing to run on.
 
@@ -5173,7 +5173,7 @@ android emulator list
 
 Expected: a third entry appears. Note its exact name: the journey and the launch command below both need it.
 
-- [ ] **Step 2: Write the journey files**
+- [x] **Step 2: Write the journey files**
 
 Each is a `<journey>` with a `<description>` and `<actions>`, matching `journeys/m0-scaffold.xml`. Create all six:
 
@@ -5312,7 +5312,7 @@ Each is a `<journey>` with a `<description>` and `<actions>`, matching `journeys
 </journey>
 ```
 
-- [ ] **Step 3: Run the five phone journeys**
+- [x] **Step 3: Run the five phone journeys**
 
 ```bash
 android emulator start Pixel_10
@@ -5323,7 +5323,7 @@ Then evaluate each of `journeys/m1-first-chat.xml`, `m1-resume.xml`, `m1-delete.
 
 Expected: all six pass. Fix the app, not the journey, for anything else that fails.
 
-- [ ] **Step 4: Run the two-pane journey on the tablet**
+- [x] **Step 4: Run the two-pane journey on the tablet**
 
 ```bash
 android emulator start <the tablet AVD name from Step 1>
@@ -5332,7 +5332,7 @@ android emulator start <the tablet AVD name from Step 1>
 
 Evaluate `journeys/m1-two-pane.xml`. Expected: pass.
 
-- [ ] **Step 5: Correct the three things 005 owes**
+- [x] **Step 5: Correct the three things 005 owes**
 
 `specs/005-conversation-shell.md:15` currently reads "Two changes to 004's contract, which that spec is amended to carry." 004 defers them to 005 instead, matching how the rest of its deferral table works. Replace with:
 
@@ -5363,7 +5363,7 @@ data class ChatUiState(
 )
 ```
 
-- [ ] **Step 6: Record the two new libraries in 001**
+- [x] **Step 6: Record the two new libraries in 001**
 
 `specs/001-tech-stack.md` is the canonical record, and 001 itself says a substitution requires updating it first. In the **UI** table, extend the Navigation row's Choice cell to name the adaptive artifact and its version, and add its pre-release status to the Rationale:
 
@@ -5377,7 +5377,7 @@ In the **Architecture & DI** table, extend the DI row's Rationale:
 Compose integration comes from `androidx.hilt:hilt-lifecycle-viewmodel-compose`, **not** `hilt-navigation-compose`, which declares `androidx.navigation:navigation-compose` as a compile dependency and would put the prohibited Navigation 2 on the classpath. The `hiltViewModel` overload taking a `creationCallback` (how a Nav 3 key reaches an assisted-injected ViewModel) lives in the former.
 ```
 
-- [ ] **Step 7: Bring the roadmap's status up to date**
+- [x] **Step 7: Bring the roadmap's status up to date**
 
 `docs/roadmap.md`, Status table: 002, 003, 004 and 005 are in, and 006 is not:
 
@@ -5391,11 +5391,11 @@ Compose integration comes from `androidx.hilt:hilt-lifecycle-viewmodel-compose`,
 | M4 polish | not started |
 ```
 
-- [ ] **Step 8: Review the prose**
+- [x] **Step 8: Review the prose**
 
 Run the `prose-review` skill over the four edited Markdown files. The house style forbids em dashes and history ("what happened once"), and these edits are easy to write in both.
 
-- [ ] **Step 9: Final checkpoint, the M1 exit gate**
+- [x] **Step 9: Final checkpoint, the M1 exit gate**
 
 ```bash
 ./gradlew spotlessApply

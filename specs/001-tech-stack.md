@@ -18,12 +18,12 @@ This spec is the canonical record of the project's current technology choices. A
 
 ## UI
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| UI toolkit | Jetpack Compose, BOM 2026.06.00+ | Standard for new apps |
-| Design system | Material 3 (stable APIs only) | M3 Expressive components still alpha (material3 1.5.0-alpha22) — adopt selectively once stable |
-| Navigation | **Jetpack Navigation 3** — `androidx.navigation3:navigation3-runtime` + `navigation3-ui` 1.1.x | Stable since Nov 2025. Owned back stack (typed keys in `SnapshotStateList`), `entryProvider` DSL, `NavDisplay`. Scenes give native adaptive two-pane (conversation list + chat on tablets/foldables) via `androidx.compose.material3.adaptive:adaptive-navigation3`. **Navigation 2 / navigation-compose is prohibited.** Reference: `navigation-3` project skill, github.com/android/nav3-recipes |
-| Insets | Edge-to-edge from day one | Android 16 requirement; `edge-to-edge` project skill |
+| Decision | Choice | Rationale                                                                                                                                             |
+|---|---|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| UI toolkit | Jetpack Compose, BOM 2026.06.00+ | Standard for new apps                                                                                                                                 |
+| Design system | Material 3 (stable APIs only) | M3 Expressive components still alpha (material3 1.5.0-alpha22) — adopt selectively once stable                                                        |
+| Navigation | **Jetpack Navigation 3**  | Stable since Nov 2025. Owned back stack (typed keys in `SnapshotStateList`), `entryProvider` DSL, `NavDisplay`. Scenes give native adaptive two-pane. |
+| Insets | Edge-to-edge from day one | Android 16 requirement; `edge-to-edge` project skill                                                                                                  |
 
 ## Project structure (KMP shared core, feature-modularized Android app)
 

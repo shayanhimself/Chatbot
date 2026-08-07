@@ -1,0 +1,17 @@
+<journey name="Resume conversation: history survives a relaunch">
+   <description>
+      Chat history is stored on device, so killing the app and reopening a
+      conversation shows every message that was there before.
+   </description>
+   <actions>
+     <action>Open the "buddy" app</action>
+     <action>Tap the "new chat" button</action>
+     <action>Type "Reply with exactly: Hello" into the message field and tap send</action>
+     <action>Wait until a reply bubble appears containing "Hello"</action>
+     <action>Force stop the app</action>
+     <action>Open the "buddy" app again</action>
+     <action>Verify the conversation list shows the conversation</action>
+     <action>Tap that conversation</action>
+     <action>Verify both the sent message and the reply are still displayed</action>
+   </actions>
+</journey>

@@ -12,6 +12,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.shayanaryan.chatbot.core.ui.designsystem.modifier.bottomBarSafeDrawingPadding
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.feature.conversation.chat.CHAT_PREVIEW_WIDTH_DP
@@ -38,12 +39,14 @@ fun ChatBottomBar(
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Column(
             modifier =
-                Modifier.padding(
-                    start = Spacing.s3,
-                    end = Spacing.s3,
-                    top = Spacing.s2,
-                    bottom = Spacing.s3,
-                ),
+                Modifier
+                    .bottomBarSafeDrawingPadding()
+                    .padding(
+                        start = Spacing.s3,
+                        end = Spacing.s3,
+                        top = Spacing.s2,
+                        bottom = Spacing.s3,
+                    ),
             verticalArrangement = Arrangement.spacedBy(Spacing.s2),
         ) {
             ModelPickerChip(

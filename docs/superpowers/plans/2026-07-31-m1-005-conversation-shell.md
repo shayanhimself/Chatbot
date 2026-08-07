@@ -291,10 +291,10 @@ Step 4 *replaces* `observeAll()` rather than adding beside it, so two tests alre
 stop compiling and are rewritten here alongside the new ones. Both read the entity directly where
 the projection now wraps it:
 
-```kotlin
-                    .observeAllWithSnippet()
-                    .first()
-                    .map { it.conversation.id }
+```
+.observeAllWithSnippet()
+    .first()
+    .map { it.conversation.id }
 ```
 
 in `orders conversations by most recently updated`, and the same substitution plus

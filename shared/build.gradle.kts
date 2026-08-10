@@ -36,13 +36,13 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
             implementation(libs.ktor.client.core)
-            // consumers hold the database as a singleton, so its supertype
-            // (androidx.room.RoomDatabase) must be on their compile classpath. api() does that.
             api(libs.androidx.room.runtime)
             implementation(libs.androidx.sqlite.bundled)
+            api(libs.androidx.datastore.preferences)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.tink.android)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

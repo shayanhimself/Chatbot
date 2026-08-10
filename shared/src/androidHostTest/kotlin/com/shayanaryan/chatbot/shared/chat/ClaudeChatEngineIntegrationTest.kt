@@ -50,7 +50,7 @@ class ClaudeChatEngineIntegrationTest {
                 return@runTest
             }
 
-            val engine = createChatEngine { key }
+            val engine = createChatEngine(createChatHttpClient()) { key }
             val request =
                 ChatRequest(
                     messages =
@@ -85,7 +85,7 @@ class ClaudeChatEngineIntegrationTest {
                 return@runTest
             }
 
-            val engine = createChatEngine { REJECTED_KEY }
+            val engine = createChatEngine(createChatHttpClient()) { REJECTED_KEY }
             val request =
                 ChatRequest(
                     messages =

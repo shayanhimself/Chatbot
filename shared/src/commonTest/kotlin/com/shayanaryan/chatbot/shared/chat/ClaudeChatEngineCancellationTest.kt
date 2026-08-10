@@ -48,7 +48,7 @@ class ClaudeChatEngineCancellationTest {
 
     @Test
     fun `the factory builds an engine`() {
-        val engine = createChatEngine { API_KEY }
+        val engine = createChatEngine(createChatHttpClient()) { API_KEY }
 
         assertIs<ChatEngine>(engine)
     }

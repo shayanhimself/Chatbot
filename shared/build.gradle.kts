@@ -28,6 +28,13 @@ kotlin {
             // Robolectric at them, which is also what puts robolectric.properties on its path.
             isIncludeAndroidResources = true
         }
+
+        // Device tests are off by default under the Android-KMP plugin; this is what creates the
+        // `androidDeviceTest` source set and the tasks that build and run its APK.
+        withDeviceTestBuilder {
+        }.configure {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
     }
 
     sourceSets {
@@ -49,12 +56,17 @@ kotlin {
             implementation(libs.ktor.client.mock)
             implementation(libs.kotlinx.coroutines.test)
         }
-        // No typed accessor exists for this source set.
         getByName("androidHostTest").dependencies {
             implementation(projects.shared.testing)
             implementation(libs.junit)
             implementation(libs.robolectric)
             implementation(libs.androidx.test.core)
+            implementation(libs.androidx.test.ext.junit)
+        }
+        getByName("androidDeviceTest").dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.junit)
+            implementation(libs.androidx.test.runner)
             implementation(libs.androidx.test.ext.junit)
         }
     }

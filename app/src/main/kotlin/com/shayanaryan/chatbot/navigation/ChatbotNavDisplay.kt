@@ -23,17 +23,19 @@ import androidx.navigation3.ui.NavDisplay
 import com.shayanaryan.chatbot.feature.conversation.chat.ChatRoute
 import com.shayanaryan.chatbot.feature.conversation.chat.component.NewChatEmptyState
 import com.shayanaryan.chatbot.feature.conversation.conversationlist.ConversationListRoute
+import com.shayanaryan.chatbot.feature.onboarding.OnboardingRoute
 
 /**
  * Maps every key to its route and lets the adaptive scene arrange them.
  *
- * @param backStack owned by the caller, since a launch intent has to be able to replace it
- *   wholesale.
+ * @param backStack owned by the caller, and read here only to render it.
+ * @param navigator the owner of every mutation the routes ask for.
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun ChatbotNavDisplay(
+internal fun ChatbotNavDisplay(
     backStack: NavBackStack<NavKey>,
+    navigator: ChatbotNavigator,
     modifier: Modifier = Modifier,
 ) {
     // The open conversation, reported up by the chat route because the key deliberately never
@@ -51,22 +53,10 @@ fun ChatbotNavDisplay(
     val twoPane = directive.maxHorizontalPartitions > 1
     val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>(directive = directive)
 
-    val openChat: (ChatKey) -> Unit = { key ->
-        // Replace rather than stack: the list is always the entry below a chat, and a different
-        // chat should get a different ViewModel.
-        if (backStack.lastOrNull() is ChatKey) {
-            backStack[backStack.lastIndex] = key
-        } else {
-            backStack.add(key)
-        }
-    }
-
-    val popChat: () -> Unit = { backStack.removeLastOrNull() }
-
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
-        onBack = { backStack.removeLastOrNull() },
+        onBack = { navigator.back() },
         sceneStrategies = listOf(listDetailStrategy),
         entryDecorators =
             listOf(
@@ -77,6 +67,7 @@ fun ChatbotNavDisplay(
             ),
         entryProvider =
             entryProvider {
+                entry<OnboardingKey> { OnboardingRoute() }
                 entry<ConversationListKey>(
                     metadata =
                         ListDetailSceneStrategy.listPane(
@@ -88,17 +79,17 @@ fun ChatbotNavDisplay(
                     ConversationListRoute(
                         // A narrow window never shows the list beside a chat, so nothing is selected.
                         selectedConversationId = if (twoPane) selectedConversationId else null,
-                        onConversationClick = { id -> openChat(ChatKey(id)) },
-                        onNewChat = { openChat(ChatKey()) },
+                        onConversationClick = navigator::openConversation,
+                        onNewChat = navigator::openNewChat,
                     )
                 }
                 entry<ChatKey>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
                     ChatRoute(
                         conversationId = key.conversationId,
-                        onBack = if (twoPane) null else popChat,
+                        onBack = if (twoPane) null else navigator::back,
                         // One path for both windows: popping the chat leaves the list, which on a
                         // wide window means the detail pane falls back to the new-chat state.
-                        onDeleted = popChat,
+                        onDeleted = navigator::back,
                         onConversationIdChanged = { selectedConversationId = it },
                     )
                 }

@@ -33,6 +33,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             ChatbotTheme {
                 ChatbotApp(
+                    // Replaced by the gate in the next task.
+                    hasApiKey = true,
                     deepLinkConversationId = deepLinkConversationId,
                     onDeepLinkHandled = { deepLinkConversationId = null },
                 )

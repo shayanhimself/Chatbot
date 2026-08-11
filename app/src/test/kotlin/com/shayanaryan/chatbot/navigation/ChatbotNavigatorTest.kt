@@ -1,0 +1,142 @@
+package com.shayanaryan.chatbot.navigation
+
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+private const val CONVERSATION_ID = 7L
+private const val OTHER_CONVERSATION_ID = 9L
+
+class ChatbotNavigatorTest {
+    private fun backStack(vararg keys: NavKey) = NavBackStack(*keys)
+
+    private fun navigator(
+        backStack: NavBackStack<NavKey>,
+        hasApiKeyAtStart: Boolean,
+    ) = ChatbotNavigator(backStack, hasApiKeyAtStart)
+
+    @Test
+    fun `a missing key starts on onboarding`() {
+        assertEquals(OnboardingKey, ChatbotNavigator.startKeyFor(hasApiKey = false))
+    }
+
+    @Test
+    fun `a stored key starts on the conversation list`() {
+        assertEquals(ConversationListKey, ChatbotNavigator.startKeyFor(hasApiKey = true))
+    }
+
+    @Test
+    fun `storing a key rewrites the stack to the list and a new chat`() {
+        val stack = backStack(OnboardingKey)
+        val navigator = navigator(stack, hasApiKeyAtStart = false)
+
+        navigator.resetForApiKeyState(hasApiKey = true)
+
+        assertEquals(listOf(ConversationListKey, ChatKey()), stack.toList())
+    }
+
+    @Test
+    fun `removing a key rewrites the stack to onboarding`() {
+        val stack = backStack(ConversationListKey, ChatKey(CONVERSATION_ID))
+        val navigator = navigator(stack, hasApiKeyAtStart = true)
+
+        navigator.resetForApiKeyState(hasApiKey = false)
+
+        assertEquals(listOf(OnboardingKey), stack.toList())
+    }
+
+    @Test
+    fun `a repeated value leaves the stack untouched`() {
+        val stack = backStack(ConversationListKey, ChatKey(CONVERSATION_ID))
+        val navigator = navigator(stack, hasApiKeyAtStart = true)
+
+        navigator.resetForApiKeyState(hasApiKey = true)
+
+        assertEquals(listOf(ConversationListKey, ChatKey(CONVERSATION_ID)), stack.toList())
+    }
+
+    @Test
+    fun `a navigator built against the current value treats it as no transition`() {
+        // What a restore looks like: the stack came back from saved state and the flag has not
+        // moved, so nothing may discard where the user was.
+        val stack = backStack(ConversationListKey, ChatKey(CONVERSATION_ID))
+        val navigator = navigator(stack, hasApiKeyAtStart = true)
+
+        navigator.resetForApiKeyState(hasApiKey = true)
+        navigator.resetForApiKeyState(hasApiKey = true)
+
+        assertEquals(listOf(ConversationListKey, ChatKey(CONVERSATION_ID)), stack.toList())
+    }
+
+    @Test
+    fun `opening a conversation from the list pushes a chat`() {
+        val stack = backStack(ConversationListKey)
+        val navigator = navigator(stack, hasApiKeyAtStart = true)
+
+        navigator.openConversation(CONVERSATION_ID)
+
+        assertEquals(listOf(ConversationListKey, ChatKey(CONVERSATION_ID)), stack.toList())
+    }
+
+    @Test
+    fun `opening another conversation replaces the open chat`() {
+        val stack = backStack(ConversationListKey)
+        val navigator = navigator(stack, hasApiKeyAtStart = true)
+
+        navigator.openConversation(CONVERSATION_ID)
+        navigator.openConversation(OTHER_CONVERSATION_ID)
+
+        assertEquals(listOf(ConversationListKey, ChatKey(OTHER_CONVERSATION_ID)), stack.toList())
+    }
+
+    @Test
+    fun `a new chat replaces an open chat rather than stacking on it`() {
+        val stack = backStack(ConversationListKey, ChatKey(CONVERSATION_ID))
+        val navigator = navigator(stack, hasApiKeyAtStart = true)
+
+        navigator.openNewChat()
+
+        assertEquals(listOf(ConversationListKey, ChatKey()), stack.toList())
+    }
+
+    @Test
+    fun `back pops the top entry`() {
+        val stack = backStack(ConversationListKey, ChatKey(CONVERSATION_ID))
+        val navigator = navigator(stack, hasApiKeyAtStart = true)
+
+        navigator.back()
+
+        assertEquals(listOf(ConversationListKey), stack.toList())
+    }
+
+    @Test
+    fun `a deep link flattens a stack that already has a chat`() {
+        val stack = backStack(ConversationListKey, ChatKey(OTHER_CONVERSATION_ID))
+        val navigator = navigator(stack, hasApiKeyAtStart = true)
+
+        navigator.openConversationFromDeepLink(CONVERSATION_ID)
+
+        assertEquals(listOf(ConversationListKey, ChatKey(CONVERSATION_ID)), stack.toList())
+    }
+
+    @Test
+    fun `a deep link builds both entries from an arbitrary stack`() {
+        val stack = backStack(OnboardingKey)
+        val navigator = navigator(stack, hasApiKeyAtStart = true)
+
+        navigator.openConversationFromDeepLink(CONVERSATION_ID)
+
+        assertEquals(listOf(ConversationListKey, ChatKey(CONVERSATION_ID)), stack.toList())
+    }
+
+    @Test
+    fun `a deep link arriving with no key is dropped`() {
+        val stack = backStack(OnboardingKey)
+        val navigator = navigator(stack, hasApiKeyAtStart = false)
+
+        navigator.openConversationFromDeepLink(CONVERSATION_ID)
+
+        assertEquals(listOf(OnboardingKey), stack.toList())
+    }
+}

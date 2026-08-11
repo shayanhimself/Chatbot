@@ -170,22 +170,6 @@ private fun submitLabel(
         else -> R.string.onboarding_submit_empty
     }
 
-@Composable
-private fun PreviewOnboarding(
-    uiState: OnboardingUiState,
-    key: String = "",
-    revealed: Boolean = false,
-) {
-    OnboardingScreen(
-        uiState = uiState,
-        onSubmit = {},
-        onKeyEdited = {},
-        onConsoleClick = {},
-        keyState = remember { mutableStateOf(key) },
-        revealedState = remember { mutableStateOf(revealed) },
-    )
-}
-
 @Preview(showBackground = true, heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
 @Composable
 private fun OnboardingEmptyPreview() {

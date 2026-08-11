@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -18,7 +17,6 @@ import com.shayanaryan.chatbot.core.ui.designsystem.component.DsTextField
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
-import com.shayanaryan.chatbot.feature.onboarding.ONBOARDING_PREVIEW_WIDTH_DP
 import com.shayanaryan.chatbot.feature.onboarding.PREVIEW_API_KEY
 import com.shayanaryan.chatbot.feature.onboarding.R
 import com.shayanaryan.chatbot.shared.chat.ChatError

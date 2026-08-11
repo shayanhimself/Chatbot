@@ -17,7 +17,6 @@ import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.RadiusPrimitives
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
-import com.shayanaryan.chatbot.feature.onboarding.ONBOARDING_PREVIEW_WIDTH_DP
 
 private val brandMarkSize = 72.dp
 private val brandMarkGlyphSize = 42.dp

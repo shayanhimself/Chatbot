@@ -98,9 +98,8 @@ private fun MessageList(
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
-    // `canScrollForward` is false when there is nothing left below the viewport, which is to say
-    // the list is already scrolled to its end. So the guard reads as "only follow the tail when the
-    // user is sitting at the bottom", and following stops the moment they scroll up.
+    // Follow the tail when the scroll is sitting at the end,
+    // and following stops the moment user scrolls up.
     LaunchedEffect(chatItems) {
         if (!listState.canScrollForward) {
             listState.scrollToItem(tailIndex)

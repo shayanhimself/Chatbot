@@ -17,24 +17,27 @@ internal class ChatbotNavigator(
 ) {
     private var appliedHasApiKey: Boolean = hasApiKeyAtStart
 
+    /** Opens conversation [id], replacing the open chat rather than stacking on it. */
     fun openConversation(id: Long) = openChat(ChatKey(id))
 
+    /** Opens a new chat, replacing the open chat rather than stacking. */
     fun openNewChat() = openChat(ChatKey())
 
+    /** Pops the top entry, and does nothing on a stack with none. */
     fun back() {
         backStack.removeLastOrNull()
     }
 
     /**
-     * Serves an intent from outside the app. Unlike [openConversation] it can assume nothing about
-     * what is on the stack, so it discards it and builds the two entries a notification should
-     * land on.
+     * Opens the conversation an intent from outside the app asked for.
      *
-     * A notification can outlive the key that scheduled it. With no key there is nothing to resume
-     * into and onboarding is the only destination the app may show, so the intent is dropped
-     * rather than held until a key arrives.
+     * Unlike [openConversation] this can assume nothing about the stack it arrives against, so it
+     * discards what is there and builds the two entries a notification should land on.
      */
     fun openConversationFromDeepLink(id: Long) {
+        // A notification can outlive the key that scheduled it. With no key there is nothing to
+        // resume into and onboarding is the only destination the app may show, so the intent is
+        // dropped rather than held until a key arrives.
         if (!appliedHasApiKey) return
         backStack.clear()
         backStack.add(ConversationListKey)
@@ -42,18 +45,18 @@ internal class ChatbotNavigator(
     }
 
     /**
-     * Rewrites the stack when the gate value changes, and only then. The effect that drives this
-     * runs on entering composition against a navigator built in the same composition from the same
-     * value, so equality is the ordinary case on every launch and a change is the rare one.
+     * Moves the app between onboarding and the conversation list when a key is stored or removed.
      *
-     * Storing a key lands on the list plus a new chat, where the user can immediately use what
-     * they just set up. Removing one closes the gate again, which is the same rule read backwards.
+     * @param hasApiKey the current gate value. Nothing happens while it matches the last value
+     *   applied, which is the ordinary case: the effect driving this runs on entering composition,
+     *   against a navigator built in the same composition from the same value.
      */
     fun resetForApiKeyState(hasApiKey: Boolean) {
         if (hasApiKey == appliedHasApiKey) return
         appliedHasApiKey = hasApiKey
         backStack.clear()
         if (hasApiKey) {
+            // A new chat above the list, so the user can immediately use what they just set up.
             backStack.add(ConversationListKey)
             backStack.add(ChatKey())
         } else {
@@ -62,8 +65,10 @@ internal class ChatbotNavigator(
     }
 
     /**
-     * The list is always the entry below a chat, so a second chat replaces the first rather than
-     * stacking on it. That is what gives a different conversation a different ViewModel.
+     * Opens [key], replacing the chat already on top rather than stacking on it.
+     *
+     * The list is always the entry below a chat, and replacing is what gives a different
+     * conversation a different ViewModel.
      */
     private fun openChat(key: ChatKey) {
         if (backStack.lastOrNull() is ChatKey) {
@@ -75,11 +80,14 @@ internal class ChatbotNavigator(
 
     companion object {
         /**
-         * Where a launch lands, given whether a key is stored. Without one, onboarding is the only
-         * reachable destination; with one, the list is the home screen.
+         * Chooses the destination a launch starts on.
          *
-         * A launch seeds the list alone, while [resetForApiKeyState] adds a new chat above it. A
-         * cold start belongs on the list; storing a key belongs on what the user just set up.
+         * A launch seeds this key alone, while [resetForApiKeyState] lands on a new chat above the
+         * list. A cold start belongs on the list, and a key just stored belongs on what the user
+         * set up with it.
+         *
+         * @return [OnboardingKey] without a stored key, which is then the only destination the app
+         *   may show, and [ConversationListKey] with one.
          */
         fun startKeyFor(hasApiKey: Boolean): NavKey =
             if (hasApiKey) ConversationListKey else OnboardingKey

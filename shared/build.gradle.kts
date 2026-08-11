@@ -1,14 +1,11 @@
 plugins {
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.kotlin.multiplatform.library)
+    alias(libs.plugins.chatbot.kmp.library)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.room)
 }
 
 kotlin {
-    jvmToolchain(17)
-
     compilerOptions {
         // Silences the Beta warning on the database constructor's expect/actual pair.
         freeCompilerArgs.add("-Xexpect-actual-classes")
@@ -16,8 +13,6 @@ kotlin {
 
     android {
         namespace = "com.shayanaryan.chatbot.shared"
-        compileSdk = 37
-        minSdk = 31
 
         withHostTestBuilder {}.configure {
             // enables commonTest on JVM; returnDefaultValues stops android.jar stubs
@@ -81,13 +76,4 @@ dependencies {
 
 room {
     schemaDirectory("$projectDir/schemas")
-}
-
-// Robolectric needs a Java 21 runtime for SDK 36; compile toolchain stays 17.
-tasks.withType<Test>().configureEach {
-    javaLauncher.set(
-        project.extensions.getByType<JavaToolchainService>().launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        },
-    )
 }

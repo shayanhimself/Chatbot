@@ -1,6 +1,5 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.chatbot.android.application)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
@@ -29,11 +28,8 @@ val devApiKey: Provider<String> =
 
 android {
     namespace = "com.shayanaryan.chatbot"
-    compileSdk = 37
     defaultConfig {
         applicationId = "com.shayanaryan.chatbot"
-        minSdk = 31
-        targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "com.shayanaryan.chatbot.HiltTestRunner"
@@ -51,12 +47,7 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
     buildFeatures {
-        compose = true
         aidl = false
         buildConfig = true
         shaders = false
@@ -67,10 +58,6 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-}
-
-kotlin {
-    jvmToolchain(17)
 }
 
 dependencies {

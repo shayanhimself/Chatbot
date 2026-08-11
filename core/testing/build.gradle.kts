@@ -1,16 +1,9 @@
 plugins {
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.chatbot.android.library)
 }
 
 android {
     namespace = "com.shayanaryan.chatbot.core.testing"
-    compileSdk = 37
-    defaultConfig {
-        minSdk = 31
-    }
-    compileOptions {
-        targetCompatibility = JavaVersion.VERSION_17
-    }
 }
 
 dependencies {

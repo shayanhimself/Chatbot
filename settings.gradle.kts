@@ -3,6 +3,9 @@
 @file:Suppress("UnstableApiUsage")
 
 pluginManagement {
+    // Supplies the `chatbot.*` convention plugins, which carry the Android and Kotlin
+    // configuration every module shares.
+    includeBuild("build-logic")
     repositories {
         google()
         mavenCentral()

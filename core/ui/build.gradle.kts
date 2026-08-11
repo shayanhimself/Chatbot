@@ -1,37 +1,9 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.screenshot)
+    alias(libs.plugins.chatbot.android.library.screenshot)
 }
 
 android {
     namespace = "com.shayanaryan.chatbot.core.ui"
-    compileSdk = 37
-    defaultConfig {
-        minSdk = 31
-    }
-    compileOptions {
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    buildFeatures {
-        compose = true
-    }
-    // Gates screenshotTest source-set creation
-    experimentalProperties["android.experimental.enableScreenshotTest"] = true
-    testOptions {
-        unitTests {
-            isIncludeAndroidResources = true
-        }
-    }
-}
-
-// Robolectric needs a Java 21 runtime for SDK 36; compile toolchain stays 17.
-tasks.withType<Test>().configureEach {
-    javaLauncher.set(
-        project.extensions.getByType<JavaToolchainService>().launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        },
-    )
 }
 
 dependencies {

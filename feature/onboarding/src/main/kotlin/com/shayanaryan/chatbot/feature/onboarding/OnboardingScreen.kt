@@ -173,22 +173,33 @@ private fun submitLabel(
 @Preview(showBackground = true, heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
 @Composable
 private fun OnboardingEmptyPreview() {
-    ChatbotTheme(darkTheme = true) { PreviewOnboarding(OnboardingUiState.Idle) }
+    ChatbotTheme(darkTheme = true) {
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Idle,
+        )
+    }
 }
 
 @Preview(showBackground = true, heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
 @Composable
 private fun OnboardingObscuredPreview() {
-    ChatbotTheme(
-        darkTheme = true,
-    ) { PreviewOnboarding(OnboardingUiState.Idle, key = PREVIEW_API_KEY) }
+    ChatbotTheme(darkTheme = true) {
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Idle,
+            key = PREVIEW_API_KEY,
+        )
+    }
 }
 
 @Preview(showBackground = true, heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
 @Composable
 private fun OnboardingRevealedPreview() {
     ChatbotTheme(darkTheme = true) {
-        PreviewOnboarding(OnboardingUiState.Idle, key = PREVIEW_API_KEY, revealed = true)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Idle,
+            key = PREVIEW_API_KEY,
+            revealed = true,
+        )
     }
 }
 
@@ -196,7 +207,10 @@ private fun OnboardingRevealedPreview() {
 @Composable
 private fun OnboardingValidatingPreview() {
     ChatbotTheme(darkTheme = true) {
-        PreviewOnboarding(OnboardingUiState.Validating, key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Validating,
+            key = PREVIEW_API_KEY,
+        )
     }
 }
 
@@ -204,7 +218,10 @@ private fun OnboardingValidatingPreview() {
 @Composable
 private fun OnboardingRejectedPreview() {
     ChatbotTheme(darkTheme = true) {
-        PreviewOnboarding(OnboardingUiState.Failed(ChatError.Authentication), key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Failed(ChatError.Authentication),
+            key = PREVIEW_API_KEY,
+        )
     }
 }
 
@@ -212,6 +229,9 @@ private fun OnboardingRejectedPreview() {
 @Composable
 private fun OnboardingOfflinePreview() {
     ChatbotTheme(darkTheme = true) {
-        PreviewOnboarding(OnboardingUiState.Failed(ChatError.Network), key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Failed(ChatError.Network),
+            key = PREVIEW_API_KEY,
+        )
     }
 }

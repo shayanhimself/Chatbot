@@ -15,14 +15,22 @@ import com.shayanaryan.chatbot.shared.chat.ChatError
 @Preview(heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
 @Composable
 private fun OnboardingEmptyDarkPreview() {
-    ChatbotTheme(darkTheme = true) { PreviewOnboarding(OnboardingUiState.Idle) }
+    ChatbotTheme(darkTheme = true) {
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Idle,
+        )
+    }
 }
 
 @PreviewTest
 @Preview(heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
 @Composable
 private fun OnboardingEmptyLightPreview() {
-    ChatbotTheme(darkTheme = false) { PreviewOnboarding(OnboardingUiState.Idle) }
+    ChatbotTheme(darkTheme = false) {
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Idle,
+        )
+    }
 }
 
 @PreviewTest
@@ -30,7 +38,10 @@ private fun OnboardingEmptyLightPreview() {
 @Composable
 private fun OnboardingObscuredDarkPreview() {
     ChatbotTheme(darkTheme = true) {
-        PreviewOnboarding(OnboardingUiState.Idle, key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Idle,
+            key = PREVIEW_API_KEY,
+        )
     }
 }
 
@@ -39,7 +50,10 @@ private fun OnboardingObscuredDarkPreview() {
 @Composable
 private fun OnboardingObscuredLightPreview() {
     ChatbotTheme(darkTheme = false) {
-        PreviewOnboarding(OnboardingUiState.Idle, key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Idle,
+            key = PREVIEW_API_KEY,
+        )
     }
 }
 
@@ -48,7 +62,11 @@ private fun OnboardingObscuredLightPreview() {
 @Composable
 private fun OnboardingRevealedDarkPreview() {
     ChatbotTheme(darkTheme = true) {
-        PreviewOnboarding(OnboardingUiState.Idle, key = PREVIEW_API_KEY, revealed = true)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Idle,
+            key = PREVIEW_API_KEY,
+            revealed = true,
+        )
     }
 }
 
@@ -57,7 +75,11 @@ private fun OnboardingRevealedDarkPreview() {
 @Composable
 private fun OnboardingRevealedLightPreview() {
     ChatbotTheme(darkTheme = false) {
-        PreviewOnboarding(OnboardingUiState.Idle, key = PREVIEW_API_KEY, revealed = true)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Idle,
+            key = PREVIEW_API_KEY,
+            revealed = true,
+        )
     }
 }
 
@@ -66,7 +88,10 @@ private fun OnboardingRevealedLightPreview() {
 @Composable
 private fun OnboardingValidatingDarkPreview() {
     ChatbotTheme(darkTheme = true) {
-        PreviewOnboarding(OnboardingUiState.Validating, key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Validating,
+            key = PREVIEW_API_KEY,
+        )
     }
 }
 
@@ -75,7 +100,10 @@ private fun OnboardingValidatingDarkPreview() {
 @Composable
 private fun OnboardingValidatingLightPreview() {
     ChatbotTheme(darkTheme = false) {
-        PreviewOnboarding(OnboardingUiState.Validating, key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Validating,
+            key = PREVIEW_API_KEY,
+        )
     }
 }
 
@@ -84,7 +112,10 @@ private fun OnboardingValidatingLightPreview() {
 @Composable
 private fun OnboardingRejectedDarkPreview() {
     ChatbotTheme(darkTheme = true) {
-        PreviewOnboarding(OnboardingUiState.Failed(ChatError.Authentication), key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Failed(ChatError.Authentication),
+            key = PREVIEW_API_KEY,
+        )
     }
 }
 
@@ -93,7 +124,10 @@ private fun OnboardingRejectedDarkPreview() {
 @Composable
 private fun OnboardingRejectedLightPreview() {
     ChatbotTheme(darkTheme = false) {
-        PreviewOnboarding(OnboardingUiState.Failed(ChatError.Authentication), key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Failed(ChatError.Authentication),
+            key = PREVIEW_API_KEY,
+        )
     }
 }
 
@@ -102,7 +136,10 @@ private fun OnboardingRejectedLightPreview() {
 @Composable
 private fun OnboardingOfflineDarkPreview() {
     ChatbotTheme(darkTheme = true) {
-        PreviewOnboarding(OnboardingUiState.Failed(ChatError.Network), key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Failed(ChatError.Network),
+            key = PREVIEW_API_KEY,
+        )
     }
 }
 
@@ -111,7 +148,10 @@ private fun OnboardingOfflineDarkPreview() {
 @Composable
 private fun OnboardingOfflineLightPreview() {
     ChatbotTheme(darkTheme = false) {
-        PreviewOnboarding(OnboardingUiState.Failed(ChatError.Network), key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Failed(ChatError.Network),
+            key = PREVIEW_API_KEY,
+        )
     }
 }
 
@@ -120,6 +160,9 @@ private fun OnboardingOfflineLightPreview() {
 @Composable
 private fun OnboardingFormFactorPreview() {
     ChatbotTheme(darkTheme = true) {
-        PreviewOnboarding(OnboardingUiState.Idle, key = PREVIEW_API_KEY)
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Idle,
+            key = PREVIEW_API_KEY,
+        )
     }
 }

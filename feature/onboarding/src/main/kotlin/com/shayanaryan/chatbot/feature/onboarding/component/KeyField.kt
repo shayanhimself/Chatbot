@@ -117,29 +117,43 @@ private fun KeyFieldEmptyPreview() {
 @Preview
 @Composable
 private fun KeyFieldObscuredPreview() {
-    PreviewKeyField(key = PREVIEW_API_KEY)
+    PreviewKeyField(
+        key = PREVIEW_API_KEY,
+    )
 }
 
 @Preview
 @Composable
 private fun KeyFieldRevealedPreview() {
-    PreviewKeyField(key = PREVIEW_API_KEY, revealed = true)
+    PreviewKeyField(
+        key = PREVIEW_API_KEY,
+        revealed = true,
+    )
 }
 
 @Preview
 @Composable
 private fun KeyFieldValidatingPreview() {
-    PreviewKeyField(key = PREVIEW_API_KEY, validating = true)
+    PreviewKeyField(
+        key = PREVIEW_API_KEY,
+        validating = true,
+    )
 }
 
 @Preview
 @Composable
 private fun KeyFieldRejectedPreview() {
-    PreviewKeyField(key = PREVIEW_API_KEY, failure = ChatError.Authentication)
+    PreviewKeyField(
+        key = PREVIEW_API_KEY,
+        failure = ChatError.Authentication,
+    )
 }
 
 @Preview
 @Composable
 private fun KeyFieldOfflinePreview() {
-    PreviewKeyField(key = PREVIEW_API_KEY, failure = ChatError.Network)
+    PreviewKeyField(
+        key = PREVIEW_API_KEY,
+        failure = ChatError.Network,
+    )
 }

@@ -23,4 +23,8 @@ object Glyphs {
     const val EXPAND_LESS = "expand_less"
     const val CHECK = "check"
     const val REFRESH = "refresh"
+    const val KEY = "key"
+    const val VISIBILITY = "visibility"
+    const val VISIBILITY_OFF = "visibility_off"
+    const val CLOUD_OFF = "cloud_off"
 }

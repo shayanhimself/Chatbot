@@ -1,0 +1,32 @@
+<resources>
+    <!-- Hero -->
+    <string name="onboarding_headline">chat with me,\non your terms</string>
+    <string name="onboarding_body">Bring your own Anthropic API key. Everything stays on this device.</string>
+
+    <!-- Key field -->
+    <string name="onboarding_key_label">Anthropic API key</string>
+    <string name="onboarding_key_placeholder">sk-ant-api03-…</string>
+    <string name="onboarding_key_helper">Encrypted with Android Keystore · never leaves your phone</string>
+    <string name="onboarding_key_helper_validating">Checking your key…</string>
+    <string name="onboarding_key_reveal">Show key</string>
+    <string name="onboarding_key_hide">Hide key</string>
+
+    <!-- Submit. Four labels, one button: the label follows what the next tap will do. -->
+    <string name="onboarding_submit_empty">Enter your key</string>
+    <string name="onboarding_submit">Validate &amp; continue</string>
+    <string name="onboarding_submit_validating">Validating…</string>
+    <string name="onboarding_submit_retry">Try again</string>
+
+    <string name="onboarding_console">Get a key at console.anthropic.com</string>
+
+    <!-- Validation failures. One per ChatError case; only the first says the key is wrong. -->
+    <string name="onboarding_error_authentication">That key was rejected. Check it and try again.</string>
+    <string name="onboarding_error_network">Couldn\'t reach Anthropic. You\'re offline; try again once you\'re back.</string>
+    <string name="onboarding_error_timeout">The check timed out before Anthropic answered. Try again.</string>
+    <string name="onboarding_error_rate_limited">Anthropic returned 429 (rate limited). Try again in a moment.</string>
+    <string name="onboarding_error_rate_limited_after">Anthropic returned 429 (rate limited). Try again in %1$d seconds.</string>
+    <string name="onboarding_error_overloaded">Anthropic is overloaded right now. Try again in a moment.</string>
+    <string name="onboarding_error_invalid_request">Anthropic rejected the check as invalid. My bad.</string>
+    <string name="onboarding_error_server">Anthropic hit a server error. Try again in a moment.</string>
+    <string name="onboarding_error_unexpected">Something went wrong on the way to Anthropic. Try again.</string>
+</resources>

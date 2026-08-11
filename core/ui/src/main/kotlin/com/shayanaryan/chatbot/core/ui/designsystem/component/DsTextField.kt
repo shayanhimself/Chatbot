@@ -3,6 +3,7 @@ package com.shayanaryan.chatbot.core.ui.designsystem.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Surface
@@ -35,9 +36,12 @@ enum class TextFieldVariant { Outlined, Filled }
  * @param variant outlined (default) or filled.
  * @param leadingGlyph / trailingGlyph [com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs] ligatures for the leading/trailing slots.
  * @param onTrailingClick when non-null, wraps the trailing glyph in a clickable icon button.
+ * @param trailingContentDescription label for the trailing slot, required whenever
+ *   [onTrailingClick] makes it interactive.
  * @param supportingText helper/error text below the field.
  * @param mono renders the value in [MonoTextStyle] for keys / ids / code.
  * @param visualTransformation e.g. password masking for an API key.
+ * @param keyboardActions what the IME action does, e.g. submitting a key from the keyboard.
  */
 @Composable
 fun DsTextField(
@@ -50,6 +54,7 @@ fun DsTextField(
     leadingGlyph: String? = null,
     trailingGlyph: String? = null,
     onTrailingClick: (() -> Unit)? = null,
+    trailingContentDescription: String? = null,
     supportingText: String? = null,
     isError: Boolean = false,
     enabled: Boolean = true,
@@ -58,6 +63,7 @@ fun DsTextField(
     mono: Boolean = false,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
     val textStyle = if (mono) MonoTextStyle else LocalTextStyle.current
     val labelComposable: (@Composable () -> Unit)? = label?.let { { Text(it) } }
@@ -73,9 +79,15 @@ fun DsTextField(
                 if (onTrailingClick != null) {
                     M3IconButton(
                         onClick = onTrailingClick,
-                    ) { DsIcon(glyph, contentDescription = null, size = 20.dp) }
+                    ) {
+                        DsIcon(
+                            glyph,
+                            contentDescription = trailingContentDescription,
+                            size = 20.dp,
+                        )
+                    }
                 } else {
-                    DsIcon(glyph, contentDescription = null, size = 20.dp)
+                    DsIcon(glyph, contentDescription = trailingContentDescription, size = 20.dp)
                 }
             }
         }
@@ -95,6 +107,7 @@ fun DsTextField(
                 isError = isError,
                 visualTransformation = visualTransformation,
                 keyboardOptions = keyboardOptions,
+                keyboardActions = keyboardActions,
                 singleLine = singleLine,
                 minLines = minLines,
                 shape = ComponentShapes.input,
@@ -116,6 +129,7 @@ fun DsTextField(
                 isError = isError,
                 visualTransformation = visualTransformation,
                 keyboardOptions = keyboardOptions,
+                keyboardActions = keyboardActions,
                 singleLine = singleLine,
                 minLines = minLines,
             )

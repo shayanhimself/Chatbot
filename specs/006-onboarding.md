@@ -30,6 +30,8 @@ ApiKeyRepository
 
 Ciphertext lives in DataStore Preferences. `KeyCipher` is an interface in commonMain; its Android implementation is Tink AEAD keyed by a hardware-backed Android Keystore master key. Both the DataStore instance and the cipher are built in androidMain from a `Context` and handed to the commonMain factory, so commonMain stays free of platform imports and an iOS Keychain implementation later replaces one class.
 
+The store is excluded from cloud backup and from device transfer. The master key never leaves this device's Keystore, so a copy restored elsewhere cannot be decrypted.
+
 ### Key validation
 
 ```
@@ -75,11 +77,11 @@ The field is a password keyboard with autocorrect and capitalization off, submit
 
 **The key is a parameter, never a field and never saved state.**
 
-The screen holds the text in a plain `remember { TextFieldState() }` and passes the finished string to the ViewModel, which validates it, hands it to the repository, and retains nothing. This deliberately diverges from 005, whose composer text is `rememberSaveable`.
+The screen holds the text in a plain `remember { mutableStateOf("") }` and passes the finished string to the ViewModel, which validates it, hands it to the repository, and retains nothing. This deliberately diverges from 005, whose composer text is `rememberSaveable`.
 
 The reason is that saved state is not ours. `rememberSaveable` and `SavedStateHandle` serialize their value and hand it to the system, which keeps a copy in memory outside this process and survives this process dying. Nothing there can be scoped or cleared by the app. A plain `remember` keeps the key in our own heap for the life of the composition and it dies with us.
 
-`rememberTextFieldState` is saveable and therefore prohibited here, which is worth naming because it is the obvious call to reach for and it would undo the rule without any visible sign.
+`rememberSaveable` and `rememberTextFieldState` are both prohibited here, which is worth naming because either is the obvious call to reach for and both would undo the rule without any visible sign.
 
 The field state and the reveal flag are parameters of the screen defaulting to that plain `remember`, rather than being private to it. Previews and screenshot tests supply their own, which is the only way one stateless screen can render both an empty field and a filled one, and a masked key and a revealed one.
 
@@ -97,7 +99,7 @@ Layout, spacing, color, and the composition of each state come from the mockup, 
 |---|---|
 | `Screen-Onboarding.dc.html` | 1a–1f |
 
-Every element maps to an existing `:core:ui` component, including the button's loading state. `:core:ui` gains only the new `Glyphs` constants the screen names.
+Every element maps to an existing `:core:ui` component, including the button's loading state. `:core:ui` gains the new `Glyphs` constants the screen names, and two parameters on `DsTextField`: an IME action handler, so the keyboard can submit, and a content description for the trailing slot, because the reveal toggle is interactive and an unlabelled tappable icon is unreachable by TalkBack.
 
 **Copy is read from that file with the `pull-design` skill when the implementation plan is written.** This spec names states, never their wording.
 
@@ -137,7 +139,7 @@ None of this changes the feature contract. Features still receive lambdas and kn
 
 `MainActivity` composes `ChatbotApp` only once the state is decided, so the back stack is seeded correctly on first composition rather than seeded wrong and rewritten. `ChatbotApp` takes the resolved flag as a parameter and stays stateless, matching the split 005 established.
 
-Back stack contents are a function of that flag. Without a key it is `[OnboardingKey]`; storing one rewrites it to the conversation list plus a new chat, landing the user where they can immediately use what they just set up. Removing a key in 007 flips it back with no further work, because it is the same rule read the other way.
+The flag decides both where a launch lands and what a change rewrites the stack to, and the two are not the same stack. A launch without a key starts on `[OnboardingKey]`; a launch with one starts on the conversation list, which is where every existing journey expects to open.
 
 `resetForApiKeyState` picks between the two stacks, and rewrites only when the flag differs from the last value it applied, which it is seeded with at construction. That comparison is not an edge case: the effect driving it runs on entering composition, against a navigator built in the same composition from the same value, so equality is the ordinary case on every launch and a genuine change is the rare one. Seeding is already done by the stack's initial value, and the guard is what stops the effect doing it a second time. Because the navigator is remembered rather than saved, activity recreation and process death rebuild it against the flag as it stands at that moment, so a restore reports no transition and leaves the restored stack alone. Without it, a restore would discard the user's position and drop them into a new chat.
 

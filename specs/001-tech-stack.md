@@ -1,6 +1,7 @@
 # 001 — Tech Stack
 
 This spec is the canonical record of the project's technology choices.
+Library versions should not be mentioned here.
 
 
 ## Platform & build
@@ -25,6 +26,7 @@ This spec is the canonical record of the project's technology choices.
 | Design system | Material 3 (stable APIs only) | M3 Expressive components are still alpha; adopt selectively once stable                                                                                                                                                                             |
 | Navigation | **Jetpack Navigation 3**  | Owned back stack (typed keys in `SnapshotStateList`), `entryProvider` DSL, `NavDisplay`. Scenes give native adaptive two-pane.                                                                                                                      |
 | Insets | Edge-to-edge from day one | Android 16 requirement; `edge-to-edge` project skill                                                                                                                                                                                                |
+| Cold-start gate | `androidx.core:core-splashscreen` | Holds the platform splash while the app works out whether a key is stored, so a cold start never shows a frame of the wrong destination |
 
 ## Project structure (KMP shared core, feature-modularized Android app)
 

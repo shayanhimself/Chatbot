@@ -87,7 +87,7 @@ Spec = what/why (`specs/`); plan = how (`docs/superpowers/plans/`). The settings
 | Milestone | State |
 |---|---|
 | M0 scaffold | done |
-| M1 chat MVP (002–006) | in progress: 002, 003, 004, 005 done; 006 next |
+| M1 chat MVP (002–006) | done |
 | M2 tool loop + memory (007–009) | not started |
 | M3 reminders (010) | not started |
 | M4 polish | not started |

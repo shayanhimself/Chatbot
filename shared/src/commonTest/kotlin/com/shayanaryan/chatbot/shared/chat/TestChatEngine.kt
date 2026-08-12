@@ -1,5 +1,7 @@
 package com.shayanaryan.chatbot.shared.chat
 
+import com.shayanaryan.chatbot.shared.apikey.ApiKeyRepository
+import com.shayanaryan.chatbot.shared.apikey.FakeApiKeyRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -10,15 +12,16 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteReadChannel
 
+private const val TEST_API_KEY = "sk-ant-test"
+
 /** Builds a real [ClaudeChatEngine] over a [MockEngine], so tests exercise the whole HTTP path. */
 internal fun testChatEngine(
-    apiKey: String = "sk-ant-test",
-    keyProvider: ApiKeyProvider = ApiKeyProvider { apiKey },
+    repository: ApiKeyRepository = FakeApiKeyRepository(initialKey = TEST_API_KEY),
     handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
 ): ClaudeChatEngine =
     ClaudeChatEngine(
         client = HttpClient(MockEngine { request -> handler(request) }) { installChatDefaults() },
-        keyProvider = keyProvider,
+        repository = repository,
     )
 
 /** Responds with [body] as a streamed `text/event-stream`. */

@@ -5,9 +5,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.navigation.ChatbotApp
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,8 +24,15 @@ class MainActivity : ComponentActivity() {
      */
     private var deepLinkConversationId by mutableStateOf<Long?>(null)
 
+    private val viewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Installed before super.onCreate and before setContent: the keep-on-screen condition has
+        // to exist before the first frame, and holding the splash over Undecided is what stops a
+        // blank frame on a cold start.
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        splashScreen.setKeepOnScreenCondition { viewModel.uiState.value is MainUiState.Undecided }
         enableEdgeToEdge()
         // Only a fresh launch seeds. A recreated activity restores its own back stack, and its
         // intent still carries the extra it launched with, so reading that extra again would drag
@@ -32,12 +42,16 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             ChatbotTheme {
-                ChatbotApp(
-                    // Replaced by the gate in the next task.
-                    hasApiKey = true,
-                    deepLinkConversationId = deepLinkConversationId,
-                    onDeepLinkHandled = { deepLinkConversationId = null },
-                )
+                val state by viewModel.uiState.collectAsStateWithLifecycle()
+                // Nothing composes until the gate resolves, so the back stack is seeded correctly
+                // on first composition rather than seeded wrong and rewritten.
+                (state as? MainUiState.Decided)?.let { decided ->
+                    ChatbotApp(
+                        hasApiKey = decided.hasApiKey,
+                        deepLinkConversationId = deepLinkConversationId,
+                        onDeepLinkHandled = { deepLinkConversationId = null },
+                    )
+                }
             }
         }
     }

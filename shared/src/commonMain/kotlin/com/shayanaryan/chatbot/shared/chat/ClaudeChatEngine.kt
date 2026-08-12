@@ -1,5 +1,6 @@
 package com.shayanaryan.chatbot.shared.chat
 
+import com.shayanaryan.chatbot.shared.apikey.ApiKeyRepository
 import com.shayanaryan.chatbot.shared.chat.dto.ApiErrorType
 import com.shayanaryan.chatbot.shared.chat.dto.ContentDeltaDto
 import com.shayanaryan.chatbot.shared.chat.dto.MessageRequestDto
@@ -25,11 +26,14 @@ import kotlinx.coroutines.flow.flow
 /** The one production [ChatEngine]: Ktor over the Anthropic Messages API with hand-rolled SSE. */
 internal class ClaudeChatEngine(
     private val client: HttpClient,
-    private val keyProvider: ApiKeyProvider,
+    private val repository: ApiKeyRepository,
 ) : ChatEngine {
     override fun stream(request: ChatRequest): Flow<ChatStreamEvent> =
         flow {
-            val apiKey = keyProvider.apiKey()
+            val apiKey =
+                checkNotNull(repository.apiKey()) {
+                    "No stored API key. The gate should have kept the app on onboarding."
+                }
             val body = chatJson.encodeToString(MessageRequestDto.serializer(), request.toDto())
             client
                 .preparePost(MESSAGES_URL) {

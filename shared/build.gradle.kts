@@ -47,12 +47,15 @@ kotlin {
             implementation(libs.tink.android)
         }
         commonTest.dependencies {
+            // Points back at a module that depends on this one, which only a test compilation may
+            // do: no main compilation here sees it, so the task graph stays acyclic. It is
+            // declared once, since androidHostTest inherits what commonTest resolves.
+            implementation(projects.shared.testing)
             implementation(libs.kotlin.test)
             implementation(libs.ktor.client.mock)
             implementation(libs.kotlinx.coroutines.test)
         }
         getByName("androidHostTest").dependencies {
-            implementation(projects.shared.testing)
             implementation(libs.junit)
             implementation(libs.robolectric)
             implementation(libs.androidx.test.core)

@@ -20,9 +20,16 @@ class FakeApiKeyRepository(
     var saveCount: Int = 0
         private set
 
+    /** How many times [apiKey] has been read, so a test can assert a reader takes one per use. */
+    var readCount: Int = 0
+        private set
+
     override fun hasKeyFlow(): Flow<Boolean> = stored.map { it != null }.distinctUntilChanged()
 
-    override suspend fun apiKey(): String? = stored.value
+    override suspend fun apiKey(): String? {
+        readCount++
+        return stored.value
+    }
 
     override suspend fun save(key: String) {
         saveCount++

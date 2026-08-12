@@ -1,5 +1,6 @@
 package com.shayanaryan.chatbot.shared.chat
 
+import com.shayanaryan.chatbot.shared.apikey.FakeApiKeyRepository
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
@@ -48,7 +49,8 @@ class ClaudeChatEngineCancellationTest {
 
     @Test
     fun `the factory builds an engine`() {
-        val engine = createChatEngine(createChatHttpClient()) { API_KEY }
+        val engine =
+            createChatEngine(createChatHttpClient(), FakeApiKeyRepository(initialKey = API_KEY))
 
         assertIs<ChatEngine>(engine)
     }

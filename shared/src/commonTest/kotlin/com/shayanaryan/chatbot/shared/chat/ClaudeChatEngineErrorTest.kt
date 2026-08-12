@@ -1,5 +1,6 @@
 package com.shayanaryan.chatbot.shared.chat
 
+import com.shayanaryan.chatbot.shared.apikey.FakeApiKeyRepository
 import io.ktor.client.engine.mock.respondError
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
@@ -23,7 +24,6 @@ private const val OVERLOADED_ERROR_FRAME =
     "\n\nevent: error\ndata: " + """{"type":"error","error":{"type":"overloaded_error"}}""" + "\n\n"
 
 private const val UNREACHABLE_HOST_MESSAGE = "unreachable"
-private const val NO_KEY_STORED_MESSAGE = "no key stored"
 private const val STALLED_SOCKET_MESSAGE = "stalled"
 
 class ClaudeChatEngineErrorTest {
@@ -151,11 +151,11 @@ class ClaudeChatEngineErrorTest {
         }
 
     @Test
-    fun `a failing key provider surfaces as unexpected`() =
+    fun `an empty key store surfaces as unexpected`() =
         runTest {
             val engine =
                 testChatEngine(
-                    keyProvider = ApiKeyProvider { error(NO_KEY_STORED_MESSAGE) },
+                    FakeApiKeyRepository(),
                 ) { respondSse(SseFixtures.HAPPY_PATH) }
 
             val events = engine.stream(request).toList()

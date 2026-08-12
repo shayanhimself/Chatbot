@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Chatbot" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Chatbot" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- The window is painted behind Compose, and this theme's Light parent paints it white
+             in both modes. Nothing composes while the gate is undecided, so in dark mode the
+             splash hands over to a white flash before the first frame. The colour is night
+             qualified, so one line covers both schemes. -->
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
+
+    <!-- What the platform draws before the process is ready. installSplashScreen() swaps it for
+         postSplashScreenTheme once the activity takes over. -->
+    <style name="Theme.Chatbot.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Chatbot</item>
+    </style>
 </resources>

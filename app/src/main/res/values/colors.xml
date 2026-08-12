@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirrors ColorPrimitives.Sand98, the light scheme's background. The platform reads this
+         before any Compose theme exists, so the value has to be duplicated here. -->
+    <color name="splash_background">#FBF9F7</color>
+</resources>

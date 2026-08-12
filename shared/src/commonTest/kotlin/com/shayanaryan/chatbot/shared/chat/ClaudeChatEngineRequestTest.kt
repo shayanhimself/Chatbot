@@ -1,5 +1,6 @@
 package com.shayanaryan.chatbot.shared.chat
 
+import com.shayanaryan.chatbot.shared.apikey.FakeApiKeyRepository
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
 import io.ktor.client.request.HttpRequestData
 import io.ktor.http.content.TextContent
@@ -22,8 +23,8 @@ private const val ASSISTANT_MESSAGE = "hello"
 private const val SYSTEM_PROMPT = "be brief"
 private const val MAX_TOKENS = 512
 
-// The provider hands out a different key per call, so the last one names the call it came from.
-private const val ROTATING_KEY_PREFIX = "key-"
+// The store holds a different key per call, so the last one names the call it came from.
+private const val FIRST_ROTATED_KEY = "key-1"
 private const val SECOND_ROTATED_KEY = "key-2"
 
 // The wire contract: the endpoint, the headers it requires, and the field names of its body.
@@ -54,13 +55,13 @@ private const val TEXT_BLOCK_TYPE = "text"
 private const val THINKING_DISABLED = "disabled"
 
 private const val MESSAGE_COUNT = 2
-private const val KEY_PROVIDER_CALLS = 2
+private const val KEY_READS = 2
 
 class ClaudeChatEngineRequestTest {
     private var captured: HttpRequestData? = null
 
     private fun engine(apiKey: String = API_KEY) =
-        testChatEngine(apiKey) { request ->
+        testChatEngine(FakeApiKeyRepository(initialKey = apiKey)) { request ->
             captured = request
             respondSse(SseFixtures.HAPPY_PATH)
         }
@@ -95,25 +96,20 @@ class ClaudeChatEngineRequestTest {
         }
 
     @Test
-    fun `asks the key provider for a fresh key on every call`() =
+    fun `reads a fresh key from the store on every call`() =
         runTest {
-            var calls = 0
-            val counting =
-                testChatEngine(
-                    keyProvider =
-                        ApiKeyProvider {
-                            calls++
-                            "$ROTATING_KEY_PREFIX$calls"
-                        },
-                ) {
+            val repository = FakeApiKeyRepository(initialKey = FIRST_ROTATED_KEY)
+            val rotating =
+                testChatEngine(repository) {
                     captured = it
                     respondSse(SseFixtures.HAPPY_PATH)
                 }
 
-            counting.stream(request).toList()
-            counting.stream(request).toList()
+            rotating.stream(request).toList()
+            repository.save(SECOND_ROTATED_KEY)
+            rotating.stream(request).toList()
 
-            assertEquals(KEY_PROVIDER_CALLS, calls)
+            assertEquals(KEY_READS, repository.readCount)
             assertEquals(SECOND_ROTATED_KEY, captured!!.headers[API_KEY_HEADER])
         }
 

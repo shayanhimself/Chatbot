@@ -1,6 +1,6 @@
 package com.shayanaryan.chatbot.di
 
-import com.shayanaryan.chatbot.shared.chat.ApiKeyProvider
+import com.shayanaryan.chatbot.shared.apikey.ApiKeyRepository
 import com.shayanaryan.chatbot.shared.chat.ApiKeyValidator
 import com.shayanaryan.chatbot.shared.chat.ChatEngine
 import com.shayanaryan.chatbot.shared.chat.ChatHttpClient
@@ -18,7 +18,7 @@ import javax.inject.Singleton
  * engine is assembled here through the module's public factory; `:app` never sees the Ktor
  * client, only the opaque [ChatHttpClient] handle the engine and the validator share.
  *
- * The [ApiKeyProvider] binding is contributed separately by its own implementation module.
+ * The [ApiKeyRepository] binding is contributed separately, by the module that owns key storage.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -31,8 +31,8 @@ object ChatModule {
     @Singleton
     fun provideChatEngine(
         httpClient: ChatHttpClient,
-        keyProvider: ApiKeyProvider,
-    ): ChatEngine = createChatEngine(httpClient, keyProvider)
+        repository: ApiKeyRepository,
+    ): ChatEngine = createChatEngine(httpClient, repository)
 
     @Provides
     @Singleton

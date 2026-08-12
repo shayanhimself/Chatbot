@@ -1,5 +1,6 @@
 package com.shayanaryan.chatbot.shared.chat
 
+import com.shayanaryan.chatbot.shared.apikey.FakeApiKeyRepository
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import java.io.File
@@ -50,7 +51,8 @@ class ClaudeChatEngineIntegrationTest {
                 return@runTest
             }
 
-            val engine = createChatEngine(createChatHttpClient()) { key }
+            val engine =
+                createChatEngine(createChatHttpClient(), FakeApiKeyRepository(initialKey = key))
             val request =
                 ChatRequest(
                     messages =
@@ -85,7 +87,11 @@ class ClaudeChatEngineIntegrationTest {
                 return@runTest
             }
 
-            val engine = createChatEngine(createChatHttpClient()) { REJECTED_KEY }
+            val engine =
+                createChatEngine(
+                    createChatHttpClient(),
+                    FakeApiKeyRepository(initialKey = REJECTED_KEY),
+                )
             val request =
                 ChatRequest(
                     messages =

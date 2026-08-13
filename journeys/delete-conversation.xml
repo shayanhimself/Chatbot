@@ -1,4 +1,4 @@
-<journey name="Delete conversation: confirm, then it is gone">
+<journey name="Delete conversation: confirm, then it is gone" state="onboarded" device="phone">
    <description>
       Deleting is destructive and local-only, so it asks first and then the
       conversation is gone from the list.

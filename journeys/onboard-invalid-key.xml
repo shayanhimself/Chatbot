@@ -1,0 +1,19 @@
+<journey name="Onboard invalid key: a rejected key keeps the user on the screen" state="fresh-install" device="phone">
+   <description>
+      A key the API turns away is reported as rejected and nothing is stored, so the
+      user stays on onboarding and can correct it.
+   </description>
+   <actions>
+     <action>Open the "buddy" app</action>
+     <action>Verify the onboarding screen is displayed with the heading "chat with me, on your terms"</action>
+     <action>Verify the button labelled "Enter your key" is disabled</action>
+     <action>Type "sk-ant-api03-definitely-not-a-real-key" into the "Anthropic API key" field</action>
+     <action>Verify the button now reads "Validate &amp; continue" and is enabled</action>
+     <action>Tap "Validate &amp; continue"</action>
+     <action>Wait until an error about the key being rejected is displayed under the field</action>
+     <action>Verify the button now reads "Try again"</action>
+     <action>Verify the onboarding screen is still displayed and the conversation list is not</action>
+     <action>Type one more character into the "Anthropic API key" field</action>
+     <action>Verify the error message is no longer displayed</action>
+   </actions>
+</journey>

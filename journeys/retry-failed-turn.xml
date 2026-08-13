@@ -1,4 +1,4 @@
-<journey name="Retry failed turn: run it again after reconnecting">
+<journey name="Retry failed turn: run it again after reconnecting" state="onboarded" device="phone">
    <description>
       A turn that cannot reach the API shows an inline error with Retry rather
       than losing the message. Reconnecting and retrying produces the reply.

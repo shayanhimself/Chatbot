@@ -1,4 +1,4 @@
-<journey name="Switch model: the picker persists per conversation">
+<journey name="Switch model: the picker persists per conversation" state="onboarded" device="phone">
    <description>
       The model is a property of the conversation, so switching it survives
       leaving the screen and coming back.

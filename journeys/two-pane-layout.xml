@@ -1,4 +1,4 @@
-<journey name="Two-pane layout: list and chat side by side on a tablet">
+<journey name="Two-pane layout: list and chat side by side on a tablet" state="onboarded" device="tablet">
    <description>
       On an expanded window the conversation list and the chat share the screen,
       the open conversation is highlighted in the list, and the chat pane has no

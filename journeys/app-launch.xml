@@ -1,4 +1,4 @@
-<journey name="App launch: the list is the home screen">
+<journey name="App launch: the list is the home screen" state="onboarded" device="phone">
    <description>
       Walking-skeleton acceptance: the freshly installed app launches to the
       conversation list without crashing.

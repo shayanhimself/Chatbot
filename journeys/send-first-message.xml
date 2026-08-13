@@ -1,4 +1,4 @@
-<journey name="Send first message: a reply streams in">
+<journey name="Send first message: a reply streams in" state="onboarded" device="phone">
    <description>
       A new user starts a conversation, sends a message, and watches the reply
       stream in. The conversation then appears in the list with its snippet.

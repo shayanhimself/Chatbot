@@ -1,4 +1,4 @@
-<journey name="Resume conversation: history survives a relaunch">
+<journey name="Resume conversation: history survives a relaunch" state="onboarded" device="phone">
    <description>
       Chat history is stored on device, so killing the app and reopening a
       conversation shows every message that was there before.

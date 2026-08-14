@@ -12,6 +12,6 @@
      <action>Wait until a reply bubble appears containing "Hello"</action>
      <action>Force stop the app</action>
      <action>Open the "buddy" app again</action>
-     <action>Verify the conversation list is displayed and onboarding is not</action>
+     <action>Verify the chat list is displayed and onboarding is not</action>
    </actions>
 </journey>

@@ -36,7 +36,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.feature.onboarding.component.BrandMark
 import com.shayanaryan.chatbot.feature.onboarding.component.KeyField
-import com.shayanaryan.chatbot.shared.chat.ChatError
+import com.shayanaryan.chatbot.shared.ApiError
 
 /** The shortest input worth spending a network round trip on, per the design. */
 internal const val MIN_KEY_LENGTH = 12
@@ -160,7 +160,7 @@ fun OnboardingScreen(
 /** One button, four labels: the label says what the next tap will do. */
 private fun submitLabel(
     validating: Boolean,
-    failure: ChatError?,
+    failure: ApiError?,
     submittable: Boolean,
 ): Int =
     when {
@@ -219,7 +219,7 @@ private fun OnboardingValidatingPreview() {
 private fun OnboardingRejectedPreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Failed(ChatError.Authentication),
+            uiState = OnboardingUiState.Failed(ApiError.Authentication),
             key = PREVIEW_API_KEY,
         )
     }
@@ -230,7 +230,7 @@ private fun OnboardingRejectedPreview() {
 private fun OnboardingOfflinePreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Failed(ChatError.Network),
+            uiState = OnboardingUiState.Failed(ApiError.Network),
             key = PREVIEW_API_KEY,
         )
     }

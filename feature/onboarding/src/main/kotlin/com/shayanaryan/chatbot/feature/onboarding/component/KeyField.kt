@@ -19,7 +19,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.feature.onboarding.PREVIEW_API_KEY
 import com.shayanaryan.chatbot.feature.onboarding.R
-import com.shayanaryan.chatbot.shared.chat.ChatError
+import com.shayanaryan.chatbot.shared.ApiError
 
 /**
  * The API key input field: a masked, monospaced field whose trailing slot doubles as the reveal
@@ -37,7 +37,7 @@ internal fun KeyField(
     key: String,
     revealed: Boolean,
     validating: Boolean,
-    failure: ChatError?,
+    failure: ApiError?,
     onKeyChange: (String) -> Unit,
     onToggleReveal: () -> Unit,
     onSubmit: () -> Unit,
@@ -90,7 +90,7 @@ private fun PreviewKeyField(
     key: String = "",
     revealed: Boolean = false,
     validating: Boolean = false,
-    failure: ChatError? = null,
+    failure: ApiError? = null,
 ) {
     ChatbotTheme(darkTheme = true) {
         Surface {
@@ -145,7 +145,7 @@ private fun KeyFieldValidatingPreview() {
 private fun KeyFieldRejectedPreview() {
     PreviewKeyField(
         key = PREVIEW_API_KEY,
-        failure = ChatError.Authentication,
+        failure = ApiError.Authentication,
     )
 }
 
@@ -154,6 +154,6 @@ private fun KeyFieldRejectedPreview() {
 private fun KeyFieldOfflinePreview() {
     PreviewKeyField(
         key = PREVIEW_API_KEY,
-        failure = ChatError.Network,
+        failure = ApiError.Network,
     )
 }

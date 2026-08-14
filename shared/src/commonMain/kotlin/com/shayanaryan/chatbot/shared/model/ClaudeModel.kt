@@ -1,7 +1,7 @@
 package com.shayanaryan.chatbot.shared.model
 
 /**
- * A Claude model the user can pick for a conversation.
+ * A Claude model the user can pick for a chat.
  *
  * @param id the wire identifier sent as the API's `model` field.
  * @param displayName the name shown to the user. It lives here rather than in a feature's

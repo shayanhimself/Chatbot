@@ -1,6 +1,6 @@
-<journey name="Switch model: the picker persists per conversation" state="onboarded" device="phone">
+<journey name="Switch model: the picker persists per chat" state="onboarded" device="phone">
    <description>
-      The model is a property of the conversation, so switching it survives
+      The model is a property of the chat, so switching it survives
       leaving the screen and coming back.
    </description>
    <actions>
@@ -13,7 +13,7 @@
      <action>Tap "Haiku 4.5"</action>
      <action>Verify the chip now reads "Haiku 4.5"</action>
      <action>Tap the back arrow</action>
-     <action>Tap that conversation in the list</action>
+     <action>Tap that chat in the list</action>
      <action>Verify the chip still reads "Haiku 4.5"</action>
    </actions>
 </journey>

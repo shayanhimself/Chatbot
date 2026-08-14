@@ -1,0 +1,17 @@
+<journey name="Delete chat: confirm, then it is gone" state="onboarded" device="phone">
+   <description>
+      Deleting is destructive and local-only, so it asks first and then the
+      chat is gone from the list.
+   </description>
+   <actions>
+     <action>Open the "buddy" app</action>
+     <action>Tap the "new chat" button</action>
+     <action>Type "Reply with exactly: Hello" into the message field and tap send</action>
+     <action>Wait until a reply bubble appears containing "Hello"</action>
+     <action>Tap the "More" button in the top bar</action>
+     <action>Tap "Delete chat"</action>
+     <action>Verify a dialog titled "Delete this chat?" is displayed</action>
+     <action>Tap "Delete"</action>
+     <action>Verify the chat list no longer contains that chat</action>
+   </actions>
+</journey>

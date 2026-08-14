@@ -1,6 +1,6 @@
 # Chatbot — Agentic AI Chat for Android
 
-Native Android chatbot, powered by Claude through the user's own Anthropic API key (BYOK) — no backend server and no project-owned key. The assistant is agentic: within a conversation it acts on the user's behalf via tool calls, and two capabilities are core to the product — setting **reminders** that later notify the user and resume the conversation, and keeping **memory** of user-approved facts across conversations. All user data (conversations, reminders, memories, key) lives on-device. Built KMP-first (shared Kotlin core, native Compose UI) so an iOS target can be added later without restructuring.
+Native Android chatbot, powered by Claude through the user's own Anthropic API key (BYOK) — no backend server and no project-owned key. The assistant is agentic: within a chat it acts on the user's behalf via tool calls, and two capabilities are core to the product — setting **reminders** that later notify the user and resume the chat, and keeping **memory** of user-approved facts across chats. All user data (chats, reminders, memories, key) lives on-device. Built KMP-first (shared Kotlin core, native Compose UI) so an iOS target can be added later without restructuring.
 
 Product: `specs/000-product-brief.md`. Canonical stack: `specs/001-tech-stack.md`. Specifics below defer to those.
 
@@ -15,6 +15,9 @@ We use **`android` CLI** for project creation, SDK/emulator management, running 
 ## Code style
 
 - **"buddy" is display-name only** — never in code identifiers, packages, files, or functions. Use the neutral project name (`Chatbot` / domain terms) in code; "buddy" appears solely in user-facing copy.
+- **`chat` is the stored thread; `Claude` is the wire.** A thread the user sees and the app persists is a chat: `Chat`, `ChatEntity`, `ChatDao`, `ChatRepository`, `chatId`, and the `chats` table. The stateless Messages API client is Claude's: `ClaudeEngine`, `ClaudeMessageRequest`, `ClaudeMessage`, `ClaudeStreamEvent`. A payload carries no identity; a record does. "Conversation" is not a word this codebase uses, in code or in prose.
+- **Types both sides share live in the `:shared` root package**, owned by neither: `ApiError`, `ContentBlock`, `Role`, `textContent()`. A type the record package, the wire package, and the UI all consume belongs to none of them, and putting it in one forces the others to import that one's vocabulary.
+- **Chat UI is named for the pane it is**: `ChatList*` for the list of chats, `ChatDetail*` for the single chat, in `:feature:chat`'s `list` and `detail` packages.
 - **`const val` names use `SCREAMING_SNAKE_CASE`**. Non-const `val`s follow normal `camelCase`.
 - **No magic numbers.** A literal whose value carries meaning gets a named `const val`, so the name explains it instead of a comment. Exempt: `0` and `1`, counts and sizes a test asserts on (`assertEquals(2, items.size)`), and numbers that are already the domain's own vocabulary (an HTTP status, a `@Preview` height).
 - **No trailing (end-of-line) comments.** Put the comment on its own line *above* the code it describes. The one exception is where a language forces inline syntax.

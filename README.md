@@ -5,20 +5,20 @@ A native Android chatbot powered by Claude, using your own Anthropic API key.
 
 ## Product
 
-You pick the Claude model per conversation.
+You pick the Claude model per chat.
 
 As an offline-first app, everything stays on your device.
 
-Beyond chat, the assistant acts on your behalf within a conversation:
+Beyond answering, the assistant acts on your behalf within a chat:
 
 - **Proactive reminders**: ask it to remind you of something, *"Check in with me on Monday mornings about my weekly goals"*. No other chatbot offers this feature so far.
-- **Memory**: it remembers facts you approve across conversations, shaping future chats. You can review and delete them anytime.
+- **Memory**: it remembers facts you approve across chats, shaping later ones. You can review and delete them anytime.
 
-No backend server and no project-owned key: conversations, reminders, memories and the key all live on-device.
+No backend server and no project-owned key: chats, reminders, memories and the key all live on-device.
 
 | Bring your own key |                         Chat list                         |                         Chat                          |
 |:-:|:---------------------------------------------------------:|:-----------------------------------------------------:|
-| <img src="docs/images/onboarding.png" width="240"> | <img src="docs/images/conversation-list.png" width="240"> | <img src="docs/images/chat-reminder.png" width="240"> |
+| <img src="docs/images/onboarding.png" width="240"> | <img src="docs/images/chat-list.png" width="240"> | <img src="docs/images/chat-reminder.png" width="240"> |
 | **Reminders** |                        **Memory**                         |                     **Settings**                      |
 | <img src="docs/images/reminders.png" width="240"> |      <img src="docs/images/memory.png" width="240">       |   <img src="docs/images/settings.png" width="240">    |
 

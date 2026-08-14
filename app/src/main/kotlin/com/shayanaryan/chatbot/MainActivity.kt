@@ -18,11 +18,11 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     /**
-     * The conversation a launch intent asked for, cleared once the back stack has been seeded.
+     * The chat a launch intent asked for, cleared once the back stack has been seeded.
      * Snapshot state rather than a plain field because `onNewIntent` arrives from outside the
      * composition and has to recompose it.
      */
-    private var deepLinkConversationId by mutableStateOf<Long?>(null)
+    private var deepLinkChatId by mutableStateOf<Long?>(null)
 
     private val viewModel: MainViewModel by viewModels()
 
@@ -36,9 +36,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         // Only a fresh launch seeds. A recreated activity restores its own back stack, and its
         // intent still carries the extra it launched with, so reading that extra again would drag
-        // the user back into the notification's conversation on every rotation.
+        // the user back into the notification's chat on every rotation.
         if (savedInstanceState == null) {
-            deepLinkConversationId = intent.conversationIdExtra()
+            deepLinkChatId = intent.chatIdExtra()
         }
         setContent {
             ChatbotTheme {
@@ -48,8 +48,8 @@ class MainActivity : ComponentActivity() {
                 (state as? MainUiState.Decided)?.let { decided ->
                     ChatbotApp(
                         hasApiKey = decided.hasApiKey,
-                        deepLinkConversationId = deepLinkConversationId,
-                        onDeepLinkHandled = { deepLinkConversationId = null },
+                        deepLinkChatId = deepLinkChatId,
+                        onDeepLinkHandled = { deepLinkChatId = null },
                     )
                 }
             }
@@ -60,21 +60,21 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         // Without this, getIntent() keeps returning the intent the activity launched with.
         setIntent(intent)
-        deepLinkConversationId = intent.conversationIdExtra()
+        deepLinkChatId = intent.chatIdExtra()
     }
 
     companion object {
-        /** Set by a reminder notification to reopen the conversation that scheduled it. */
-        const val EXTRA_CONVERSATION_ID: String = "com.shayanaryan.chatbot.extra.CONVERSATION_ID"
+        /** Set by a reminder notification to reopen the chat that scheduled it. */
+        const val EXTRA_CHAT_ID: String = "com.shayanaryan.chatbot.extra.CHAT_ID"
     }
 }
 
 /**
- * The id is only ever a database key, and a conversation that does not exist resolves to a new chat
+ * The id is only ever a database key, and a chat that does not exist resolves to a new chat
  * rather than an error, so an intent from outside the app cannot do anything worse than open an
  * empty screen.
  */
-private fun Intent.conversationIdExtra(): Long? =
-    getLongExtra(MainActivity.EXTRA_CONVERSATION_ID, NO_CONVERSATION_ID).takeIf { it > 0 }
+private fun Intent.chatIdExtra(): Long? =
+    getLongExtra(MainActivity.EXTRA_CHAT_ID, NO_CHAT_ID).takeIf { it > 0 }
 
-private const val NO_CONVERSATION_ID: Long = -1L
+private const val NO_CHAT_ID: Long = -1L

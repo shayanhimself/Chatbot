@@ -1,6 +1,6 @@
 package com.shayanaryan.chatbot.feature.onboarding
 
-import com.shayanaryan.chatbot.shared.chat.ChatError
+import com.shayanaryan.chatbot.shared.ApiError
 
 /**
  * Everything the OnboardingViewModel decides about key entry.
@@ -15,10 +15,10 @@ sealed interface OnboardingUiState {
     data object Validating : OnboardingUiState
 
     /**
-     * @property error why the attempt failed. Only [ChatError.Authentication] says the key itself
+     * @property error why the attempt failed. Only [ApiError.Authentication] says the key itself
      *   is wrong; every other case leaves its validity unknown and stays retryable.
      */
     data class Failed(
-        val error: ChatError,
+        val error: ApiError,
     ) : OnboardingUiState
 }

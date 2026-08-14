@@ -42,7 +42,7 @@ LOCAL_PROPERTIES = REPO / "local.properties"
 DATA_DIR = f"/data/user/0/{PACKAGE}"
 # Every Room artifact, including the -wal and -shm sidecars: leaving those
 # behind restores rows the .db alone no longer has.
-CONVERSATION_FILES = f"{DATA_DIR}/databases/chatbot.db*"
+CHAT_FILES = f"{DATA_DIR}/databases/chatbot.db*"
 KEY_STORE = f"{DATA_DIR}/files/datastore/api_key.preferences_pb"
 
 API_KEY_ENVIRONMENT_VARIABLE = "ANTHROPIC_API_KEY"
@@ -147,14 +147,14 @@ containing one entry per action. Keep any commentary outside that object.
 PROMPT_STATE = {
     STATE_FRESH_INSTALL: "Its data has been cleared, so no API key is stored.",
     STATE_ONBOARDED: (
-        "Its conversation history has been erased, but the API key it was onboarded "
-        "with is still stored, so it opens on the conversation list."
+        "Its chat history has been erased, but the API key it was onboarded "
+        "with is still stored, so it opens on the chat list."
     ),
 }
 
 SEED_PROMPT = """\
 Onboard an Android app so that later journeys, which assume a key is already
-stored, open on the conversation list rather than the onboarding screen.
+stored, open on the chat list rather than the onboarding screen.
 
 The app package is {package}. It is installed but NOT running, and its data has
 been cleared, so it opens on the onboarding screen.
@@ -392,9 +392,9 @@ def has_key(serial: str) -> bool:
     return run_as(serial, f"test -f {KEY_STORE}", check=False).returncode == 0
 
 
-def clear_conversations(serial: str) -> None:
+def clear_chats(serial: str) -> None:
     """Erase chat history, leaving the stored key in place."""
-    run_as(serial, f"rm -f {CONVERSATION_FILES}")
+    run_as(serial, f"rm -f {CHAT_FILES}")
 
 
 def seed_key(serial: str, artifacts: Path, env: dict[str, str]) -> bool:
@@ -481,7 +481,7 @@ def evaluate(journey: Path, serial: str, env: dict[str, str]) -> bool:
         # is restored here rather than once for the whole run.
         if not has_key(serial) and not seed_key(serial, artifacts, env):
             return False
-        clear_conversations(serial)
+        clear_chats(serial)
 
     prompt = PROMPT.format(
         rules=JOURNEY_REF.read_text(),
@@ -620,7 +620,7 @@ def main() -> int:
         print(
             f"ERROR: no developer key. Set {API_KEY_ENVIRONMENT_VARIABLE}, or add "
             f"{API_KEY_PROPERTY}=<key> to local.properties.\n"
-            "Journeys that open on the conversation list cannot run without one.",
+            "Journeys that open on the chat list cannot run without one.",
             file=sys.stderr,
         )
         return 1

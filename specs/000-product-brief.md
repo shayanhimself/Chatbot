@@ -6,18 +6,18 @@ Status: draft (refine via superpowers brainstorming skill before writing feature
 
 An Android chatbot app. The user chats with Claude about anything, using their own Anthropic API key (BYOK). Beyond chat, the app is agentic on-device with no backend server:
 
-- **Reminders:** the AI sets reminders mid-conversation (tool call). At fire time the app notifies the user with a freshly composed message; tapping resumes the conversation.
-- **Memory:** the AI remembers user-approved facts across conversations; the user can review and delete them.
+- **Reminders:** the AI sets reminders mid-chat (tool call). At fire time the app notifies the user with a freshly composed message; tapping resumes the chat.
+- **Memory:** the AI remembers user-approved facts across chats; the user can review and delete them.
 
 **Engine:** Claude via the Anthropic API ( Sonnet 5 default; Haiku 4.5 / Opus 4.8 selectable), user-supplied key only.
 
 ## Core user stories (to be expanded into numbered feature specs)
 
 1. As a new user, I add my Anthropic API key on first launch (validated, stored encrypted) and then chat immediately, with streamed responses.
-2. As a user, my conversations persist locally (Room) and I can browse/resume/delete them.
-3. As a user, I can switch the Claude model per-conversation.
-4. As a user, I say "remind me …" mid-conversation; the AI sets a reminder via tool call and confirms it. At the scheduled time I get a notification with a message composed for that moment; tapping it reopens/continues that conversation.
-5. As a user, I can ask the AI to remember things about me; those facts shape all future conversations. I can view and delete memories in settings.
+2. As a user, my chats persist locally (Room) and I can browse/resume/delete them.
+3. As a user, I can switch the Claude model per-chat.
+4. As a user, I say "remind me …" mid-chat; the AI sets a reminder via tool call and confirms it. At the scheduled time I get a notification with a message composed for that moment; tapping it reopens/continues that chat.
+5. As a user, I can ask the AI to remember things about me; those facts shape all future chats. I can view and delete memories in settings.
 6. As a user, my reminders fire on time (exact-alarm permission flow), survive device reboot, and still fire with fallback text when the device is offline.
 
 ## Constraints

@@ -35,7 +35,7 @@ UI layer (:feature:*)  →  [domain layer (optional)]  →  data layer (:shared)
 - **Repositories are the sole entry to the data layer.** ViewModels and use cases
   never touch a DAO, DataStore, or the Ktor client directly.
 - **Single source of truth (SSOT):** Room is the SSOT for all persisted data
-  (conversations, reminders, memories). The app is local-only — no remote sync,
+  (chats, reminders, memories). The app is local-only — no remote sync,
   no conflict resolution. One exception: the in-flight streaming assistant message
   is in-memory UI state until `message_stop`, then persisted once (never per-token
   DB writes).
@@ -51,12 +51,12 @@ inside, not sub-modules.
 
 | Module | Contents |
 |---|---|
-| `:shared` (KMP) | **commonMain:** `ChatEngine`, Ktor client + SSE parsing, agentic tool-use loop + tool definitions, repositories, Room (entities, DAOs, database), domain models and logic. **androidMain:** Ktor OkHttp engine, Keystore/Tink crypto `actual`s |
+| `:shared` (KMP) | **commonMain:** `claude` (`ClaudeEngine`, Ktor client + SSE parsing, agentic tool-use loop + tool definitions), `chat` (repositories, Room entities, DAOs), `database`, `apikey`, `model`, and the root package's shared types. **androidMain:** Ktor OkHttp engine, Keystore/Tink crypto `actual`s |
 | `:core:ui` | Theme, design system, shared composables, generic strings (OK/Cancel/retry) |
 | `:shared:testing` (KMP) | Test helpers for `:shared`: the `FakeX` repositories, usable from any target's tests |
 | `:core:testing` | Android-side test helpers every module's tests reuse |
 | `:feature:onboarding` | First-launch flow: API key entry + validation, then straight into chat |
-| `:feature:conversation` | Chat screen, ChatViewModel, streaming UI, in-conversation model picker |
+| `:feature:chat` | Chat screen, ChatDetailViewModel, streaming UI, in-chat model picker |
 | `:feature:settings` | API key management (view/update/remove), memory management UI, permission flows |
 | `:feature:reminders` | Reminders list UI |
 | `:app` | MainActivity, Nav 3 graph, Hilt root, tool executor implementations, BroadcastReceivers, WorkManager workers |
@@ -79,7 +79,7 @@ Dependency rules (hard):
   injection; Hilt modules in `:app`/`:feature:*` construct and provide them.
 - **No localizable copy in `:shared`.** The test is whether a translator would
   ever touch the string. Prose does — expose typed errors
-  (e.g. `ChatError.RateLimited`) and let feature ViewModels map them to string
+  (e.g. `ApiError.RateLimited`) and let feature ViewModels map them to string
   resources. Untranslatable identifiers do not, and stay on the domain model
   (`ClaudeModel.displayName = "Sonnet 5"` alongside `id = "claude-sonnet-5"`) so
   every consumer reads one source rather than duplicating a table per feature.
@@ -108,9 +108,15 @@ Dependency rules (hard):
 | Test double | `FakeX` | `FakeReminderRepository` |
 | Data source | `XLocalDataSource` / `XRemoteDataSource` | `MemoryLocalDataSource` |
 | Use case | `VerbNounUseCase`, `operator fun invoke` | `ComposeReminderMessageUseCase` |
-| Screen state | `ScreenUiState` | `ChatUiState` |
+| Screen state | `ScreenUiState` | `ChatDetailUiState` |
 | Flow accessor | `getXFlow()` | `getRemindersFlow()` |
-| Mapper | extension `X.toY()`, in `YMapper.kt` | `List<Message>.toChatItems()` |
+| Mapper | extension `X.toY()`, in `YMapper.kt` | `List<Message>.toChatDetailItems()` |
+
+**Domain vocabulary.** `chat` names the stored thread (`Chat`, `ChatRepository`, `chatId`,
+the `chats` table) and lives in `:shared`'s `chat` package. `Claude` names the stateless
+Messages API client (`ClaudeEngine`, `ClaudeMessageRequest`) in `:shared`'s `claude` package —
+the only provider-coupled package in the project. Types all three of record, wire and UI consume
+(`ApiError`, `ContentBlock`, `Role`) sit in the `:shared` root, owned by neither package.
 
 **Product name vs. identifiers.** "buddy" is the **display name only** — launcher label,
 wordmark, and user-facing copy. Code identifiers — Gradle projects, packages, modules,

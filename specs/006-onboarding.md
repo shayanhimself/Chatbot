@@ -40,24 +40,24 @@ ApiKeyValidator
 
 KeyValidationResult
   Valid
-  Failed(error: ChatError)
+  Failed(error: ApiError)
 ```
 
-`GET https://api.anthropic.com/v1/models?limit=1`, with the `x-api-key` and `anthropic-version` headers every request already sends. The endpoint authenticates, consumes no tokens, runs no inference, and streams nothing, so validation costs the user nothing and needs none of the SSE machinery. `ChatEngine` is untouched and stays stream-only; the validator shares the existing Ktor client.
+`GET https://api.anthropic.com/v1/models?limit=1`, with the `x-api-key` and `anthropic-version` headers every request already sends. The endpoint authenticates, consumes no tokens, runs no inference, and streams nothing, so validation costs the user nothing and needs none of the SSE machinery. `ClaudeEngine` is untouched and stays stream-only; the validator shares the existing Ktor client.
 
-Failures are reported as `ChatError` rather than a second error vocabulary, so the status mapping stays the only one in the app. That mapping, and the version header and key header constants beside it, are file-private to the engine today and move to an internal file both callers share.
+Failures are reported as `ApiError` rather than a second error vocabulary, so the status mapping stays the only one in the app. That mapping, and the version header and key header constants beside it, are file-private to the engine today and move to an internal file both callers share.
 
 **Only 401 and 403 mean the key itself is wrong.** Every other outcome (network failure, timeout, rate limiting, server error) is a retryable failure that leaves the key's validity unknown, and the screen says so. A 429 in particular may be throttling applied before authentication, and telling a user their working key is invalid is the one mistake this screen cannot afford.
 
 ## Screen
 
-`:feature:onboarding` gains Hilt, KSP, the lifecycle-compose artifacts, and the screenshot plugin, matching what 005 gave `:feature:conversation`. It ships the `OnboardingRoute` / `OnboardingScreen` stateful-stateless pair for the same reasons.
+`:feature:onboarding` gains Hilt, KSP, the lifecycle-compose artifacts, and the screenshot plugin, matching what 005 gave `:feature:chat`. It ships the `OnboardingRoute` / `OnboardingScreen` stateful-stateless pair for the same reasons.
 
 ```
 sealed interface OnboardingUiState {
   data object Idle : OnboardingUiState
   data object Validating : OnboardingUiState
-  data class Failed(val error: ChatError) : OnboardingUiState
+  data class Failed(val error: ApiError) : OnboardingUiState
 }
 ```
 
@@ -118,18 +118,18 @@ The gate is the third rule that rewrites the back stack, joining the deep-link s
 
 ```
 ChatbotNavigator(backStack, hasApiKeyAtStart)
-  fun openConversation(id: Long)
+  fun openChat(id: Long)
   fun openNewChat()
   fun back()
-  fun openConversationFromDeepLink(id: Long)
+  fun openChatFromDeepLink(id: Long)
   fun resetForApiKeyState(hasApiKey: Boolean)
 ```
 
 `rememberNavBackStack` still creates the stack, since that is what save and restore hang from, and the navigator is remembered around it. It is the only thing that mutates it; `ChatbotNavDisplay` reads it to render.
 
-This absorbs navigation logic that is currently inline. Opening a conversation replaces the top entry when a chat is already open and pushes otherwise, so a different conversation gets a different ViewModel; that rule becomes one named function instead of a conditional with a comment. Going back has two call sites today, written twice as the same expression, and becomes one method.
+This absorbs navigation logic that is currently inline. Opening a chat replaces the top entry when a chat is already open and pushes otherwise, so a different chat gets a different ViewModel; that rule becomes one named function instead of a conditional with a comment. Going back has two call sites today, written twice as the same expression, and becomes one method.
 
-The two ways to reach a conversation differ in what they may assume. `openConversation` runs from the list, so a list-rooted stack at most one chat deep is a given and adjusting the top entry is enough. `openConversationFromDeepLink` serves an intent from outside the app, arriving against a stack it knows nothing about, so it discards what is there and builds the two entries a notification should land on. Both produce the same stack from any arrangement that exists today; they part company as soon as a third kind of destination does.
+The two ways to reach a chat differ in what they may assume. `openChat` runs from the list, so a list-rooted stack at most one chat deep is a given and adjusting the top entry is enough. `openChatFromDeepLink` serves an intent from outside the app, arriving against a stack it knows nothing about, so it discards what is there and builds the two entries a notification should land on. Both produce the same stack from any arrangement that exists today; they part company as soon as a third kind of destination does.
 
 None of this changes the feature contract. Features still receive lambdas and know nothing about navigation, and the navigator is internal to `:app`.
 
@@ -139,7 +139,7 @@ None of this changes the feature contract. Features still receive lambdas and kn
 
 `MainActivity` composes `ChatbotApp` only once the state is decided, so the back stack is seeded correctly on first composition rather than seeded wrong and rewritten. `ChatbotApp` takes the resolved flag as a parameter and stays stateless, matching the split 005 established.
 
-The flag decides both where a launch lands and what a change rewrites the stack to, and the two are not the same stack. A launch without a key starts on `[OnboardingKey]`; a launch with one starts on the conversation list, which is where every existing journey expects to open.
+The flag decides both where a launch lands and what a change rewrites the stack to, and the two are not the same stack. A launch without a key starts on `[OnboardingKey]`; a launch with one starts on the chat list, which is where every existing journey expects to open.
 
 `resetForApiKeyState` picks between the two stacks, and rewrites only when the flag differs from the last value it applied, which it is seeded with at construction. That comparison is not an edge case: the effect driving it runs on entering composition, against a navigator built in the same composition from the same value, so equality is the ordinary case on every launch and a genuine change is the rare one. Seeding is already done by the stack's initial value, and the guard is what stops the effect doing it a second time. Because the navigator is remembered rather than saved, activity recreation and process death rebuild it against the flag as it stands at that moment, so a restore reports no transition and leaves the restored stack alone. Without it, a restore would discard the user's position and drop them into a new chat.
 
@@ -151,7 +151,7 @@ The onboarding entry carries no list-detail metadata, so it renders full-screen 
 
 The vendored `navigation-3` skill carries a conditional-navigation recipe whose navigator intercepts every navigation call, against destinations that each declare whether they require a login. `ChatbotNavigator` is a vocabulary of operations, not that policy layer, and a review comparing this spec against that skill should expect the difference.
 
-The recipe solves a partial gate: most of the app is open, one destination is restricted, and login is a detour the user is redirected into and then returned from. This app is all-or-nothing, since every screen either lists conversations or talks to Claude. Every destination would declare the same value, the field carrying the interrupted destination would never hold anything but the app's normal start, and the check would run on every navigation call in the app to evaluate a condition that is false only at first launch and after a key removal. It would also oblige every future feature that adds a destination to route through it.
+The recipe solves a partial gate: most of the app is open, one destination is restricted, and login is a detour the user is redirected into and then returned from. This app is all-or-nothing, since every screen either lists chats or talks to Claude. Every destination would declare the same value, the field carrying the interrupted destination would never hold anything but the app's normal start, and the check would run on every navigation call in the app to evaluate a condition that is false only at first launch and after a key removal. It would also oblige every future feature that adds a destination to route through it.
 
 Deriving the stack from one flag needs none of that.
 
@@ -171,7 +171,7 @@ TDD throughout, fakes not mocks, per the architecture skill.
 - **Cipher**, as an instrumented test on a device. The Android Keystore is a platform service with no JVM implementation, so the one test that proves ciphertext round-trips through a hardware-backed key cannot be a host test. This is what the `KeyCipher` interface buys: the seam that keeps the platform out of every other test is also the seam that isolates the one test that needs it. `:shared` has no device test source set yet and gains one, configured the way its host tests already are.
 - **Validator**, in commonTest against Ktor's `MockEngine`. The rule that only 401 and 403 condemn the key carries the risk here and gets a case per status: 200 valid, 401 and 403 invalid, and 429, 500, 529 and a connection failure all retryable without being invalid.
 - **ViewModel** against a `FakeApiKeyRepository` and a fake validator, both added to `:shared:testing`: the validating state, each failure class, an edit clearing a failure, and a success reaching the repository. The submit threshold is not here, because it is not the ViewModel's to know.
-- **Navigator**, as plain JUnit against a real `NavBackStack`, no Compose involved: the stack each gate value produces, a rewrite on transition, a repeated value leaving the stack untouched, a navigator constructed against the current value treating it as no transition, the replace-or-push rule in both directions, and `openConversationFromDeepLink` flattening a stack that `openConversation` would have appended to. That replace-or-push rule ships untested today and is covered here because the code moves.
+- **Navigator**, as plain JUnit against a real `NavBackStack`, no Compose involved: the stack each gate value produces, a rewrite on transition, a repeated value leaving the stack untouched, a navigator constructed against the current value treating it as no transition, the replace-or-push rule in both directions, and `openChatFromDeepLink` flattening a stack that `openChat` would have appended to. That replace-or-push rule ships untested today and is covered here because the code moves.
 - **Compose UI tests** under Robolectric with the v2 rule, driving `OnboardingScreen` by typing rather than by constructing state: the submit threshold at its boundary in both directions, the reveal toggle, the field disabled while validating, error rendering, and retry.
 - **Screenshots.** `@PreviewTest` previews in dark and light, one per frame the design file carries. The sample key is an obviously fake value in a named constant, per the fixture rule.
 

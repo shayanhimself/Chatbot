@@ -9,7 +9,7 @@ One immutable data class per screen, named `ScreenUiState`, exposed as a single
 `val uiState: StateFlow<ScreenUiState>`.
 
 ```kotlin
-data class ConversationUiState(
+data class ChatUiState(
     val messages: List<MessageUiModel> = emptyList(),
     val streamingText: String? = null,        // in-flight assistant message
     val selectedModel: ClaudeModel = ClaudeModel.Default,
@@ -22,7 +22,7 @@ data class UserMessage(val id: Long, @StringRes val textRes: Int)
 
 - All fields immutable (`val`, immutable collections).
 - Loading = boolean field. Errors = data in state (see events section), not exceptions.
-- Derive, don't duplicate: `val ConversationUiState.canSend get() = !isSending && ...`
+- Derive, don't duplicate: `val ChatUiState.canSend get() = !isSending && ...`
 - Mutually exclusive states may be a sealed interface
   (`Loading` / `Ready` / `Error`) instead of a flag bag — choose per screen.
 - Multiple `StateFlow` properties are acceptable only for genuinely unrelated data
@@ -38,26 +38,26 @@ domain model already fits.
 Flows from the data layer → `combine` → `stateIn`:
 
 ```kotlin
-@HiltViewModel(assistedFactory = ConversationViewModel.Factory::class)
-class ConversationViewModel @AssistedInject constructor(
-    @Assisted private val navKey: ConversationKey,   // typed Nav 3 key = nav args
-    private val conversationRepository: ConversationRepository,
+@HiltViewModel(assistedFactory = ChatViewModel.Factory::class)
+class ChatViewModel @AssistedInject constructor(
+    @Assisted private val navKey: ChatKey,   // typed Nav 3 key = nav args
+    private val chatRepository: ChatRepository,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     @AssistedFactory
     interface Factory {
-        fun create(navKey: ConversationKey): ConversationViewModel
+        fun create(navKey: ChatKey): ChatViewModel
     }
 
     private val localInput = MutableStateFlow(LocalInputState())  // one-shot results
 
-    val uiState: StateFlow<ConversationUiState> = combine(
-        conversationRepository.getMessagesFlow(navKey.conversationId),
+    val uiState: StateFlow<ChatUiState> = combine(
+        chatRepository.getMessagesFlow(navKey.chatId),
         settingsRepository.getSelectedModelFlow(),
         localInput,
     ) { messages, model, local ->
-        ConversationUiState(
+        ChatUiState(
             messages = messages.map { it.toUiModel() },
             selectedModel = model,
             isSending = local.isSending,
@@ -66,7 +66,7 @@ class ConversationViewModel @AssistedInject constructor(
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = ConversationUiState(),
+        initialValue = ChatUiState(),
     )
 }
 ```
@@ -99,7 +99,7 @@ Pattern — event outcome becomes state, UI acknowledges consumption:
 ```kotlin
 // ViewModel
 fun send(text: String) = viewModelScope.launch {
-    try { conversationRepository.send(navKey.conversationId, text) }
+    try { chatRepository.send(navKey.chatId, text) }
     catch (e: ChatException) {
         localInput.update {
             it.copy(userMessages = it.userMessages + UserMessage(newId(), e.toUserMessageRes()))
@@ -142,9 +142,9 @@ Navigation triggers follow the same rule: a state field (`isSignedIn`,
 
 ```kotlin
 @Composable
-fun ConversationScreen(viewModel: ConversationViewModel) {
+fun ChatScreen(viewModel: ChatViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    ConversationScreen(          // stateless overload — previewable, testable
+    ChatScreen(          // stateless overload — previewable, testable
         uiState = uiState,
         onSend = viewModel::send,
         onModelSelected = viewModel::selectModel,

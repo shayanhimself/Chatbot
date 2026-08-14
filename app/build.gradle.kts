@@ -39,7 +39,7 @@ android {
 dependencies {
     implementation(projects.shared)
     implementation(projects.core.ui)
-    implementation(projects.feature.conversation)
+    implementation(projects.feature.chat)
     implementation(projects.feature.onboarding)
     implementation(projects.feature.settings)
     implementation(projects.feature.reminders)

@@ -8,7 +8,7 @@ import javax.inject.Singleton
 import kotlin.time.Clock
 
 /**
- * The app's only source of time. Both the repository's stored timestamps and the conversation
+ * The app's only source of time. Both the repository's stored timestamps and the chat
  * list's relative labels read it, so the two can never disagree about "now".
  */
 @Module

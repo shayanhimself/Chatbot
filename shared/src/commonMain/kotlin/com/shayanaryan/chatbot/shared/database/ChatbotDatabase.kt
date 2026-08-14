@@ -5,24 +5,24 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.room.TypeConverters
-import com.shayanaryan.chatbot.shared.conversation.local.ConversationDao
-import com.shayanaryan.chatbot.shared.conversation.local.ConversationEntity
-import com.shayanaryan.chatbot.shared.conversation.local.MessageDao
-import com.shayanaryan.chatbot.shared.conversation.local.MessageEntity
+import com.shayanaryan.chatbot.shared.chat.local.ChatDao
+import com.shayanaryan.chatbot.shared.chat.local.ChatEntity
+import com.shayanaryan.chatbot.shared.chat.local.MessageDao
+import com.shayanaryan.chatbot.shared.chat.local.MessageEntity
 
 /**
  * The app's only database. Callers outside this module hold it as an opaque handle and hand it to
  * a repository factory; the DAOs it exposes are module-internal.
  */
 @Database(
-    entities = [ConversationEntity::class, MessageEntity::class],
+    entities = [ChatEntity::class, MessageEntity::class],
     version = 1,
     exportSchema = true,
 )
 @TypeConverters(ChatbotConverters::class)
 @ConstructedBy(ChatbotDatabaseConstructor::class)
 abstract class ChatbotDatabase : RoomDatabase() {
-    internal abstract fun conversationDao(): ConversationDao
+    internal abstract fun chatDao(): ChatDao
 
     internal abstract fun messageDao(): MessageDao
 }

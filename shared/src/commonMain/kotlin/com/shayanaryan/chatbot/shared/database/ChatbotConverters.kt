@@ -1,9 +1,9 @@
 package com.shayanaryan.chatbot.shared.database
 
 import androidx.room.TypeConverter
-import com.shayanaryan.chatbot.shared.chat.ContentBlock
-import com.shayanaryan.chatbot.shared.chat.Role
-import com.shayanaryan.chatbot.shared.conversation.MessageStatus
+import com.shayanaryan.chatbot.shared.ContentBlock
+import com.shayanaryan.chatbot.shared.Role
+import com.shayanaryan.chatbot.shared.chat.MessageStatus
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
 
 /**
@@ -16,7 +16,7 @@ internal class ChatbotConverters {
 
     /**
      * Falls back rather than throwing: a model retired from the picker would otherwise make every
-     * conversation row naming it unreadable.
+     * chat row naming it unreadable.
      */
     @TypeConverter
     fun toModel(value: String): ClaudeModel =

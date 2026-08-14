@@ -48,14 +48,14 @@ in-memory state (a `StateFlow` in the engine/repository); persist once on
 
 | Data | Store |
 |---|---|
-| Conversations, messages, reminders, memories | Room (queryable, relational) |
+| Chats, messages, reminders, memories | Room (queryable, relational) |
 | Settings, selected model | DataStore Preferences |
 | Claude API key | Keystore master key → Tink AEAD → ciphertext in DataStore. **EncryptedSharedPreferences is deprecated — never use.** Plaintext key exists only in memory; never logged, never in Room |
 
 ## KMP rules
 
 - commonMain: no `android.*`, no Hilt, no localizable copy. Errors are typed
-  (`sealed class ChatError`), mapped to string resources in feature modules.
+  (`sealed class ApiError`), mapped to string resources in feature modules.
 - Time: `kotlinx-datetime` only.
 - Platform capability needed by shared logic itself (crypto, HTTP engine):
   `expect`/`actual`, actual in `:shared` androidMain.
@@ -75,12 +75,12 @@ in-memory state (a `StateFlow` in the engine/repository); persist once on
   from `:app`) and launch there:
 
 ```kotlin
-class DefaultConversationRepository(
-    private val engine: ChatEngine,
+class DefaultChatRepository(
+    private val engine: ClaudeEngine,
     private val messageDao: MessageDao,
     private val externalScope: CoroutineScope,
 ) {
-    suspend fun send(conversationId: Long, text: String) =
+    suspend fun send(chatId: Long, text: String) =
         externalScope.launch { /* stream, then persist */ }.join()
 }
 ```
@@ -97,7 +97,7 @@ whenever a "current value" exists.
 
 ## Errors
 
-- Suspend functions throw typed exceptions (`ChatException(ChatError.RateLimited)`);
+- Suspend functions throw typed exceptions (`ChatException(ApiError.RateLimited)`);
   never swallow `CancellationException` — always rethrow it.
 - Flows: handle with `.catch` where the repository can degrade gracefully;
   otherwise let the ViewModel catch and fold into UiState.

@@ -25,12 +25,12 @@ First sideload. Streaming chat with the user's own key; no agentic tools yet.
 | Spec | Contents |
 |---|---|
 | `002-design-system.md` | `:core:ui` M3 theme, core components, previews + screenshot tests, companion `design-system` project skill. Grows in later milestones as screens need components |
-| `003-chat-engine.md` | `ChatEngine` interface, Ktor Claude implementation, SSE streaming. Highest technical risk — built first among features. Tool-use handling deferred to 008 |
-| `004-conversation-storage.md` | Room schema and `ConversationRepository`: conversations + messages, and the turn that streams a reply and persists it (reminders/memories tables deferred to their specs) |
-| `005-conversation-shell.md` | Nav 3 back stack, conversation list + chat screen (streaming UI, composer, in-conversation model picker), adaptive two-pane, deep-link readiness. Runs on a dev-key stub from debug build config (developer's own key, debug builds only — the product stays BYOK-only). Adds `:shared:testing` so feature modules can consume `:shared`'s test fakes |
+| `003-claude-engine.md` | `ClaudeEngine` interface, Ktor Claude implementation, SSE streaming. Highest technical risk — built first among features. Tool-use handling deferred to 008 |
+| `004-chat-storage.md` | Room schema and `ChatRepository`: chats + messages, and the turn that streams a reply and persists it (reminders/memories tables deferred to their specs) |
+| `005-chat-shell.md` | Nav 3 back stack, chat list + chat screen (streaming UI, composer, in-chat model picker), adaptive two-pane, deep-link readiness. Runs on a dev-key stub from debug build config (developer's own key, debug builds only — the product stays BYOK-only). Adds `:shared:testing` so feature modules can consume `:shared`'s test fakes |
 | `006-onboarding.md` | First-launch key entry, validation, encrypted storage (Tink + Keystore → DataStore), Nav 3 conditional gate (no key → onboarding). Replaces the dev-key stub |
 
-**Exit gate:** onboard with real key → stream chat → conversations persist/resume/delete; all journeys green. **Sideload checkpoint.**
+**Exit gate:** onboard with real key → stream chat → chats persist/resume/delete; all journeys green. **Sideload checkpoint.**
 
 ### M2 — Tool loop + memory (specs 007–009)
 
@@ -42,13 +42,13 @@ First sideload. Streaming chat with the user's own key; no agentic tools yet.
 
 Memory before reminders: smallest surface that proves the whole tool loop.
 
-**Exit gate:** ask AI to remember → fact persists → shapes new conversations → viewable/deletable in settings; journeys green. **Sideload checkpoint.**
+**Exit gate:** ask AI to remember → fact persists → shapes new chats → viewable/deletable in settings; journeys green. **Sideload checkpoint.**
 
 ### M3 — Reminders (spec 010)
 
 | Spec | Contents |
 |---|---|
-| `010-reminders.md` | `set_reminder` tool, reminders Room table, AlarmManager exact scheduling + permission flow added to settings, receiver → expedited WorkManager → fire-time composition, notification deep link into conversation, reboot re-registration, offline fallback text |
+| `010-reminders.md` | `set_reminder` tool, reminders Room table, AlarmManager exact scheduling + permission flow added to settings, receiver → expedited WorkManager → fire-time composition, notification deep link into chat, reboot re-registration, offline fallback text |
 
 Hardest subsystem, lands on a proven tool loop.
 
@@ -60,7 +60,7 @@ Deferred UI from earlier specs, then the finish work.
 
 | Deferred from | Item |
 |---|---|
-| 005 | Conversation search and its no-results state (mockups 2c, 2d), plus the search action in the list top bar. A `LIKE` query over title and snippet, and a search destination |
+| 005 | Chat search and its no-results state (mockups 2c, 2d), plus the search action in the list top bar. A `LIKE` query over title and snippet, and a search destination |
 | 005 | Unread indicator on list items. The only item here needing a `lastReadAt` column, so a schema bump and migration |
 | 005 | Suggested prompt chips on the new-chat empty state (3a). Copy only, but the reminder-flavored prompt needs 010 to exist first |
 | 005 | Model picker blurbs (3e). Localizable copy, so feature string resources keyed by `ClaudeModel`, alongside the name already on the model |

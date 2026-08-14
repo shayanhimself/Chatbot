@@ -1,8 +1,8 @@
 package com.shayanaryan.chatbot.shared.database
 
-import com.shayanaryan.chatbot.shared.chat.ContentBlock
-import com.shayanaryan.chatbot.shared.chat.Role
-import com.shayanaryan.chatbot.shared.conversation.MessageStatus
+import com.shayanaryan.chatbot.shared.ContentBlock
+import com.shayanaryan.chatbot.shared.Role
+import com.shayanaryan.chatbot.shared.chat.MessageStatus
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
 import kotlin.test.Test
 import kotlin.test.assertEquals

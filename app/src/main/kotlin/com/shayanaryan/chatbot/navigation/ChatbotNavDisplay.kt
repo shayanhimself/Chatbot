@@ -20,9 +20,9 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import com.shayanaryan.chatbot.feature.conversation.chat.ChatRoute
-import com.shayanaryan.chatbot.feature.conversation.chat.component.NewChatEmptyState
-import com.shayanaryan.chatbot.feature.conversation.conversationlist.ConversationListRoute
+import com.shayanaryan.chatbot.feature.chat.detail.ChatDetailRoute
+import com.shayanaryan.chatbot.feature.chat.detail.component.NewChatEmptyState
+import com.shayanaryan.chatbot.feature.chat.list.ChatListRoute
 import com.shayanaryan.chatbot.feature.onboarding.OnboardingRoute
 
 /**
@@ -38,10 +38,10 @@ internal fun ChatbotNavDisplay(
     navigator: ChatbotNavigator,
     modifier: Modifier = Modifier,
 ) {
-    // The open conversation, reported up by the chat route because the key deliberately never
+    // The open chat, reported up by the chat route because the key deliberately never
     // learns it. The ViewModel's SavedStateHandle is the durable store,
     // and the lambda fires again on the first composition after a restore.
-    var selectedConversationId by remember { mutableStateOf<Long?>(null) }
+    var selectedChatId by remember { mutableStateOf<Long?>(null) }
 
     val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
     val directive =
@@ -62,13 +62,13 @@ internal fun ChatbotNavDisplay(
             listOf(
                 rememberSaveableStateHolderNavEntryDecorator(),
                 // The ViewModel store decorator is what scopes a ViewModel to its entry, so a different
-                // ChatKey gets a different ChatViewModel.
+                // ChatDetailKey gets a different ChatDetailViewModel.
                 rememberViewModelStoreNavEntryDecorator(),
             ),
         entryProvider =
             entryProvider {
                 entry<OnboardingKey> { OnboardingRoute() }
-                entry<ConversationListKey>(
+                entry<ChatListKey>(
                     metadata =
                         ListDetailSceneStrategy.listPane(
                             detailPlaceholder = {
@@ -76,21 +76,21 @@ internal fun ChatbotNavDisplay(
                             },
                         ),
                 ) {
-                    ConversationListRoute(
+                    ChatListRoute(
                         // A narrow window never shows the list beside a chat, so nothing is selected.
-                        selectedConversationId = if (twoPane) selectedConversationId else null,
-                        onConversationClick = navigator::openConversation,
+                        selectedChatId = if (twoPane) selectedChatId else null,
+                        onChatClick = navigator::openChat,
                         onNewChat = navigator::openNewChat,
                     )
                 }
-                entry<ChatKey>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
-                    ChatRoute(
-                        conversationId = key.conversationId,
+                entry<ChatDetailKey>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
+                    ChatDetailRoute(
+                        chatId = key.chatId,
                         onBack = if (twoPane) null else navigator::back,
                         // One path for both windows: popping the chat leaves the list, which on a
                         // wide window means the detail pane falls back to the new-chat state.
                         onDeleted = navigator::back,
-                        onConversationIdChanged = { selectedConversationId = it },
+                        onChatIdChanged = { selectedChatId = it },
                     )
                 }
             },

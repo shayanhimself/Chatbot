@@ -37,7 +37,7 @@ include(
     ":core:testing",
     ":shared",
     ":shared:testing",
-    ":feature:conversation",
+    ":feature:chat",
     ":feature:onboarding",
     ":feature:settings",
     ":feature:reminders",

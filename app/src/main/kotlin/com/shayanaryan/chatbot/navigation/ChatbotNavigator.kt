@@ -17,11 +17,11 @@ internal class ChatbotNavigator(
 ) {
     private var appliedHasApiKey: Boolean = hasApiKeyAtStart
 
-    /** Opens conversation [id], replacing the open chat rather than stacking on it. */
-    fun openConversation(id: Long) = openChat(ChatKey(id))
+    /** Opens chat [id], replacing the open chat rather than stacking on it. */
+    fun openChat(id: Long) = openChat(ChatDetailKey(id))
 
     /** Opens a new chat, replacing the open chat rather than stacking. */
-    fun openNewChat() = openChat(ChatKey())
+    fun openNewChat() = openChat(ChatDetailKey())
 
     /** Pops the top entry, and does nothing on a stack with none. */
     fun back() {
@@ -29,23 +29,23 @@ internal class ChatbotNavigator(
     }
 
     /**
-     * Opens the conversation an intent from outside the app asked for.
+     * Opens the chat an intent from outside the app asked for.
      *
-     * Unlike [openConversation] this can assume nothing about the stack it arrives against, so it
+     * Unlike [openChat] this can assume nothing about the stack it arrives against, so it
      * discards what is there and builds the two entries a notification should land on.
      */
-    fun openConversationFromDeepLink(id: Long) {
+    fun openChatFromDeepLink(id: Long) {
         // A notification can outlive the key that scheduled it. With no key there is nothing to
         // resume into and onboarding is the only destination the app may show, so the intent is
         // dropped rather than held until a key arrives.
         if (!appliedHasApiKey) return
         backStack.clear()
-        backStack.add(ConversationListKey)
-        backStack.add(ChatKey(id))
+        backStack.add(ChatListKey)
+        backStack.add(ChatDetailKey(id))
     }
 
     /**
-     * Moves the app between onboarding and the conversation list when a key is stored or removed.
+     * Moves the app between onboarding and the chat list when a key is stored or removed.
      *
      * @param hasApiKey the current gate value. Nothing happens while it matches the last value
      *   applied, which is the ordinary case: the effect driving this runs on entering composition,
@@ -57,8 +57,8 @@ internal class ChatbotNavigator(
         backStack.clear()
         if (hasApiKey) {
             // A new chat above the list, so the user can immediately use what they just set up.
-            backStack.add(ConversationListKey)
-            backStack.add(ChatKey())
+            backStack.add(ChatListKey)
+            backStack.add(ChatDetailKey())
         } else {
             backStack.add(OnboardingKey)
         }
@@ -68,10 +68,10 @@ internal class ChatbotNavigator(
      * Opens [key], replacing the chat already on top rather than stacking on it.
      *
      * The list is always the entry below a chat, and replacing is what gives a different
-     * conversation a different ViewModel.
+     * chat a different ViewModel.
      */
-    private fun openChat(key: ChatKey) {
-        if (backStack.lastOrNull() is ChatKey) {
+    private fun openChat(key: ChatDetailKey) {
+        if (backStack.lastOrNull() is ChatDetailKey) {
             backStack[backStack.lastIndex] = key
         } else {
             backStack.add(key)
@@ -87,9 +87,8 @@ internal class ChatbotNavigator(
          * set up with it.
          *
          * @return [OnboardingKey] without a stored key, which is then the only destination the app
-         *   may show, and [ConversationListKey] with one.
+         *   may show, and [ChatListKey] with one.
          */
-        fun startKeyFor(hasApiKey: Boolean): NavKey =
-            if (hasApiKey) ConversationListKey else OnboardingKey
+        fun startKeyFor(hasApiKey: Boolean): NavKey = if (hasApiKey) ChatListKey else OnboardingKey
     }
 }

@@ -4,43 +4,43 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.feature.onboarding.R
-import com.shayanaryan.chatbot.shared.chat.ChatError
+import com.shayanaryan.chatbot.shared.ApiError
 
 /** The sentence shown under the field for a failed check. */
 @Composable
-internal fun ChatError.supportingText(): String =
+internal fun ApiError.supportingText(): String =
     when (this) {
-        ChatError.Authentication -> {
+        ApiError.Authentication -> {
             stringResource(R.string.onboarding_error_authentication)
         }
 
-        ChatError.Network -> {
+        ApiError.Network -> {
             stringResource(R.string.onboarding_error_network)
         }
 
-        ChatError.Timeout -> {
+        ApiError.Timeout -> {
             stringResource(R.string.onboarding_error_timeout)
         }
 
-        is ChatError.RateLimited -> {
+        is ApiError.RateLimited -> {
             retryAfterSeconds?.let {
                 stringResource(R.string.onboarding_error_rate_limited_after, it)
             } ?: stringResource(R.string.onboarding_error_rate_limited)
         }
 
-        ChatError.Overloaded -> {
+        ApiError.Overloaded -> {
             stringResource(R.string.onboarding_error_overloaded)
         }
 
-        ChatError.InvalidRequest -> {
+        ApiError.InvalidRequest -> {
             stringResource(R.string.onboarding_error_invalid_request)
         }
 
-        ChatError.Server -> {
+        ApiError.Server -> {
             stringResource(R.string.onboarding_error_server)
         }
 
-        ChatError.Unexpected -> {
+        ApiError.Unexpected -> {
             stringResource(R.string.onboarding_error_unexpected)
         }
     }
@@ -50,8 +50,8 @@ internal fun ChatError.supportingText(): String =
  * turned away are different problems, and the icon is what says which one this was before the
  * sentence is read.
  */
-internal fun ChatError.trailingGlyph(): String =
+internal fun ApiError.trailingGlyph(): String =
     when (this) {
-        ChatError.Network, ChatError.Timeout -> Glyphs.CLOUD_OFF
+        ApiError.Network, ApiError.Timeout -> Glyphs.CLOUD_OFF
         else -> Glyphs.ERROR
     }

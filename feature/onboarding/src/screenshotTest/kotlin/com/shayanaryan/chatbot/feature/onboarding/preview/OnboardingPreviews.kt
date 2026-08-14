@@ -9,7 +9,7 @@ import com.shayanaryan.chatbot.feature.onboarding.ONBOARDING_PREVIEW_HEIGHT_DP
 import com.shayanaryan.chatbot.feature.onboarding.OnboardingUiState
 import com.shayanaryan.chatbot.feature.onboarding.PREVIEW_API_KEY
 import com.shayanaryan.chatbot.feature.onboarding.PreviewOnboarding
-import com.shayanaryan.chatbot.shared.chat.ChatError
+import com.shayanaryan.chatbot.shared.ApiError
 
 @PreviewTest
 @Preview(heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
@@ -113,7 +113,7 @@ private fun OnboardingValidatingLightPreview() {
 private fun OnboardingRejectedDarkPreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Failed(ChatError.Authentication),
+            uiState = OnboardingUiState.Failed(ApiError.Authentication),
             key = PREVIEW_API_KEY,
         )
     }
@@ -125,7 +125,7 @@ private fun OnboardingRejectedDarkPreview() {
 private fun OnboardingRejectedLightPreview() {
     ChatbotTheme(darkTheme = false) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Failed(ChatError.Authentication),
+            uiState = OnboardingUiState.Failed(ApiError.Authentication),
             key = PREVIEW_API_KEY,
         )
     }
@@ -137,7 +137,7 @@ private fun OnboardingRejectedLightPreview() {
 private fun OnboardingOfflineDarkPreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Failed(ChatError.Network),
+            uiState = OnboardingUiState.Failed(ApiError.Network),
             key = PREVIEW_API_KEY,
         )
     }
@@ -149,7 +149,7 @@ private fun OnboardingOfflineDarkPreview() {
 private fun OnboardingOfflineLightPreview() {
     ChatbotTheme(darkTheme = false) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Failed(ChatError.Network),
+            uiState = OnboardingUiState.Failed(ApiError.Network),
             key = PREVIEW_API_KEY,
         )
     }

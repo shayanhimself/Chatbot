@@ -12,15 +12,15 @@ import androidx.navigation3.runtime.rememberNavBackStack
  *
  * @param hasApiKey whether a key is stored. Resolved before this composes, so the stack starts on
  *   the right destination instead of being rewritten onto it.
- * @param deepLinkConversationId the conversation an intent asked to open, null on a normal launch.
+ * @param deepLinkChatId the chat an intent asked to open, null on a normal launch.
  * @param onDeepLinkHandled called once that id has been consumed, so the same intent cannot pull
- *   the user back to the conversation after they navigate away. It fires whether the navigator
+ *   the user back to the chat after they navigate away. It fires whether the navigator
  *   acted on the id or dropped it for want of a key.
  */
 @Composable
 fun ChatbotApp(
     hasApiKey: Boolean,
-    deepLinkConversationId: Long?,
+    deepLinkChatId: Long?,
     onDeepLinkHandled: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -39,9 +39,9 @@ fun ChatbotApp(
 
     LaunchedEffect(hasApiKey) { navigator.resetForApiKeyState(hasApiKey) }
 
-    LaunchedEffect(deepLinkConversationId) {
-        val id = deepLinkConversationId ?: return@LaunchedEffect
-        navigator.openConversationFromDeepLink(id)
+    LaunchedEffect(deepLinkChatId) {
+        val id = deepLinkChatId ?: return@LaunchedEffect
+        navigator.openChatFromDeepLink(id)
         onDeepLinkHandled()
     }
 

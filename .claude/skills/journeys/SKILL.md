@@ -36,7 +36,7 @@ is unusual about it.
 | `state` | `onboarded`, `fresh-install` | `onboarded` | The app the first action opens |
 | `device` | `phone`, `tablet` | `phone` | The form factor the journey is about |
 
-`onboarded` is a stored API key with no conversations. `fresh-install` is
+`onboarded` is a stored API key with no chats. `fresh-install` is
 nothing stored at all, which only the onboarding journeys want.
 
 **Whoever runs the journey establishes the declared state before the first
@@ -66,7 +66,7 @@ stays in front of you. Establish the state first.
 # fresh-install
 adb shell pm clear com.shayanaryan.chatbot
 
-# onboarded: erase conversations, keep the key
+# onboarded: erase chats, keep the key
 adb shell "run-as com.shayanaryan.chatbot sh -c 'rm -f /data/user/0/com.shayanaryan.chatbot/databases/chatbot.db*'"
 ```
 

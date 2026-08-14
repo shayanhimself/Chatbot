@@ -3,8 +3,8 @@ package com.shayanaryan.chatbot.feature.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.shayanaryan.chatbot.shared.apikey.ApiKeyRepository
-import com.shayanaryan.chatbot.shared.chat.ApiKeyValidator
-import com.shayanaryan.chatbot.shared.chat.KeyValidationResult
+import com.shayanaryan.chatbot.shared.claude.ApiKeyValidator
+import com.shayanaryan.chatbot.shared.claude.KeyValidationResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -20,7 +20,7 @@ rule in this codebase.
 
 ```kotlin
 class ComposeReminderMessageUseCase(
-    private val chatEngine: ChatEngine,
+    private val chatEngine: ClaudeEngine,
     private val memoryRepository: MemoryRepository,
 ) {
     suspend operator fun invoke(reminder: Reminder): String { /* ... */ }

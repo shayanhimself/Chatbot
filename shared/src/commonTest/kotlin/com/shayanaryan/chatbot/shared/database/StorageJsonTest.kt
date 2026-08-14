@@ -1,6 +1,6 @@
 package com.shayanaryan.chatbot.shared.database
 
-import com.shayanaryan.chatbot.shared.chat.ContentBlock
+import com.shayanaryan.chatbot.shared.ContentBlock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

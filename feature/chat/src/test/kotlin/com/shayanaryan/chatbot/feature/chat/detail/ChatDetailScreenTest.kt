@@ -1,0 +1,240 @@
+package com.shayanaryan.chatbot.feature.chat.detail
+
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.shayanaryan.chatbot.core.testing.string
+import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
+import com.shayanaryan.chatbot.feature.chat.R
+import com.shayanaryan.chatbot.shared.ApiError
+import com.shayanaryan.chatbot.shared.ContentBlock
+import com.shayanaryan.chatbot.shared.Role
+import com.shayanaryan.chatbot.shared.chat.Message
+import com.shayanaryan.chatbot.shared.chat.MessageStatus
+import com.shayanaryan.chatbot.shared.model.ClaudeModel
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.time.Instant
+import com.shayanaryan.chatbot.core.ui.R as CoreUiR
+
+private const val CHAT_TITLE = "Weekend trip to Portland"
+private const val USER_MESSAGE = "help me plan a weekend in portland"
+private const val ASSISTANT_MESSAGE = "Powell's Books first."
+private const val COMPOSED_MESSAGE = "a packing list please"
+private const val TYPED_TEXT = "hello"
+private const val STREAMED_TEXT = "Powell"
+
+@RunWith(AndroidJUnit4::class)
+class ChatDetailScreenTest {
+    @get:Rule
+    val composeRule = createComposeRule()
+
+    @Test
+    fun `renders the title and both bubbles`() {
+        setScreen(openChat)
+
+        composeRule.onNodeWithText(CHAT_TITLE).assertIsDisplayed()
+        composeRule.onNodeWithText(USER_MESSAGE).assertIsDisplayed()
+        composeRule.onNodeWithText(ASSISTANT_MESSAGE).assertIsDisplayed()
+    }
+
+    @Test
+    fun `a chat with no first message shows the new-chat copy`() {
+        setScreen(ChatDetailUiState())
+
+        composeRule.onNodeWithText(string(R.string.chat_new_chat_title)).assertIsDisplayed()
+        composeRule
+            .onNodeWithText(
+                string(R.string.chat_new_chat_greeting),
+            ).assertIsDisplayed()
+    }
+
+    @Test
+    fun `send is disabled until there is non-blank text`() {
+        setScreen(openChat)
+
+        composeRule
+            .onNodeWithContentDescription(
+                string(R.string.chat_send),
+            ).assertIsNotEnabled()
+        composeRule
+            .onNodeWithText(
+                string(R.string.chat_composer_placeholder),
+            ).performTextInput(TYPED_TEXT)
+        composeRule
+            .onNodeWithContentDescription(
+                string(R.string.chat_send),
+            ).assertIsEnabled()
+    }
+
+    @Test
+    fun `send reports the composed text and clears the field`() {
+        var sent: String? = null
+        setScreen(openChat, onSend = { sent = it })
+
+        composeRule
+            .onNodeWithText(
+                string(R.string.chat_composer_placeholder),
+            ).performTextInput(COMPOSED_MESSAGE)
+        composeRule.onNodeWithContentDescription(string(R.string.chat_send)).performClick()
+
+        assertEquals(COMPOSED_MESSAGE, sent)
+        composeRule
+            .onNodeWithText(
+                string(R.string.chat_composer_placeholder),
+            ).assertIsDisplayed()
+    }
+
+    @Test
+    fun `while streaming the trailing button stops the turn`() {
+        composeRule.mainClock.autoAdvance = false
+        var cancelled = false
+        val streaming =
+            openChat.copy(
+                items = openChat.items + ChatDetailItem.Streaming(STREAMED_TEXT),
+                isStreaming = true,
+            )
+        setScreen(streaming, onCancel = { cancelled = true })
+
+        composeRule.onNodeWithContentDescription(string(R.string.chat_stop)).performClick()
+
+        assertTrue(cancelled)
+    }
+
+    @Test
+    fun `the model picker checkmarks the current model and reports a change`() {
+        var picked: ClaudeModel? = null
+        setScreen(openChat, onModelSelected = { picked = it })
+
+        composeRule.onNodeWithText(ClaudeModel.Sonnet.displayName).performClick()
+        composeRule.onNodeWithText(ClaudeModel.Haiku.displayName).performClick()
+
+        assertEquals(ClaudeModel.Haiku, picked)
+    }
+
+    @Test
+    fun `the model picker is disabled during a turn`() {
+        composeRule.mainClock.autoAdvance = false
+        setScreen(openChat.copy(isStreaming = true))
+
+        composeRule.onNodeWithText(ClaudeModel.Sonnet.displayName).assertIsNotEnabled()
+    }
+
+    @Test
+    fun `the overflow menu offers delete and reports it`() {
+        var requested = false
+        setScreen(openChat, onDeleteRequested = { requested = true })
+
+        composeRule.onNodeWithContentDescription(string(R.string.chat_more)).performClick()
+        composeRule.onNodeWithText(string(R.string.chat_delete)).performClick()
+
+        assertTrue(requested)
+    }
+
+    @Test
+    fun `the overflow button is hidden on a chat with nothing to delete`() {
+        setScreen(ChatDetailUiState())
+
+        composeRule
+            .onNodeWithContentDescription(
+                string(R.string.chat_more),
+            ).assertDoesNotExist()
+    }
+
+    @Test
+    fun `confirming the delete dialog reports it`() {
+        var confirmed = false
+        val deleting = openChat.copy(deleteDialogVisible = true)
+        setScreen(deleting, onDeleteConfirmed = { confirmed = true })
+
+        composeRule.onNodeWithText(string(R.string.chat_delete_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.chat_delete_confirm)).performClick()
+
+        assertTrue(confirmed)
+    }
+
+    @Test
+    fun `retry on the error item reports it`() {
+        var retried = false
+        val failed = openChat.copy(items = openChat.items + ChatDetailItem.Error(ApiError.Network))
+        setScreen(failed, onRetry = { retried = true })
+
+        composeRule.onNodeWithText(string(CoreUiR.string.core_ui_retry)).performClick()
+
+        assertTrue(retried)
+    }
+
+    @Test
+    fun `the back arrow is absent when the caller gives no back action`() {
+        setScreen(openChat, onBack = null)
+
+        composeRule
+            .onNodeWithContentDescription(
+                string(R.string.chat_back),
+            ).assertDoesNotExist()
+    }
+
+    private fun persisted(
+        id: Long,
+        role: Role,
+        text: String,
+    ) = ChatDetailItem.Persisted(
+        Message(
+            id = id,
+            chatId = 1L,
+            role = role,
+            content = listOf(ContentBlock.Text(text)),
+            status = MessageStatus.Complete,
+            createdAt = Instant.fromEpochMilliseconds(id),
+        ),
+    )
+
+    private val openChat =
+        ChatDetailUiState(
+            chatId = 1L,
+            title = CHAT_TITLE,
+            model = ClaudeModel.Sonnet,
+            items =
+                listOf(
+                    persisted(1L, Role.User, USER_MESSAGE),
+                    persisted(2L, Role.Assistant, ASSISTANT_MESSAGE),
+                ),
+        )
+
+    private fun setScreen(
+        uiState: ChatDetailUiState,
+        onBack: (() -> Unit)? = {},
+        onSend: (String) -> Unit = {},
+        onCancel: () -> Unit = {},
+        onRetry: () -> Unit = {},
+        onModelSelected: (ClaudeModel) -> Unit = {},
+        onDeleteRequested: () -> Unit = {},
+        onDeleteDismissed: () -> Unit = {},
+        onDeleteConfirmed: () -> Unit = {},
+    ) {
+        composeRule.setContent {
+            ChatbotTheme(darkTheme = true) {
+                ChatDetailScreen(
+                    uiState = uiState,
+                    onBack = onBack,
+                    onSend = onSend,
+                    onCancel = onCancel,
+                    onRetry = onRetry,
+                    onModelSelected = onModelSelected,
+                    onDeleteRequested = onDeleteRequested,
+                    onDeleteDismissed = onDeleteDismissed,
+                    onDeleteConfirmed = onDeleteConfirmed,
+                )
+            }
+        }
+    }
+}

@@ -8,12 +8,12 @@ import kotlinx.serialization.Serializable
 data object OnboardingKey : NavKey
 
 @Serializable
-data object ConversationListKey : NavKey
+data object ChatListKey : NavKey
 
 /**
- * @property conversationId null for a chat with no first message.
+ * @property chatId null for a chat with no first message.
  */
 @Serializable
-data class ChatKey(
-    val conversationId: Long? = null,
+data class ChatDetailKey(
+    val chatId: Long? = null,
 ) : NavKey

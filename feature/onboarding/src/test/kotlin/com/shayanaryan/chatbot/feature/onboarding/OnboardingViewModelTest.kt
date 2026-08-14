@@ -1,9 +1,9 @@
 package com.shayanaryan.chatbot.feature.onboarding
 
+import com.shayanaryan.chatbot.shared.ApiError
 import com.shayanaryan.chatbot.shared.apikey.FakeApiKeyRepository
-import com.shayanaryan.chatbot.shared.chat.ChatError
-import com.shayanaryan.chatbot.shared.chat.FakeApiKeyValidator
-import com.shayanaryan.chatbot.shared.chat.KeyValidationResult
+import com.shayanaryan.chatbot.shared.claude.FakeApiKeyValidator
+import com.shayanaryan.chatbot.shared.claude.KeyValidationResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -61,26 +61,26 @@ class OnboardingViewModelTest {
     @Test
     fun `a rejected key reports the authentication failure`() =
         runTest {
-            validator.result = KeyValidationResult.Failed(ChatError.Authentication)
+            validator.result = KeyValidationResult.Failed(ApiError.Authentication)
             val model = viewModel()
 
             model.onSubmit(API_KEY)
             advanceUntilIdle()
 
-            assertEquals(OnboardingUiState.Failed(ChatError.Authentication), model.uiState.value)
+            assertEquals(OnboardingUiState.Failed(ApiError.Authentication), model.uiState.value)
             assertNull(repository.apiKey())
         }
 
     @Test
     fun `an offline attempt reports the network failure without storing anything`() =
         runTest {
-            validator.result = KeyValidationResult.Failed(ChatError.Network)
+            validator.result = KeyValidationResult.Failed(ApiError.Network)
             val model = viewModel()
 
             model.onSubmit(API_KEY)
             advanceUntilIdle()
 
-            assertEquals(OnboardingUiState.Failed(ChatError.Network), model.uiState.value)
+            assertEquals(OnboardingUiState.Failed(ApiError.Network), model.uiState.value)
             assertNull(repository.apiKey())
         }
 
@@ -88,14 +88,14 @@ class OnboardingViewModelTest {
     fun `a rate limited attempt reports the rate limit`() =
         runTest {
             validator.result =
-                KeyValidationResult.Failed(ChatError.RateLimited(RETRY_AFTER_SECONDS))
+                KeyValidationResult.Failed(ApiError.RateLimited(RETRY_AFTER_SECONDS))
             val model = viewModel()
 
             model.onSubmit(API_KEY)
             advanceUntilIdle()
 
             assertEquals(
-                OnboardingUiState.Failed(ChatError.RateLimited(RETRY_AFTER_SECONDS)),
+                OnboardingUiState.Failed(ApiError.RateLimited(RETRY_AFTER_SECONDS)),
                 model.uiState.value,
             )
         }
@@ -103,7 +103,7 @@ class OnboardingViewModelTest {
     @Test
     fun `editing after a failure returns to idle`() =
         runTest {
-            validator.result = KeyValidationResult.Failed(ChatError.Authentication)
+            validator.result = KeyValidationResult.Failed(ApiError.Authentication)
             val model = viewModel()
             model.onSubmit(API_KEY)
             advanceUntilIdle()

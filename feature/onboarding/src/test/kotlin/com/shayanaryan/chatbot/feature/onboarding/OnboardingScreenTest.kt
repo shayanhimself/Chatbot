@@ -13,7 +13,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shayanaryan.chatbot.core.testing.string
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-import com.shayanaryan.chatbot.shared.chat.ChatError
+import com.shayanaryan.chatbot.shared.ApiError
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -113,7 +113,7 @@ class OnboardingScreenTest {
 
     @Test
     fun `a rejected key shows its message and offers a retry`() {
-        setScreen(OnboardingUiState.Failed(ChatError.Authentication))
+        setScreen(OnboardingUiState.Failed(ApiError.Authentication))
         composeRule.onNode(hasSetTextAction()).performTextInput(VALID_LENGTH_KEY)
 
         composeRule
@@ -124,7 +124,7 @@ class OnboardingScreenTest {
 
     @Test
     fun `an offline failure shows the offline message and stays retryable`() {
-        setScreen(OnboardingUiState.Failed(ChatError.Network))
+        setScreen(OnboardingUiState.Failed(ApiError.Network))
         composeRule.onNode(hasSetTextAction()).performTextInput(VALID_LENGTH_KEY)
 
         composeRule.onNodeWithText(string(R.string.onboarding_error_network)).assertIsDisplayed()
@@ -136,7 +136,7 @@ class OnboardingScreenTest {
 
     @Test
     fun `typing after a failure reports the edit`() {
-        setScreen(OnboardingUiState.Failed(ChatError.Authentication))
+        setScreen(OnboardingUiState.Failed(ApiError.Authentication))
 
         composeRule.onNode(hasSetTextAction()).performTextInput(VALID_LENGTH_KEY)
 

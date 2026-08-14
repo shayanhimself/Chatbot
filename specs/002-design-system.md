@@ -93,8 +93,8 @@ All components are stateless and presentational — state in via parameters, eve
 
 **What is deliberately not here.** A component earns a place in `:core:ui` by having more than one consumer *and* a shape that does not vary per screen. Two families fail that test:
 
-- **Chat surfaces** — `MessageBubble`, `ConversationListItem`, `ModelPicker`. Single consumer (`:feature:conversation`), and their props are domain-shaped (message role, tool chips, model identity), which `:core:ui` cannot see. Hosting them here would mean duplicating those concepts as DS-local enums and mapping to them at every call site. They are built in the feature module under spec 005.
-- **Empty states** — structurally different per screen, not merely different in copy: the conversation screen wants a hero block, a list screen wants icon + line + optional CTA. A shared component would freeze a guessed layout before any screen exists to validate it. Features build their own; hoist only once two screens demonstrably share a structure.
+- **Chat surfaces** — `MessageBubble`, `ChatListItem`, `ModelPicker`. Single consumer (`:feature:chat`), and their props are domain-shaped (message role, tool chips, model identity), which `:core:ui` cannot see. Hosting them here would mean duplicating those concepts as DS-local enums and mapping to them at every call site. They are built in the feature module under spec 005.
+- **Empty states** — structurally different per screen, not merely different in copy: the chat screen wants a hero block, a list screen wants icon + line + optional CTA. A shared component would freeze a guessed layout before any screen exists to validate it. Features build their own; hoist only once two screens demonstrably share a structure.
 
 The design system remains the source of truth for their *appearance* regardless: bubble shapes (`ComponentShapes.bubbleUser`/`bubbleAssistant`) and the streaming-caret duration are tokens defined here and consumed there. Appearance SSOT is the token vocabulary, not every composition built from it.
 

@@ -60,7 +60,7 @@ Library versions should not be mentioned here.
 |---|---|---|
 | Reminder firing | AlarmManager `setExactAndAllowWhileIdle` gated by `SCHEDULE_EXACT_ALARM` special permission — request via `ACTION_REQUEST_SCHEDULE_EXACT_ALARM` settings intent, re-check on `ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` | Reminders are user-facing exact-time work; WorkManager alone drifts (Doze batching, 15-min periodic floor). User-scheduled reminders are Google's canonical sanctioned use case for this permission. **`USE_EXACT_ALARM` prohibited** — Play policy reserves it for alarm/calendar-core apps |
 | Permission-denied fallback | WorkManager inexact scheduling | Reminder still fires, within an inexact window |
-| Fire-time pipeline | Thin `BroadcastReceiver` (enqueue + return, milliseconds) → **expedited WorkManager job** (`NETWORK_CONNECTED` constraint, backoff) → Claude composes notification message → notification → Nav 3 deep link into conversation | `onReceive()` has a ~10s main-thread budget and the process is killable after return — no place for a network call. Offline/API failure → notification shows stored reminder text; never silently lost |
+| Fire-time pipeline | Thin `BroadcastReceiver` (enqueue + return, milliseconds) → **expedited WorkManager job** (`NETWORK_CONNECTED` constraint, backoff) → Claude composes notification message → notification → Nav 3 deep link into chat | `onReceive()` has a ~10s main-thread budget and the process is killable after return — no place for a network call. Offline/API failure → notification shows stored reminder text; never silently lost |
 | Reboot persistence | `BOOT_COMPLETED` receiver re-registers alarms from Room | Alarms don't survive reboot |
 | Notifications | `POST_NOTIFICATIONS` runtime permission (API 33+); androidx core-ktx `NotificationCompat` | |
 | Background jobs | `androidx.work` (WorkManager) | |
@@ -71,8 +71,8 @@ Library versions should not be mentioned here.
 | Decision | Choice | Rationale |
 |---|---|---|
 | Engine (sole, BYOK) | **Ktor client + kotlinx.serialization** against `POST https://api.anthropic.com/v1/messages` with hand-rolled SSE streaming (`message_start` → `content_block_delta`/`text_delta` → `message_stop`) | KMP-insurance: official Anthropic Java SDK is JVM-only; Ktor layer ports to iOS as-is. Small surface — one endpoint, SSE parse. Headers: `x-api-key`, `anthropic-version: 2023-06-01`, `content-type: application/json`. Default model `claude-sonnet-5`; picker for `claude-haiku-4-5` / `claude-opus-4-8`. User's own key only — never a project-owned key in the app |
-| Tool use | Native Anthropic tool use: `tools` param, `tool_use` / `tool_result` content blocks. SSE parser must additionally handle `input_json_delta` deltas and `stop_reason: "tool_use"`. Agentic loop (model emits tool call → app executes locally → resume turn with result) lives in `:shared` commonMain; executors injected via interfaces | Reminders and memory are created by the model mid-conversation |
-| Engine abstraction | Common `ChatEngine` interface | Retained despite single engine: test fakes, and a future iOS on-device engine (Foundation Models) slots in without touching callers |
+| Tool use | Native Anthropic tool use: `tools` param, `tool_use` / `tool_result` content blocks. SSE parser must additionally handle `input_json_delta` deltas and `stop_reason: "tool_use"`. Agentic loop (model emits tool call → app executes locally → resume turn with result) lives in `:shared` commonMain; executors injected via interfaces | Reminders and memory are created by the model mid-chat |
+| Engine abstraction | Common `ClaudeEngine` interface | Retained despite single engine: test fakes, and a future iOS on-device engine (Foundation Models) slots in without touching callers |
 
 ## Testing
 

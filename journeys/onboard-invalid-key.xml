@@ -12,7 +12,7 @@
      <action>Tap "Validate &amp; continue"</action>
      <action>Wait until an error about the key being rejected is displayed under the field</action>
      <action>Verify the button now reads "Try again"</action>
-     <action>Verify the onboarding screen is still displayed and the conversation list is not</action>
+     <action>Verify the onboarding screen is still displayed and the chat list is not</action>
      <action>Type one more character into the "Anthropic API key" field</action>
      <action>Verify the error message is no longer displayed</action>
    </actions>

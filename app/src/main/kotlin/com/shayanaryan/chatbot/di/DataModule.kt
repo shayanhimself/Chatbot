@@ -1,9 +1,9 @@
 package com.shayanaryan.chatbot.di
 
 import android.content.Context
-import com.shayanaryan.chatbot.shared.chat.ChatEngine
-import com.shayanaryan.chatbot.shared.conversation.ConversationRepository
-import com.shayanaryan.chatbot.shared.conversation.createConversationRepository
+import com.shayanaryan.chatbot.shared.chat.ChatRepository
+import com.shayanaryan.chatbot.shared.chat.createChatRepository
+import com.shayanaryan.chatbot.shared.claude.ClaudeEngine
 import com.shayanaryan.chatbot.shared.database.ChatbotDatabase
 import com.shayanaryan.chatbot.shared.database.chatbotDatabaseBuilder
 import com.shayanaryan.chatbot.shared.database.createChatbotDatabase
@@ -31,13 +31,13 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideConversationRepository(
+    fun provideChatRepository(
         database: ChatbotDatabase,
-        engine: ChatEngine,
+        engine: ClaudeEngine,
         @ApplicationScope externalScope: CoroutineScope,
         clock: Clock,
-    ): ConversationRepository =
-        createConversationRepository(
+    ): ChatRepository =
+        createChatRepository(
             database = database,
             engine = engine,
             externalScope = externalScope,

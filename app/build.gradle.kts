@@ -66,8 +66,11 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 
+    androidTestImplementation(projects.shared)
     androidTestImplementation(libs.hilt.android.testing)
     kspAndroidTest(libs.hilt.compiler)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.kotlin.test)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 }

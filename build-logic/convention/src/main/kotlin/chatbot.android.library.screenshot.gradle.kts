@@ -1,3 +1,5 @@
+import com.android.compose.screenshot.gradle.ScreenshotTestOptions
+
 plugins {
     id("com.android.library")
     id("chatbot.android.library.compose")
@@ -23,4 +25,11 @@ apply(plugin = "com.android.compose.screenshot")
 // after the plugin applied above has registered it.
 tasks.named("check") {
     dependsOn("validateDebugScreenshotTest")
+}
+
+// Lets a small share of screenshot pixels differ before validation fails. The default of zero demands
+// identical pixels, which a golden recorded on macOS never is on the Linux runner. Set after the
+// apply above, which registers this extension.
+extensions.configure<ScreenshotTestOptions> {
+    imageDifferenceThreshold = SCREENSHOT_IMAGE_DIFFERENCE_THRESHOLD
 }

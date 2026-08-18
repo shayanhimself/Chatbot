@@ -18,7 +18,8 @@ dependencies {
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.compose.gradlePlugin)
 
-    // implementation, not compileOnly: the screenshot plugin is applied by id at execution time,
-    // so it has to reach the classpath of the build that applies the convention plugin.
+    // implementation, not compileOnly: these are applied by id at execution time, so they have
+    // to reach the classpath of the build that applies the convention plugin.
     implementation(libs.screenshot.gradlePlugin)
+    implementation(libs.kover.gradlePlugin)
 }

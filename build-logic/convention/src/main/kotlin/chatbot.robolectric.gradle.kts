@@ -1,3 +1,7 @@
+plugins {
+    id("chatbot.kover")
+}
+
 tasks.withType<Test>().configureEach {
     javaLauncher.set(
         project.extensions

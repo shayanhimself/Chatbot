@@ -16,7 +16,7 @@ Beyond answering, the assistant acts on your behalf within a chat:
 
 No backend server and no project-owned key: chats, reminders, memories and the key all live on-device.
 
-| Bring your own key |                         Chat list                         |                         Chat                         |
+| Onboarding |                         Chat list                         |                         Chat details                         |
 |:-:|:---------------------------------------------------------:|:----------------------------------------------------:|
 | <img src="docs/images/onboarding.png" width="240"> | <img src="docs/images/chat-list.png" width="240"> | <img src="docs/images/chat-details.png" width="240"> |
 | **Reminders** |                        **Memory**                         |                     **Settings**                     |

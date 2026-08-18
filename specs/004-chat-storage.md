@@ -1,14 +1,14 @@
-# 004 — Chat Storage
+# 004: Chat Storage
 
 Room persistence for chats and messages, plus the `ChatRepository` that owns a chat turn end to end: append the user message, stream the reply through `ClaudeEngine` (003), persist the result. Lives in `:shared` commonMain (data layer); the Android file path is the only platform-specific piece.
 
-Room is the single source of truth for chat history. The one exception is the in-flight assistant message, which stays in memory as `TurnState` until the stream ends — never a write per token.
+Room is the single source of truth for chat history. The one exception is the in-flight assistant message, which stays in memory as `TurnState` until the stream ends, never a write per token.
 
 Scope is chats and messages. Memories (009) and reminders (010) add their own tables to the same database. UI and ViewModel are 005; the deferrals are listed at the bottom.
 
 ## Schema
 
-Version 1, two tables. Entities, DAOs, and converters are `internal` to `:shared` — nothing above the data layer can reach a DAO.
+Version 1, two tables. Entities, DAOs, and converters are `internal` to `:shared`, so nothing above the data layer can reach a DAO.
 
 ```
 @Entity(tableName = "chats")
@@ -48,7 +48,7 @@ Deleting a chat cascades to its messages. The index on `chatId` serves both that
 
 **Content is a JSON column.** A `List<ContentBlock>` converter stores the block list as text, which requires `@Serializable` on `ContentBlock`. 008 adds `ToolUse` and `ToolResult` as new subtypes with no schema change. Message content is never queried by SQL; full-text search, if it ever exists, is a separate FTS table.
 
-The codec is the storage layer's own `Json`, not 003's `claudeJson`. Sharing one instance would put the on-disk format at the mercy of settings that exist for HTTP reasons — and a stored value that no longer decodes would be coerced to a default rather than failing loudly. Nothing on the wire path serializes `ContentBlock` directly, so the two formats are free to diverge.
+The codec is the storage layer's own `Json`, not 003's `claudeJson`. Sharing one instance would put the on-disk format at the mercy of settings that exist for HTTP reasons, and a stored value that no longer decodes would be coerced to a default rather than failing loudly. Nothing on the wire path serializes `ContentBlock` directly, so the two formats are free to diverge.
 
 Three converters: `ClaudeModel`, the `Role`/`MessageStatus` enums, and the content list. Timestamps are epoch millis in the database and `kotlin.time.Instant` in domain models; a `kotlin.time.Clock` is injected so tests assert exact values.
 
@@ -56,7 +56,7 @@ An unknown stored `ClaudeModel` name decodes to `ClaudeModel.Default` rather tha
 
 **Failed rows store no error detail.** Which `ApiError` occurred lives in `TurnState` until the next turn on that chat replaces it. A reopened chat shows only that the turn did not finish.
 
-Two queries carry the feature — the chat list, and the history sent to Claude:
+Two queries carry the feature: the chat list, and the history sent to Claude:
 
 ```
 SELECT * FROM messages
@@ -139,13 +139,13 @@ The insert completes before `TurnState` returns to `Idle`, so the live bubble is
 
 `system` is null here; 009 fills it with memories.
 
-**One turn per chat.** `send` on a chat with a live turn throws `IllegalStateException` — 005 disables the composer while streaming, so this is a guard against a programming error, not a user-facing state.
+**One turn per chat.** `send` on a chat with a live turn throws `IllegalStateException`. 005 disables the composer while streaming, so this is a guard against a programming error, not a user-facing state.
 
 `cancel` cancels the job and writes the partial text as `Cancelled`. `retry` deletes the trailing `Failed` or `Cancelled` assistant row and re-runs the turn; since the history query never saw that row, nothing else needs undoing. Both are no-ops when there is nothing to cancel or retry.
 
 A turn that completes without emitting any text still stores its assistant row, but blank text blocks are dropped on the way into a request and a message left with no blocks is dropped whole. The API rejects an empty text block, and a stored one would otherwise be replayed on every later turn, making the chat permanently un-sendable. Filtering on the read side rather than skipping the write keeps the row for the UI.
 
-Turns live in a `MutableStateFlow<Map<Long, Turn>>` — an immutable map behind a `StateFlow` so `getTurnFlow` reads without a lock and observes turns that start after collection begins:
+Turns live in a `MutableStateFlow<Map<Long, Turn>>`: an immutable map behind a `StateFlow` so `getTurnFlow` reads without a lock and observes turns that start after collection begins:
 
 ```
 getTurnFlow(id) = turns
@@ -153,9 +153,9 @@ getTurnFlow(id) = turns
   .distinctUntilChanged()
 ```
 
-Writes take a `Mutex`. `StateFlow.update` makes one compare-and-set atomic, but the guard spans two operations — test for a live turn, then insert one — and without the lock two concurrent sends both see none and both launch.
+Writes take a `Mutex`. `StateFlow.update` makes one compare-and-set atomic, but the guard spans two operations (test for a live turn, then insert one) and without the lock two concurrent sends both see none and both launch.
 
-**The map holds the latest turn per chat, live or terminal.** A turn is live while its job is active, so the one-turn guard tests the job and the state rather than the entry's presence — a turn that dies unexpectedly can never block a later send, and neither can one that has gone `Idle` but not yet been cleared. The entry is cleared when the turn ends `Idle` — that is, once the `Complete` row is in — and a `Failed` entry is kept so `TurnState.Failed(error)` stays readable until the next `send` or `retry` replaces it, or `delete` drops it. Clearing on failure instead would lose the error before any collector saw it: the fallback to `Idle` conflates, so `Failed` need never be delivered at all. `cancel` cancels the job and joins it; the turn coroutine writes the `Cancelled` row on its way out, in a `NonCancellable` block, then sets `Idle` and drops the entry. One writer per turn means no window in which a turn finishes normally between a liveness check and a second insert, and joining keeps the rule that a row exists before the live bubble disappears.
+**The map holds the latest turn per chat, live or terminal.** A turn is live while its job is active, so the one-turn guard tests the job and the state rather than the entry's presence: a turn that dies unexpectedly can never block a later send, and neither can one that has gone `Idle` but not yet been cleared. The entry is cleared when the turn ends `Idle`, that is, once the `Complete` row is in, and a `Failed` entry is kept so `TurnState.Failed(error)` stays readable until the next `send` or `retry` replaces it, or `delete` drops it. Clearing on failure instead would lose the error before any collector saw it: the fallback to `Idle` conflates, so `Failed` need never be delivered at all. `cancel` cancels the job and joins it; the turn coroutine writes the `Cancelled` row on its way out, in a `NonCancellable` block, then sets `Idle` and drops the entry. One writer per turn means no window in which a turn finishes normally between a liveness check and a second insert, and joining keeps the rule that a row exists before the live bubble disappears.
 
 ## Module and DI
 
@@ -176,11 +176,11 @@ dependencies { add("kspAndroid", libs.androidx.room.compiler) }
 room { schemaDirectory("$projectDir/schemas") }
 ```
 
-`room-runtime` is `api`, not `implementation`: `:app` holds `ChatbotDatabase` as a singleton, so `RoomDatabase` — its supertype — has to be on `:app`'s compile classpath. Room's own Android variant re-exports `androidx.sqlite`, so `sqlite-bundled` stays `implementation`.
+`room-runtime` is `api`, not `implementation`: `:app` holds `ChatbotDatabase` as a singleton, so `RoomDatabase`, its supertype, has to be on `:app`'s compile classpath. Room's own Android variant re-exports `androidx.sqlite`, so `sqlite-bundled` stays `implementation`.
 
-KSP configurations are per target and are created after the `kotlin {}` block evaluates, so `add("ksp<Target>", …)` is the only available spelling — there is no typed accessor, and KSP 2 deprecates the catch-all `ksp(…)`. iOS targets add their own lines. The build script carries a comment saying so, since the spelling looks like an oversight otherwise.
+KSP configurations are per target and are created after the `kotlin {}` block evaluates, so `add("ksp<Target>", …)` is the only available spelling: there is no typed accessor, and KSP 2 deprecates the catch-all `ksp(…)`. iOS targets add their own lines. The build script carries a comment saying so, since the spelling looks like an oversight otherwise.
 
-The module also sets `-Xexpect-actual-classes`. The database constructor is an `expect object` whose `actual` is generated, and expect/actual classes are still Beta — without the flag every build carries two warnings that nothing in the project can resolve.
+The module also sets `-Xexpect-actual-classes`. The database constructor is an `expect object` whose `actual` is generated, and expect/actual classes are still Beta, and without the flag every build carries two warnings that nothing in the project can resolve.
 
 ```
 @Database(entities = [ChatEntity::class, MessageEntity::class], version = 1)
@@ -201,7 +201,7 @@ Room's KSP processor generates the `actual`. This should be mentioned in the com
 Two factories are the module's assembly seam:
 
 ```
-// androidMain — the file path is the only platform-specific piece
+// androidMain: the file path is the only platform-specific piece
 fun chatbotDatabaseBuilder(context: Context): RoomDatabase.Builder<ChatbotDatabase>
 
 // commonMain
@@ -227,23 +227,23 @@ The module's public surface is the repository interface, the domain models, `Cha
 
 ## Migrations
 
-`exportSchema` is on and `shared/schemas/…/1.json` is committed as the baseline every future migration diffs against. Every version bump ships an `@AutoMigration` and a `MigrationTestHelper` test, added by the spec that changes the schema. Adding a table — 009's memories, 010's reminders — is auto-migratable in one line. Destructive fallback is never enabled.
+`exportSchema` is on and `shared/schemas/…/1.json` is committed as the baseline every future migration diffs against. Every version bump ships an `@AutoMigration` and a `MigrationTestHelper` test, added by the spec that changes the schema. Adding a table (009's memories, 010's reminders) is auto-migratable in one line. Destructive fallback is never enabled.
 
 ## Testing
 
 TDD, real objects over fakes, no mocking library.
 
-**Anything needing a real database lives in `androidHostTest`, under Robolectric with `AndroidSQLiteDriver`.** `sqlite-bundled` ships host natives only in its `jvm` variant, and an Android consumer resolves the `android` one, whose `.so` files AGP never puts on the unit-test classpath — `BundledSQLiteDriver` dies there with `UnsatisfiedLinkError`. It stays the production driver, where the APK does carry those natives. Robolectric supplies the host `android.database.sqlite` implementation and is an Android-only dependency, so this is also the only source set it can live in.
+**Anything needing a real database lives in `androidHostTest`, under Robolectric with `AndroidSQLiteDriver`.** `sqlite-bundled` ships host natives only in its `jvm` variant, and an Android consumer resolves the `android` one, whose `.so` files AGP never puts on the unit-test classpath, where `BundledSQLiteDriver` dies with `UnsatisfiedLinkError`. It stays the production driver, where the APK does carry those natives. Robolectric supplies the host `android.database.sqlite` implementation and is an Android-only dependency, so this is also the only source set it can live in.
 
-`commonTest` is not an option while `:shared` targets Android alone: common code then resolves Room's Android overloads, and building a database there would need a `Context`. Tests that touch no database — the fakes and their own tests — still belong in `commonTest`.
+`commonTest` is not an option while `:shared` targets Android alone: common code then resolves Room's Android overloads, and building a database there would need a `Context`. Tests that touch no database, the fakes and their own tests, still belong in `commonTest`.
 
 Swapping the driver is why `createChatbotDatabase` takes it as a parameter.
 
-- **DAO** — cascade delete; `id` and `updatedAt DESC` ordering; the history query returning only `Complete` rows; every converter round-tripping a multi-block content list. The history query's `status = 'Complete'` literal is coupled to an enum constant name with nothing in the compiler to check it, so one test inserts a non-`Complete` row and asserts it is excluded.
-- **Repository** — real in-memory database plus a fake engine, so only the network is faked. Creation from a null id with a truncated title; append to an existing chat; `Completed` persisting a `Complete` row and bumping `updatedAt`, with the row queryable before `Idle` is emitted; `Failed` persisting partial text; the next send excluding that row from history; `cancel` and `retry`; a second concurrent `send` rejected; `getTurnFlow` attaching mid-stream.
-- **Engine doubles** — 003's `FakeScriptedClaudeEngine` emits a scripted list eagerly, which cannot express an assertion taken mid-stream. `FakeManualClaudeEngine` alongside it opens a stream the test feeds event by event and closes when done; the three tests that attach mid-flight, assert mid-stream, or cancel a collector need it.
-- **Turn lifetime** — collect `getTurnFlow`, cancel the collecting scope mid-stream, assert the assistant row still lands. This requires a `TestScope` for collection separate from `externalScope`, and it is the assertion the whole turn design exists to satisfy.
-- **`FakeChatRepository`** in commonTest, in-memory, reproducing the same lifetime semantics — the standard dependency for 005's ViewModel tests.
+- **DAO**: cascade delete; `id` and `updatedAt DESC` ordering; the history query returning only `Complete` rows; every converter round-tripping a multi-block content list. The history query's `status = 'Complete'` literal is coupled to an enum constant name with nothing in the compiler to check it, so one test inserts a non-`Complete` row and asserts it is excluded.
+- **Repository**: real in-memory database plus a fake engine, so only the network is faked. Creation from a null id with a truncated title; append to an existing chat; `Completed` persisting a `Complete` row and bumping `updatedAt`, with the row queryable before `Idle` is emitted; `Failed` persisting partial text; the next send excluding that row from history; `cancel` and `retry`; a second concurrent `send` rejected; `getTurnFlow` attaching mid-stream.
+- **Engine doubles**: 003's `FakeScriptedClaudeEngine` emits a scripted list eagerly, which cannot express an assertion taken mid-stream. `FakeManualClaudeEngine` alongside it opens a stream the test feeds event by event and closes when done; the three tests that attach mid-flight, assert mid-stream, or cancel a collector need it.
+- **Turn lifetime**: collect `getTurnFlow`, cancel the collecting scope mid-stream, assert the assistant row still lands. This requires a `TestScope` for collection separate from `externalScope`, and it is the assertion the whole turn design exists to satisfy.
+- **`FakeChatRepository`** in commonTest, in-memory, reproducing the same lifetime semantics, the standard dependency for 005's ViewModel tests.
 
 A fake `Clock` returning fixed instants keeps timestamp assertions exact.
 

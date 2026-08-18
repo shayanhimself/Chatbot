@@ -1,4 +1,4 @@
-# 005 — Chat Shell
+# 005: Chat Screens
 
 The app's first screens: a chat list and a chat screen, wired together by a Nav 3 back stack that adapts to a two-pane layout on wide windows. This is where 003's stream and 004's storage become something a person can use, and it is the last spec before the M1 sideload checkpoint.
 

@@ -1,4 +1,4 @@
-# 006 — Onboarding
+# 006: Onboarding
 
 First launch asks for the user's Anthropic API key, validates it against the API, and stores it encrypted. Until a key is stored the app has nothing to show and nothing it can do, so onboarding is also the gate: it is the only reachable destination while the key is missing, and the rest of the app becomes reachable the moment one is stored.
 

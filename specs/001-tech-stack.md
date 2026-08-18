@@ -1,4 +1,4 @@
-# 001 — Tech Stack
+# 001: Tech Stack
 
 This spec is the canonical record of the project's technology choices.
 Library versions should not be mentioned here.
@@ -34,14 +34,14 @@ Library versions should not be mentioned here.
 |---|---|---|
 | Multiplatform | KMP from day one; `:shared` is the **only** KMP module (`androidTarget()` now, iOS targets later), holding all data + domain code. Uses `org.jetbrains.kotlin.multiplatform` + AGP's KMP library plugin (`com.android.kotlin.multiplatform.library`) | iOS addable without restructuring; one KMP module subsumes Google's `:core:*` data-side modules as packages |
 | Platform split inside `:shared` | commonMain pure Kotlin; androidMain: Ktor OkHttp engine, Keystore/Tink crypto; iosMain (future): Foundation Models engine, Ktor Darwin engine | Ktor needs a platform engine; crypto is platform API |
-| Android modularization | Feature-modularized — module map, dependency rules, and layer conventions owned by the **`architecture` project skill** | Google modularization guidance: enforced boundaries, parallel builds |
+| Android modularization | Feature-modularized: module map, dependency rules, and layer conventions owned by the **`architecture` project skill** | Google modularization guidance: enforced boundaries, parallel builds |
 
 ## Architecture & DI
 
 | Decision | Choice | Rationale |
 |---|---|---|
 | Architecture | Official guidance: UI → optional Domain → Data; UDF; SSOT; ViewModel state holders. Data + domain live in `:shared` commonMain where possible | developer.android.com/topic/architecture |
-| DI | **Hilt** | Still Google's official recommendation. Metro (ZacSweers) is the emerging compile-time/KMP alternative and appears in official nav3-recipes samples — revisit if project goes KMP; not now |
+| DI | **Hilt** | Still Google's official recommendation. Metro (ZacSweers) is the emerging compile-time/KMP alternative and appears in official nav3-recipes samples. Revisit if project goes KMP; not now |
 | Async | kotlinx.coroutines + Flow | Standard |
 | Serialization | kotlinx.serialization | Nav 3 key serialization + API payloads |
 
@@ -58,19 +58,19 @@ Library versions should not be mentioned here.
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Reminder firing | AlarmManager `setExactAndAllowWhileIdle` gated by `SCHEDULE_EXACT_ALARM` special permission — request via `ACTION_REQUEST_SCHEDULE_EXACT_ALARM` settings intent, re-check on `ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` | Reminders are user-facing exact-time work; WorkManager alone drifts (Doze batching, 15-min periodic floor). User-scheduled reminders are Google's canonical sanctioned use case for this permission. **`USE_EXACT_ALARM` prohibited** — Play policy reserves it for alarm/calendar-core apps |
+| Reminder firing | AlarmManager `setExactAndAllowWhileIdle` gated by `SCHEDULE_EXACT_ALARM` special permission, requested via `ACTION_REQUEST_SCHEDULE_EXACT_ALARM` settings intent, re-check on `ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` | Reminders are user-facing exact-time work; WorkManager alone drifts (Doze batching, 15-min periodic floor). User-scheduled reminders are Google's canonical sanctioned use case for this permission. **`USE_EXACT_ALARM` prohibited**: Play policy reserves it for alarm/calendar-core apps |
 | Permission-denied fallback | WorkManager inexact scheduling | Reminder still fires, within an inexact window |
-| Fire-time pipeline | Thin `BroadcastReceiver` (enqueue + return, milliseconds) → **expedited WorkManager job** (`NETWORK_CONNECTED` constraint, backoff) → Claude composes notification message → notification → Nav 3 deep link into chat | `onReceive()` has a ~10s main-thread budget and the process is killable after return — no place for a network call. Offline/API failure → notification shows stored reminder text; never silently lost |
+| Fire-time pipeline | Thin `BroadcastReceiver` (enqueue + return, milliseconds) → **expedited WorkManager job** (`NETWORK_CONNECTED` constraint, backoff) → Claude composes notification message → notification → Nav 3 deep link into chat | `onReceive()` has a ~10s main-thread budget and the process is killable after return, so there is no place for a network call. Offline/API failure → notification shows stored reminder text; never silently lost |
 | Reboot persistence | `BOOT_COMPLETED` receiver re-registers alarms from Room | Alarms don't survive reboot |
 | Notifications | `POST_NOTIFICATIONS` runtime permission (API 33+); androidx core-ktx `NotificationCompat` | |
 | Background jobs | `androidx.work` (WorkManager) | |
-| Time in shared code | `kotlin.time.Instant` / `kotlin.time.Clock` for timestamps and injected clocks; `kotlinx-datetime` in commonMain for calendar types and time zones | Instant and Clock are standard-library types on the pinned Kotlin and need no opt-in, so kotlinx-datetime is carried only for what the standard library lacks — which reminders need. Domain models stay KMP-pure either way |
+| Time in shared code | `kotlin.time.Instant` / `kotlin.time.Clock` for timestamps and injected clocks; `kotlinx-datetime` in commonMain for calendar types and time zones | Instant and Clock are standard-library types on the pinned Kotlin and need no opt-in, so kotlinx-datetime is carried only for what the standard library lacks and reminders need. Domain models stay KMP-pure either way |
 
 ## AI engine
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Engine (sole, BYOK) | **Ktor client + kotlinx.serialization** against `POST https://api.anthropic.com/v1/messages` with hand-rolled SSE streaming (`message_start` → `content_block_delta`/`text_delta` → `message_stop`) | KMP-insurance: official Anthropic Java SDK is JVM-only; Ktor layer ports to iOS as-is. Small surface — one endpoint, SSE parse. Headers: `x-api-key`, `anthropic-version: 2023-06-01`, `content-type: application/json`. Default model `claude-sonnet-5`; picker for `claude-haiku-4-5` / `claude-opus-4-8`. User's own key only — never a project-owned key in the app |
+| Engine (sole, BYOK) | **Ktor client + kotlinx.serialization** against `POST https://api.anthropic.com/v1/messages` with hand-rolled SSE streaming (`message_start` → `content_block_delta`/`text_delta` → `message_stop`) | KMP-insurance: official Anthropic Java SDK is JVM-only; Ktor layer ports to iOS as-is. Small surface: one endpoint, SSE parse. Headers: `x-api-key`, `anthropic-version: 2023-06-01`, `content-type: application/json`. Default model `claude-sonnet-5`; picker for `claude-haiku-4-5` / `claude-opus-4-8`. User's own key only, never a project-owned key in the app |
 | Tool use | Native Anthropic tool use: `tools` param, `tool_use` / `tool_result` content blocks. SSE parser must additionally handle `input_json_delta` deltas and `stop_reason: "tool_use"`. Agentic loop (model emits tool call → app executes locally → resume turn with result) lives in `:shared` commonMain; executors injected via interfaces | Reminders and memory are created by the model mid-chat |
 | Engine abstraction | Common `ClaudeEngine` interface | Retained despite single engine: test fakes, and a future iOS on-device engine (Foundation Models) slots in without touching callers |
 
@@ -80,8 +80,8 @@ Library versions should not be mentioned here.
 |---|---|---|
 | Unit tests | JUnit4 | Android default; JUnit5 still third-party-plugin territory |
 | Android framework in JVM tests | **Robolectric**; emulated SDK pinned in `robolectric.properties` | Needs JDK 21 to run. The emulated SDK is independent of compileSdk and lags it, because Robolectric supports a new platform later than AGP compiles against one. The pin is load-bearing: without it Robolectric defaults to targetSdk, which it cannot yet run, and every JVM test fails at startup. Raise it once a Robolectric release supports the current targetSdk |
-| UI tests | **Compose testing APIs** (v2), `createComposeRule` + semantics matchers — both local (Robolectric) and instrumented | The tool for Compose UIs. Import the rule from `androidx.compose.ui.test.junit4.v2` — the same name in the parent `junit4` package is the deprecated v1 rule. v2 runs a `StandardTestDispatcher`, so composition-launched coroutines queue instead of running eagerly. |
-| Screenshot tests | Compose Preview Screenshot Testing (`@PreviewTest`) | Official tool; still preview-channel — fall back to Roborazzi if it blocks us |
+| UI tests | **Compose testing APIs** (v2), `createComposeRule` + semantics matchers, both local (Robolectric) and instrumented | The tool for Compose UIs. Import the rule from `androidx.compose.ui.test.junit4.v2`: the same name in the parent `junit4` package is the deprecated v1 rule. v2 runs a `StandardTestDispatcher`, so composition-launched coroutines queue instead of running eagerly. |
+| Screenshot tests | Compose Preview Screenshot Testing (`@PreviewTest`) | Official tool; still preview-channel, so fall back to Roborazzi if it blocks us |
 | Acceptance / E2E | Journey XML files evaluated by agent via `android` CLI against emulator | Spec-level acceptance: each feature spec ships journeys for its acceptance criteria. Complements, never replaces, coded tests |
 | Method | TDD (red → green → refactor) mandatory | Superpowers `test-driven-development` skill enforces |
 
@@ -90,8 +90,8 @@ Library versions should not be mentioned here.
 | Decision | Choice | Rationale |
 |---|---|---|
 | Dev CLI | **`android` CLI** (official Google Android CLI) | Project creation (`android create`), emulator management, running apps, device interaction/screenshots, docs lookup (`android docs`), journey evaluation, skills management. Install: `curl -fsSL https://dl.google.com/android/cli/latest/darwin_arm64/install.sh \| bash` |
-| Agent skills | **Official Android skills** (github.com/android/skills) vendored in `.claude/skills/`: `navigation-3`, `adaptive`, `testing-setup`, `edge-to-edge`, `android-cli` | AI-optimized instructions from Google (open Agent Skills standard). Update: `android update` + re-run `android skills add --project=.` per skill, then review `git diff .claude/skills/` before commit — never merge upstream skill changes unreviewed |
-| Workflow | Superpowers plugin (project scope) | Spec→plan→TDD pipeline — `docs/superpowers-guide.md` |
+| Agent skills | **Official Android skills** (github.com/android/skills) vendored in `.claude/skills/`: `navigation-3`, `adaptive`, `testing-setup`, `edge-to-edge`, `android-cli` | AI-optimized instructions from Google (open Agent Skills standard). Update: `android update` + re-run `android skills add --project=.` per skill, then review `git diff .claude/skills/` before commit. Never merge upstream skill changes unreviewed |
+| Workflow | Superpowers plugin (project scope) | Spec→plan→TDD pipeline: `docs/superpowers-guide.md` |
 | Code formatting | **Spotless** running **ktlint** | Formatting is enforced at the same gate as tests. Style lives in root `.editorconfig` so the IDE and the build agree. |
 
 ## Open items

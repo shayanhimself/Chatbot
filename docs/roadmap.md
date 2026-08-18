@@ -6,7 +6,7 @@ Build order and milestone gates for the app described in `specs/000-product-brie
 
 ## Milestones
 
-### M0 — Scaffold
+### M0: Scaffold
 
 No feature spec; this section is the definition.
 
@@ -18,21 +18,21 @@ No feature spec; this section is the definition.
 
 **Exit gate:** empty app builds and launches; unit + journey baseline green.
 
-### M1 — Chat MVP (specs 002–006)
+### M1: Chat MVP (specs 002–006)
 
 First sideload. Streaming chat with the user's own key; no agentic tools yet.
 
 | Spec | Contents |
 |---|---|
 | `002-design-system.md` | `:core:ui` M3 theme, core components, previews + screenshot tests, companion `design-system` project skill. Grows in later milestones as screens need components |
-| `003-claude-engine.md` | `ClaudeEngine` interface, Ktor Claude implementation, SSE streaming. Highest technical risk — built first among features. Tool-use handling deferred to 008 |
+| `003-claude-engine.md` | `ClaudeEngine` interface, Ktor Claude implementation, SSE streaming. Highest technical risk, so built first among features. Tool-use handling deferred to 008 |
 | `004-chat-storage.md` | Room schema and `ChatRepository`: chats + messages, and the turn that streams a reply and persists it (reminders/memories tables deferred to their specs) |
-| `005-chat-shell.md` | Nav 3 back stack, chat list + chat screen (streaming UI, composer, in-chat model picker), adaptive two-pane, deep-link readiness. Runs on a dev-key stub from debug build config (developer's own key, debug builds only — the product stays BYOK-only). Adds `:shared:testing` so feature modules can consume `:shared`'s test fakes |
+| `005-chat-shell.md` | Nav 3 back stack, chat list + chat screen (streaming UI, composer, in-chat model picker), adaptive two-pane, deep-link readiness. Runs on a dev-key stub from debug build config (developer's own key, debug builds only; the product stays BYOK-only). Adds `:shared:testing` so feature modules can consume `:shared`'s test fakes |
 | `006-onboarding.md` | First-launch key entry, validation, encrypted storage (Tink + Keystore → DataStore), Nav 3 conditional gate (no key → onboarding). Replaces the dev-key stub |
 
 **Exit gate:** onboard with real key → stream chat → chats persist/resume/delete; all journeys green. **Sideload checkpoint.**
 
-### M2 — Tool loop + memory (specs 007–009)
+### M2: Tool loop + memory (specs 007–009)
 
 | Spec | Contents |
 |---|---|
@@ -44,7 +44,7 @@ Memory before reminders: smallest surface that proves the whole tool loop.
 
 **Exit gate:** ask AI to remember → fact persists → shapes new chats → viewable/deletable in settings; journeys green. **Sideload checkpoint.**
 
-### M3 — Reminders (spec 010)
+### M3: Reminders (spec 010)
 
 | Spec | Contents |
 |---|---|
@@ -54,7 +54,7 @@ Hardest subsystem, lands on a proven tool loop.
 
 **Exit gate:** reminder journeys green, including permission-denied (inexact fallback), reboot, and offline-fallback cases. **Sideload checkpoint.**
 
-### M4 — Polish
+### M4: Polish
 
 Deferred UI from earlier specs, then the finish work.
 
@@ -74,13 +74,13 @@ Then:
 1. Brainstorm the feature spec (superpowers brainstorming skill), save to `specs/`
 2. Isolated worktree, then implementation plan → `docs/superpowers/plans/`
 3. TDD implementation (red → green → refactor)
-4. Exit gate: all tests + the milestone's journey XMLs green on the emulator — no milestone starts on a red baseline
+4. Exit gate: all tests + the milestone's journey XMLs green on the emulator. No milestone starts on a red baseline
 
 Spec = what/why (`specs/`); plan = how (`docs/superpowers/plans/`). The settings screen grows across milestones; each addition is specced by the feature that owns it (007 shell + key, 009 memory UI, 010 permission flows).
 
 ## Standing risks
 
-- **M3 device-matrix risk:** exact alarms, Doze, and reboot behavior vary by OEM — test journeys on a physical device, not just the emulator.
+- **M3 device-matrix risk:** exact alarms, Doze, and reboot behavior vary by OEM, so test journeys on a physical device, not just the emulator.
 
 ## Status
 

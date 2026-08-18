@@ -1,37 +1,37 @@
-# 002 — Design System
+# 002: Design System
 
-The `:core:ui` module: the app's Material 3 design system — theme, design tokens, and a reusable Compose component catalog. Every feature module renders through it; it depends on nothing else in the project.
+The `:core:ui` module: the app's Material 3 design system: theme, design tokens, and a reusable Compose component catalog. Every feature module renders through it; it depends on nothing else in the project.
 
-The single source of truth for the visual design is the **"Chatbot Design System"** Claude Design project (with screen mockups in the companion **"Chatbot designs"** project). This spec is a *downstream translation* of that source into Android/Compose terms — it states what `:core:ui` provides and the rules for using it, while raw ramp constants and per-component prop contracts stay in the source. When the design changes upstream, this spec and `:core:ui` are what needs re-syncing; the values here can therefore drift and should be re-verified against the source rather than trusted blindly. Pull the current tokens and designs with the **`pull-design`** skill.
+The single source of truth for the visual design is the **"Chatbot Design System"** Claude Design project (with screen mockups in the companion **"Chatbot designs"** project). This spec is a *downstream translation* of that source into Android/Compose terms. It states what `:core:ui` provides and the rules for using it, while raw ramp constants and per-component prop contracts stay in the source. When the design changes upstream, this spec and `:core:ui` are what needs re-syncing; the values here can therefore drift and should be re-verified against the source rather than trusted blindly. Pull the current tokens and designs with the **`pull-design`** skill.
 
-Dark-first: dark is the default scheme; light is a full opt-in scheme. No Material You / dynamic color — the crafted navy+orange identity ships on every device. No gradients; flat tonal fills only.
+Dark-first: dark is the default scheme; light is a full opt-in scheme. No Material You / dynamic color; the crafted navy+orange identity ships on every device. No gradients; flat tonal fills only.
 
 ## Source of truth & where values live
 
 One home per fact:
 
-- **Claude Design ("Chatbot Design System")** — upstream SSOT for the visual design. Everything below mirrors it and can drift; re-sync with the `pull-design` skill.
-- **`:core:ui` Kotlin token files** — the in-project home for exact values (hex, sp, primitive names), once built: one typed definition, consumed by the code.
-- **`design-system` skill** — owns *usage* (how to find token accessors and catalog components in the code, the design→Compose translation, naming boundary rule) and the manual **sync procedure** (`pull-design` → diff → update code + usage → stamp date). It points to the token files for current values; it does not duplicate them, and the design — not the skill — decides which role/component each element uses.
-- **This spec** — owns the durable *what/why*: decisions and rationale, the two-tier color structure, role names, component families, screenshot strategy, naming rule. It does not own volatile values.
+- **Claude Design ("Chatbot Design System")**: upstream SSOT for the visual design. Everything below mirrors it and can drift; re-sync with the `pull-design` skill.
+- **`:core:ui` Kotlin token files**: the in-project home for exact values (hex, sp, primitive names), once built: one typed definition, consumed by the code.
+- **`design-system` skill**: owns *usage* (how to find token accessors and catalog components in the code, the design→Compose translation, naming boundary rule) and the manual **sync procedure** (`pull-design` → diff → update code + usage → stamp date). It points to the token files for current values; it does not duplicate them, and the design, not the skill, decides which role/component each element uses.
+- **This spec**: owns the durable *what/why*: decisions and rationale, the two-tier color structure, role names, component families, screenshot strategy, naming rule. It does not own volatile values.
 
-Exact values live in the `:core:ui` Kotlin token files, not here — this spec keeps only structure and rationale and points to the code for each family.
+Exact values live in the `:core:ui` Kotlin token files, not here; this spec keeps only structure and rationale and points to the code for each family.
 
 ## Module
 
-- `:core:ui`, package `com.shayanaryan.chatbot.core.ui`. Android library (not KMP — pure UI).
+- `:core:ui`, package `com.shayanaryan.chatbot.core.ui`. Android library (not KMP, pure UI).
 - Depends only on Compose (BOM), Material 3, and the icon/screenshot tooling below. No dependency on `:shared` or any feature module.
 - Replaces the placeholder AGP-template theme (`Color.kt` / `Type.kt` / `Theme.kt`).
 
 ## Token layer
 
-Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for — semantic/extended colors, motion, the mono text style, named component shapes — live in `:core:ui`, split by whether their value depends on runtime state.
+Standard tokens flow through `MaterialTheme` (`ColorScheme`, `Typography`, `Shapes`). Tokens M3 has no slot for (semantic/extended colors, motion, the mono text style, named component shapes) live in `:core:ui`, split by whether their value depends on runtime state.
 
-A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. `ExtendedColors` is the only one: the `ChatbotTheme` composable installs it, and it is read through the `ChatbotExtendedTheme.colors` accessor. Everything else is constant and read directly — the `Spacing`, `Elevation`, `ComponentShapes` and `Motion` sets and `MonoTextStyle` — with no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
+A token set earns a CompositionLocal only if its value depends on the active color scheme or a user/system preference. `ExtendedColors` is the only one: the `ChatbotTheme` composable installs it, and it is read through the `ChatbotExtendedTheme.colors` accessor. Everything else is constant and read directly: the `Spacing`, `Elevation`, `ComponentShapes` and `Motion` sets and `MonoTextStyle`, with no theme lookup, and usable outside composition (draw scopes, previews, test fixtures).
 
 ### Color
 
-The source organizes color in two tiers, and the Android layer mirrors it: a **primitive palette** (every literal value, named once by hue + tone) and two **semantic `ColorScheme`s** (dark default + light) whose roles each reference a primitive. Components read only roles. Both schemes fully specify every role — the light scope darkens hues for legibility on light surfaces rather than reusing the dark tones. Semantic colors M3 has no slot for are an extended set, read via `ChatbotExtendedTheme.colors`.
+The source organizes color in two tiers, and the Android layer mirrors it: a **primitive palette** (every literal value, named once by hue + tone) and two **semantic `ColorScheme`s** (dark default + light) whose roles each reference a primitive. Components read only roles. Both schemes fully specify every role: the light scope darkens hues for legibility on light surfaces rather than reusing the dark tones. Semantic colors M3 has no slot for are an extended set, read via `ChatbotExtendedTheme.colors`.
 
 ### Typography
 
@@ -39,19 +39,19 @@ Full 15-role M3 scale on **Roboto**, with per-role weights from the source. Weig
 
 The M3 Expressive **emphasized** variants are not adopted. Material 3 defines one per role, but the Compose accessors are internal, so no call site can read `MaterialTheme.typography.bodyLargeEmphasized`. Emphasis steps up a role instead (`bodyLarge` → `titleMedium`), which is what the upstream design system provides. Revisit when the API is public.
 
-A monospace style (`MonoTextStyle`) — API keys, model ids, code — is the one text style outside the M3 scale. It resolves to the device monospace via `FontFamily.Monospace`; bundling a Roboto Mono asset is deferred until fidelity demands it.
+A monospace style (`MonoTextStyle`), for API keys, model ids and code, is the one text style outside the M3 scale. It resolves to the device monospace via `FontFamily.Monospace`; bundling a Roboto Mono asset is deferred until fidelity demands it.
 
 ### Shape
 
 Corner radii follow the primitive→semantic tiering:
 
-- **`RadiusPrimitives`** — the raw radius ramp, mirrored 1:1 from the upstream `--radius-*` tokens (numeric scale, `N = px/4`). **Public and call-site-facing** — this is where the tiering diverges from color: the mockups use the numeric radius scale directly on plain surfaces (the 20dp logo tiles), exactly as they use the `Spacing` scale, so a feature builds its own `RoundedCornerShape` from the matching primitive for any radius no M3 slot or `ComponentShapes` role already names.
-- **`ChatbotM3Shapes`** — the M3 `Shapes` ramp, built from those primitives and installed into `MaterialTheme(shapes = …)`. It pins the five public M3 slots to our radii, so every built-in M3 component that reads its default corner from the theme draws our values, not the library's.
-- **`ComponentShapes`** — named per-component roles, read directly at call sites. Each maps to its upstream component-scoped token, and so **resolves to a `RadiusPrimitives` value**. Two reasons: it mirrors the upstream structure exactly (a component role points at a primitive — `--radius-card: var(--radius-3)`), and it can reach off-slot radii the public M3 `Shapes` cannot name (the chat bubbles' 20dp corner has no slot). `button` is the pill `--radius-full`.
+- **`RadiusPrimitives`**: the raw radius ramp, mirrored 1:1 from the upstream `--radius-*` tokens (numeric scale, `N = px/4`). **Public and call-site-facing**: this is where the tiering diverges from color: the mockups use the numeric radius scale directly on plain surfaces (the 20dp logo tiles), exactly as they use the `Spacing` scale, so a feature builds its own `RoundedCornerShape` from the matching primitive for any radius no M3 slot or `ComponentShapes` role already names.
+- **`ChatbotM3Shapes`**: the M3 `Shapes` ramp, built from those primitives and installed into `MaterialTheme(shapes = …)`. It pins the five public M3 slots to our radii, so every built-in M3 component that reads its default corner from the theme draws our values, not the library's.
+- **`ComponentShapes`**: named per-component roles, read directly at call sites. Each maps to its upstream component-scoped token, and so **resolves to a `RadiusPrimitives` value**. Two reasons: it mirrors the upstream structure exactly (a component role points at a primitive, `--radius-card: var(--radius-3)`), and it can reach off-slot radii the public M3 `Shapes` cannot name (the chat bubbles' 20dp corner has no slot). `button` is the pill `--radius-full`.
 
 ### Elevation & motion
 
-Dark elevation is conveyed by tonal surface color; shadow (`Elevation`) is reserved for FAB, menus, dialogs, and the fire-time heads-up notification. Cards default to flat filled surfaces. The shadow ramp is identical in both schemes — depth in dark comes from the tonal `surfaceContainer*` roles, not from different shadow values.
+Dark elevation is conveyed by tonal surface color; shadow (`Elevation`) is reserved for FAB, menus, dialogs, and the fire-time heads-up notification. Cards default to flat filled surfaces. The shadow ramp is identical in both schemes: depth in dark comes from the tonal `surfaceContainer*` roles, not from different shadow values.
 
 Motion (`Motion`): a set of easings and durations. Press scales the target down and, on filled surfaces, shifts to the pressed color; hover applies a state layer. Streaming caret blinks at a fixed interval. No infinite decorative loops. No glass/backdrop blur; `scrim` dims behind dialogs.
 
@@ -67,7 +67,7 @@ Selects the dark or light `ColorScheme`, installs `MaterialTheme(colorScheme, ty
 
 ## Icon system
 
-`Icon` wraps **Material Symbols Rounded**, shipped as a **variable-font asset in `:core:ui`** (the source loads it from the Google Fonts CDN; the app bundles it in-APK so chrome renders offline). Glyphs are referenced by ligature name; variable axes `FILL` (rest → active), `wght`, `GRAD`, and optical size are settable per use. No PNG/SVG icon assets; emoji are never UI icons. The entire icon set is that one bundled font file — no per-icon drawables; subsetting the font to only used glyphs is a deferred APK-size optimization.
+`Icon` wraps **Material Symbols Rounded**, shipped as a **variable-font asset in `:core:ui`** (the source loads it from the Google Fonts CDN; the app bundles it in-APK so chrome renders offline). Glyphs are referenced by ligature name; variable axes `FILL` (rest → active), `wght`, `GRAD`, and optical size are settable per use. No PNG/SVG icon assets; emoji are never UI icons. The entire icon set is that one bundled font file, with no per-icon drawables; subsetting the font to only used glyphs is a deferred APK-size optimization.
 
 Every ligature the app renders is a constant on `Glyphs` so no call site spells one out. Feature modules extend it as their screens need glyphs. Models carry no glyph: a model is identified by name only, never an icon.
 
@@ -83,22 +83,22 @@ Every ligature the app renders is a constant on `Glyphs` so no call site spells 
 
 ## Component catalog
 
-All components are stateless and presentational — state in via parameters, events out via lambdas — so feature modules own state and these stay screenshot-testable. Grouped as in the source project:
+All components are stateless and presentational, taking state in via parameters and sending events out via lambdas, so feature modules own state and these stay screenshot-testable. Grouped as in the source project:
 
-- **core** — `DsButton`, `DsIconButton`, `DsIcon`, `DsCard`, `DsBadge`. `DsButton` carries a `loading` state distinct from disabled: full colour and label kept, trailing slot becomes a spinner, click swallowed.
-- **forms** — `DsTextField`, `DsSwitch`, `DsChip`.
-- **feedback** — `DsDialog`, `DsSnackbar`.
+- **core**: `DsButton`, `DsIconButton`, `DsIcon`, `DsCard`, `DsBadge`. `DsButton` carries a `loading` state distinct from disabled: full colour and label kept, trailing slot becomes a spinner, click swallowed.
+- **forms**: `DsTextField`, `DsSwitch`, `DsChip`.
+- **feedback**: `DsDialog`, `DsSnackbar`.
 
-**Strings.** No component holds a user-visible literal. Text a user reads or TalkBack speaks resolves from `:core:ui`'s `strings.xml`, and the module declares only strings that are generic by nature — a loading state description, a retry label, a dismiss description, the wordmark. Per-screen copy is a component parameter: the feature owns the words and resolves them from its own resources at the call site, which is what keeps `:core:ui` free of product vocabulary. Material Symbols ligature names are glyph identifiers rather than text, so they stay in code — but only in `Glyphs`, never at a call site: a mistyped ligature renders nothing and no compiler catches it.
+**Strings.** No component holds a user-visible literal. Text a user reads or TalkBack speaks resolves from `:core:ui`'s `strings.xml`, and the module declares only strings that are generic by nature: a loading state description, a retry label, a dismiss description, the wordmark. Per-screen copy is a component parameter: the feature owns the words and resolves them from its own resources at the call site, which is what keeps `:core:ui` free of product vocabulary. Material Symbols ligature names are glyph identifiers rather than text, so they stay in code, but only in `Glyphs`, never at a call site: a mistyped ligature renders nothing and no compiler catches it.
 
 **What is deliberately not here.** A component earns a place in `:core:ui` by having more than one consumer *and* a shape that does not vary per screen. Two families fail that test:
 
-- **Chat surfaces** — `MessageBubble`, `ChatListItem`, `ModelPicker`. Single consumer (`:feature:chat`), and their props are domain-shaped (message role, tool chips, model identity), which `:core:ui` cannot see. Hosting them here would mean duplicating those concepts as DS-local enums and mapping to them at every call site. They are built in the feature module under spec 005.
-- **Empty states** — structurally different per screen, not merely different in copy: the chat screen wants a hero block, a list screen wants icon + line + optional CTA. A shared component would freeze a guessed layout before any screen exists to validate it. Features build their own; hoist only once two screens demonstrably share a structure.
+- **Chat surfaces**: `MessageBubble`, `ChatListItem`, `ModelPicker`. Single consumer (`:feature:chat`), and their props are domain-shaped (message role, tool chips, model identity), which `:core:ui` cannot see. Hosting them here would mean duplicating those concepts as DS-local enums and mapping to them at every call site. They are built in the feature module under spec 005.
+- **Empty states**: structurally different per screen, not merely different in copy: the chat screen wants a hero block, a list screen wants icon + line + optional CTA. A shared component would freeze a guessed layout before any screen exists to validate it. Features build their own; hoist only once two screens demonstrably share a structure.
 
 The design system remains the source of truth for their *appearance* regardless: bubble shapes (`ComponentShapes.bubbleUser`/`bubbleAssistant`) and the streaming-caret duration are tokens defined here and consumed there. Appearance SSOT is the token vocabulary, not every composition built from it.
 
-**Naming.** Catalog components carry a `Ds` prefix (`DsButton`, `DsIcon`, `DsCard`, …). Feature modules legitimately use both the catalog and `androidx.compose.material3` directly — the latter for M3 components the catalog does not wrap — so an un-prefixed `Button` would leave a reader unsure whether it is ours or M3's. The prefix makes provenance obvious at every call site and lets both coexist in one file with no import aliasing. Inside `:core:ui`, a wrapper still aliases the M3 original it delegates to (e.g. `import androidx.compose.material3.Button as M3Button`). Recorded in the `architecture` / `design-system` skills.
+**Naming.** Catalog components carry a `Ds` prefix (`DsButton`, `DsIcon`, `DsCard`, …). Feature modules legitimately use both the catalog and `androidx.compose.material3` directly (the latter for M3 components the catalog does not wrap) so an un-prefixed `Button` would leave a reader unsure whether it is ours or M3's. The prefix makes provenance obvious at every call site and lets both coexist in one file with no import aliasing. Inside `:core:ui`, a wrapper still aliases the M3 original it delegates to (e.g. `import androidx.compose.material3.Button as M3Button`). Recorded in the `architecture` / `design-system` skills.
 
 ## Screenshot testing
 

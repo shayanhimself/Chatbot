@@ -1,11 +1,11 @@
-# Android CLI & Official Android Skills — Usage Guide
+# Android CLI & Official Android Skills: Usage Guide
 
 Two related pieces from Google (announced April 2026, ["Build Android apps 3x faster using any agent"](https://android-developers.googleblog.com/2026/04/build-android-apps-3x-faster-using-any-agent.html)):
 
-- **`android` CLI** — command-line tool for project creation, emulators, running apps, device inspection, docs search, journey tests, and skills management. Docs: [developer.android.com/tools/agents/android-cli](https://developer.android.com/tools/agents/android-cli)
-- **Android skills** — [github.com/android/skills](https://github.com/android/skills): AI-optimized SKILL.md instruction sets (open [Agent Skills standard](https://agentskills.io)) covering areas where LLMs underperform. Works with Claude Code, Gemini, Antigravity, Codex. Docs: [developer.android.com/tools/agents/android-skills](https://developer.android.com/tools/agents/android-skills)
+- **`android` CLI**: command-line tool for project creation, emulators, running apps, device inspection, docs search, journey tests, and skills management. Docs: [developer.android.com/tools/agents/android-cli](https://developer.android.com/tools/agents/android-cli)
+- **Android skills**: [github.com/android/skills](https://github.com/android/skills): AI-optimized SKILL.md instruction sets (open [Agent Skills standard](https://agentskills.io)) covering areas where LLMs underperform. Works with Claude Code, Gemini, Antigravity, Codex. Docs: [developer.android.com/tools/agents/android-skills](https://developer.android.com/tools/agents/android-skills)
 
-Both are pinned stack choices — see `specs/001-tech-stack.md`.
+Both are pinned stack choices; see `specs/001-tech-stack.md`.
 
 ---
 
@@ -23,7 +23,7 @@ android info            # environment info (SDK location etc.)
 android init            # initialize environment for the CLI
 ```
 
-**`android init` installs skills *globally*** (`~/.claude/skills`, `~/.copilot/skills`), not into the repo. For committed, project-local skills use `android skills add … --project=.` (see §2) — that's what this project wants.
+**`android init` installs skills *globally*** (`~/.claude/skills`, `~/.copilot/skills`), not into the repo. For committed, project-local skills use `android skills add … --project=.` (see §2), which is what this project wants.
 
 ### SDK management
 
@@ -58,11 +58,11 @@ android run --apks=<path.apk> [--activity=...] [--device=<serial>] [--debug]
 android describe               # project metadata: build targets + APK output paths
 ```
 
-### Inspect a running app (agent superpower — cheaper than screenshots)
+### Inspect a running app (agent superpower, cheaper than screenshots)
 
 ```bash
 android layout --pretty                  # JSON tree of on-screen UI elements
-android layout --diff                    # only elements changed since last call — keeps context small
+android layout --diff                    # only elements changed since last call, keeps context small
 android screen capture -o screen.png     # screenshot (secondary tool; WebViews, images)
 android screen capture --annotate -o screen.png   # numbered boxes on UI elements
 android screen resolve --screen screen.png --string "#3"   # label → coordinates
@@ -85,7 +85,7 @@ android docs search <keywords>
 android docs fetch <...>
 ```
 
-Authoritative developer.android.com content, AI-curated. Use for migration guides, API examples, best practices — fresher than model training data.
+Authoritative developer.android.com content, AI-curated. Use for migration guides, API examples, best practices. Fresher than model training data.
 
 ### Android Studio bridge
 
@@ -114,12 +114,12 @@ Journey = XML file of natural-language steps, evaluated by an AI agent driving a
 
 Semantics:
 
-- Steps execute literally, in order, independently — no intent-guessing
+- Steps execute literally, in order, independently, with no intent-guessing
 - `Verify`/`Check` steps inspect the current screen only (no scrolling, no interaction)
 - A single verify step with multiple expectations fails if ANY is false
-- Output: JSON per action — `PASSED` / `FAILED` / `SKIPPED` + adb commands used + comments
+- Output: JSON per action: `PASSED` / `FAILED` / `SKIPPED` + adb commands used + comments
 
-Project convention (spec 000): every feature spec ships journey files covering its acceptance criteria. Journeys complement coded tests (JUnit/Compose testing APIs), never replace them — they're slow, token-costed, nondeterministic, but survive UI refactors because they test intent.
+Project convention (spec 000): every feature spec ships journey files covering its acceptance criteria. Journeys complement coded tests (JUnit/Compose testing APIs), never replace them. They're slow, token-costed, nondeterministic, but survive UI refactors because they test intent.
 
 ---
 
@@ -131,15 +131,15 @@ Copied into `.claude/skills/` (committed, so they're reproducible, reviewable, o
 
 | Skill | Use when |
 |---|---|
-| `navigation-3` | Any navigation work — setup, migration, deep links, multiple back stacks, scenes (dialog/bottom-sheet/list-detail/two-pane), conditional nav, result flows, Hilt/ViewModel integration |
-| `adaptive` | UI across phones/tablets/foldables/desktop — window size classes, multi-pane via Nav3 Scenes, adaptive components |
+| `navigation-3` | Any navigation work: setup, migration, deep links, multiple back stacks, scenes (dialog/bottom-sheet/list-detail/two-pane), conditional nav, result flows, Hilt/ViewModel integration |
+| `adaptive` | UI across phones/tablets/foldables/desktop: window size classes, multi-pane via Nav3 Scenes, adaptive components |
 | `testing-setup` | Installing test libraries, building unit/UI/screenshot/e2e harnesses |
 | `edge-to-edge` | Edge-to-edge migration; UI obscured by system bars; IME insets |
-| `styles` | Jetpack Compose Styles API — component themes, making custom components styleable, migrating layout properties to unified styles |
+| `styles` | Jetpack Compose Styles API: component themes, making custom components styleable, migrating layout properties to unified styles |
 | `android-intent-security` | Auditing Intent handling / manifest component config to prevent Intent Redirection and unauthorized access |
 | `android-cli` | Teaches the agent the `android` CLI itself (section 1 is distilled from it) |
 
-They auto-activate — Claude Code matches the task against each skill's `description`. Manual trigger: just name the topic, or invoke via `/` skill menu.
+They auto-activate: Claude Code matches the task against each skill's `description`. Manual trigger: just name the topic, or invoke via `/` skill menu.
 
 Full catalog (browse before adding more): `android skills list`, `android skills find <keyword>`, or [developer.android.com/tools/agents/android-skills/browse](https://developer.android.com/tools/agents/android-skills/browse). Available but not vendored: `agp-9-upgrade`, `migrate-xml-views-to-jetpack-compose`, `r8-analyzer`, `perfetto-*`, camera/wear/xr/play skills.
 
@@ -151,11 +151,11 @@ Full catalog (browse before adding more): `android skills list`, `android skills
 android skills add <name> --project=. --agent=claude-code
 ```
 
-- `<name>` — positional, e.g. `navigation-3`. Or `--all` for every skill.
-- `--project=.` — install into this repo (`.claude/skills/`), not globally. Omit it and the skill lands in your global agent dirs.
-- `--agent=` — comma-separated agent list; **the Claude Code agent is `claude-code`** (not `claude`). Omit to install for *all* detected agents (adds `~/.copilot/skills` etc.). Valid values include `claude-code`, `github-copilot`, `codex`, `cursor`, `gemini`, `windsurf`, `universal`, … (`android skills install <x>` with a bad `--agent` prints the full list).
+- `<name>`: positional, e.g. `navigation-3`. Or `--all` for every skill.
+- `--project=.`: install into this repo (`.claude/skills/`), not globally. Omit it and the skill lands in your global agent dirs.
+- `--agent=`: comma-separated agent list; **the Claude Code agent is `claude-code`** (not `claude`). Omit to install for *all* detected agents (adds `~/.copilot/skills` etc.). Valid values include `claude-code`, `github-copilot`, `codex`, `cursor`, `gemini`, `windsurf`, `universal`, … (`android skills install <x>` with a bad `--agent` prints the full list).
 
-Then commit. (Equivalent: copy the folder from a clone of github.com/android/skills — that's how the current seven were installed.)
+Then commit. (Equivalent: copy the folder from a clone of github.com/android/skills, which is how the current seven were installed.)
 
 Vendor all seven, Claude Code only:
 
@@ -166,7 +166,7 @@ done
 git add .claude/skills && git commit
 ```
 
-### Updating skills — the important part
+### Updating skills: the important part
 
 No `android skills update` command exists. Procedure:
 
@@ -178,7 +178,7 @@ git diff .claude/skills/                                    # REVIEW before comm
 git add .claude/skills && git commit
 ```
 
-**Never commit upstream skill changes unreviewed.** Skills are instructions the agent obeys — a prompt-injection surface. The git diff review is the security boundary. Cadence: monthly, plus before major feature work (repo releases roughly monthly).
+**Never commit upstream skill changes unreviewed.** Skills are instructions the agent obeys, and so a prompt-injection surface. The git diff review is the security boundary. Cadence: monthly, plus before major feature work (repo releases roughly monthly).
 
 ### Removing
 
@@ -190,7 +190,7 @@ android skills remove ...        # or just delete the folder from .claude/skills
 
 ## References
 
-- `specs/001-tech-stack.md` — stack decisions incl. these tools
-- `docs/superpowers-guide.md` — the workflow these tools plug into
-- `.claude/skills/android-cli/references/` — `interact.md` (device interaction), `journeys.md` (journey format spec)
-- [android-developers.googleblog.com — launch post](https://android-developers.googleblog.com/2026/04/build-android-apps-3x-faster-using-any-agent.html)
+- `specs/001-tech-stack.md`: stack decisions incl. these tools
+- `docs/superpowers-guide.md`: the workflow these tools plug into
+- `.claude/skills/android-cli/references/`: `interact.md` (device interaction), `journeys.md` (journey format spec)
+- [android-developers.googleblog.com, launch post](https://android-developers.googleblog.com/2026/04/build-android-apps-3x-faster-using-any-agent.html)

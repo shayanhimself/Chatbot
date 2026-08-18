@@ -1,6 +1,6 @@
-# 003 — Claude Engine
+# 003: Claude Engine
 
-The `ClaudeEngine`: the app's sole interface to Claude. It streams a message history to `POST /v1/messages` and emits the assistant's reply as it arrives. Lives in `:shared` commonMain (data layer); stateless — callers pass full history in, nothing is persisted here.
+The `ClaudeEngine`: the app's sole interface to Claude. It streams a message history to `POST /v1/messages` and emits the assistant's reply as it arrives. Lives in `:shared` commonMain (data layer); stateless, so callers pass full history in, nothing is persisted here.
 
 Scope is text streaming only. Tool use (`tool_use` / `tool_result`, agentic loop) is deferred to 008; memory to 009; persistence to 004; UI/ViewModel to 005; key storage to 006/007. See the deferrals at the bottom.
 
@@ -12,7 +12,7 @@ interface ClaudeEngine {
 }
 ```
 
-One cold `Flow` per call. Main-safe (Ktor suspends on its own dispatchers). Emits exactly one terminal `Completed` or `Failed`, then completes. It never throws for API or domain errors — every outcome is an event a ViewModel folds into `UiState` (architecture: no ViewModel→UI event bus). Only structured cancellation propagates, cancelling the in-flight HTTP call.
+One cold `Flow` per call. Main-safe (Ktor suspends on its own dispatchers). Emits exactly one terminal `Completed` or `Failed`, then completes. It never throws for API or domain errors: every outcome is an event a ViewModel folds into `UiState` (architecture: no ViewModel→UI event bus). Only structured cancellation propagates, cancelling the in-flight HTTP call.
 
 ## Types
 
@@ -52,35 +52,35 @@ sealed interface ApiError {                    // no user-facing text (architect
 fun interface ApiKeyProvider { suspend fun apiKey(): String }
 ```
 
-`maxTokens` defaults to `DEFAULT_MAX_TOKENS` (8192) — long enough for a detailed chat turn, short enough that a runaway response stays cheap on the user's own key.
+`maxTokens` defaults to `DEFAULT_MAX_TOKENS` (8192), long enough for a detailed chat turn, short enough that a runaway response stays cheap on the user's own key.
 
 `ContentBlock` is a list rather than a bare `String` so 008 can add `ToolUse` / `ToolResult` without reshaping `ClaudeMessage`. Only `Text` exists in this spec.
 
-`ApiError` carries no strings a user reads; feature ViewModels map each case to a string resource. `RateLimited` and `Overloaded` expose enough for a caller retry policy — the engine itself does not retry.
+`ApiError` carries no strings a user reads; feature ViewModels map each case to a string resource. `RateLimited` and `Overloaded` expose enough for a caller retry policy; the engine itself does not retry.
 
 ## Implementation
 
 `DefaultClaudeEngine(client: HttpClient, keyProvider: ApiKeyProvider)` is the one concrete engine. The `ClaudeEngine` interface is retained despite the single implementation for test fakes and a future iOS on-device engine (per `001`).
 
-**Request.** `POST https://api.anthropic.com/v1/messages`. Headers: `x-api-key` (from `keyProvider.apiKey()` per request — never held or logged), `anthropic-version: 2023-06-01`, `content-type: application/json`, `accept: text/event-stream`. Body: `{ model, max_tokens, system?, stream: true, thinking: { type: "disabled" }, messages: [{ role, content: [{ type: "text", text }] }] }`. `thinking` is sent explicitly as `{"type": "disabled"}`, not omitted — on the default model (`Sonnet`) an absent `thinking` field turns on adaptive thinking, billing thinking tokens on the user's key and stalling the first visible token for a feature nobody chose. Sending `disabled` makes "no thinking" true across all three picker models. Turning thinking on is a deliberate future-spec decision.
+**Request.** `POST https://api.anthropic.com/v1/messages`. Headers: `x-api-key` (from `keyProvider.apiKey()` per request, never held or logged), `anthropic-version: 2023-06-01`, `content-type: application/json`, `accept: text/event-stream`. Body: `{ model, max_tokens, system?, stream: true, thinking: { type: "disabled" }, messages: [{ role, content: [{ type: "text", text }] }] }`. `thinking` is sent explicitly as `{"type": "disabled"}`, not omitted: on the default model (`Sonnet`) an absent `thinking` field turns on adaptive thinking, billing thinking tokens on the user's key and stalling the first visible token for a feature nobody chose. Sending `disabled` makes "no thinking" true across all three picker models. Turning thinking on is a deliberate future-spec decision.
 
-**SSE.** Hand-rolled per `001` (no Ktor SSE plugin) — one parse path that extends to `input_json_delta` in 008. The Ktor SSE plugin is also unusable here: its client requires an engine advertising `SSECapability`, which `MockEngine` does not, so the hermetic fixture tests could not drive it. Reading the raw `ByteReadChannel` keeps the whole test suite on `MockEngine`. The response body is read as a stream, not buffered: `preparePost(...).execute { }` returns before the body is read, and `bodyAsChannel().readUTF8Line()` pulls frames as they arrive. Dispatch on the `data` JSON `type`:
+**SSE.** Hand-rolled per `001` (no Ktor SSE plugin): one parse path that extends to `input_json_delta` in 008. The Ktor SSE plugin is also unusable here: its client requires an engine advertising `SSECapability`, which `MockEngine` does not, so the hermetic fixture tests could not drive it. Reading the raw `ByteReadChannel` keeps the whole test suite on `MockEngine`. The response body is read as a stream, not buffered: `preparePost(...).execute { }` returns before the body is read, and `bodyAsChannel().readUTF8Line()` pulls frames as they arrive. Dispatch on the `data` JSON `type`:
 
-- `message_start` — capture input token usage.
-- `content_block_delta` with a `text_delta` — emit `Delta`. `thinking` blocks and any non-`text_delta` block are ignored.
-- `message_delta` — capture `stop_reason` and cumulative output usage.
-- `message_stop` — emit `Completed`.
-- SSE `event: error` — emit `Failed`, then end.
+- `message_start`: capture input token usage.
+- `content_block_delta` with a `text_delta`: emit `Delta`. `thinking` blocks and any non-`text_delta` block are ignored.
+- `message_delta`: capture `stop_reason` and cumulative output usage.
+- `message_stop`: emit `Completed`.
+- SSE `event: error`: emit `Failed`, then end.
 - `event: ping` and any unrecognized `type` are ignored; a stream that closes without `message_stop` is a truncation and maps to `Unexpected`.
 
 **Errors.** A non-2xx status before streaming maps to a `ApiError` (the `retry-after` header populates `RateLimited`). Lost connectivity maps to `Network`; a byte-gap stall (`socketTimeout`) to `Timeout`; a malformed frame or JSON to `Unexpected`.
 
 ## Module and DI
 
-`:shared` owns construction; `:app` owns only DI registration. `:shared` assembles the engine and keeps the Ktor `HttpClient` internal — nothing outside the module sees the client. It exposes exactly two public symbols: the `ClaudeEngine` interface and a factory:
+`:shared` owns construction; `:app` owns only DI registration. `:shared` assembles the engine and keeps the Ktor `HttpClient` internal, so nothing outside the module sees the client. It exposes exactly two public symbols: the `ClaudeEngine` interface and a factory:
 
 ```
-// commonMain — client, config, and impl are all internal
+// commonMain: client, config, and impl are all internal
 internal fun HttpClientConfig<*>.installChatDefaults() { /* HttpTimeout only */ }
 internal expect fun createClaudeHttpClient(): HttpClient
 internal class DefaultClaudeEngine(...) : ClaudeEngine
@@ -88,15 +88,15 @@ internal class DefaultClaudeEngine(...) : ClaudeEngine
 fun createClaudeEngine(keyProvider: ApiKeyProvider): ClaudeEngine =   // the only assembly seam
     DefaultClaudeEngine(createClaudeHttpClient(), keyProvider)
 
-// androidMain — the engine is the only platform-specific piece
+// androidMain: the engine is the only platform-specific piece
 internal actual fun createClaudeHttpClient(): HttpClient = HttpClient(OkHttp) { installChatDefaults() }
 ```
 
-`HttpTimeout`: `requestTimeoutMillis = null` (the stream is long-lived), `connectTimeoutMillis = 15_000`, `socketTimeoutMillis = 60_000`. A future iosMain `actual` uses `HttpClient(Darwin)` with the same config — which is why the client factory is `:shared`, not `:app`. `ktor-client-core` is the multiplatform API used everywhere; only the engine artifact (`ktor-client-okhttp`) is androidMain.
+`HttpTimeout`: `requestTimeoutMillis = null` (the stream is long-lived), `connectTimeoutMillis = 15_000`, `socketTimeoutMillis = 60_000`. A future iosMain `actual` uses `HttpClient(Darwin)` with the same config, which is why the client factory is `:shared`, not `:app`. `ktor-client-core` is the multiplatform API used everywhere; only the engine artifact (`ktor-client-okhttp`) is androidMain.
 
 No `ContentNegotiation` plugin. The engine hand-rolls SSE and never calls `body<T>()`; the only thing ContentNegotiation would do is serialize the request body, which one `claudeJson.encodeToString` call already does with the same `Json` instance the SSE parser needs. It would also append an `Accept: application/json` header alongside the explicit `accept: text/event-stream`. So `installChatDefaults()` installs `HttpTimeout` only, dropping `ktor-client-content-negotiation` and `ktor-serialization-kotlinx-json`.
 
-`:app` contributes one Hilt binding — `@Provides fun chatEngine(keyProvider) = createClaudeEngine(keyProvider)`. It ships no `ApiKeyProvider` binding, since no production `ApiKeyProvider` implementation exists in this spec (005 provides a debug stub, 006 the real one); that binding lands with its implementation. It never references `HttpClient`. `:app` is irreducible only because Hilt cannot enter `:shared` and because `ApiKeyProvider`'s real implementation is assembled by Hilt from androidMain crypto (006).
+`:app` contributes one Hilt binding: `@Provides fun chatEngine(keyProvider) = createClaudeEngine(keyProvider)`. It ships no `ApiKeyProvider` binding, since no production `ApiKeyProvider` implementation exists in this spec (005 provides a debug stub, 006 the real one); that binding lands with its implementation. It never references `HttpClient`. `:app` is irreducible only because Hilt cannot enter `:shared` and because `ApiKeyProvider`'s real implementation is assembled by Hilt from androidMain crypto (006).
 
 `ApiKeyProvider` is defined here as an interface only; no production implementation ships in this spec.
 
@@ -104,9 +104,9 @@ No `ContentNegotiation` plugin. The engine hand-rolls SSE and never calls `body<
 
 TDD, fakes not mocks (architecture).
 
-- **`FakeScriptedClaudeEngine`** (commonTest) — emits scripted event lists so later feature specs test against it, never the network.
-- **`DefaultClaudeEngine`** — hermetic, via Ktor `MockEngine` feeding fixtures recorded from a real API response (not invented): happy path, `Refusal` stop, each error status → the correct `ApiError`, `retry-after` parsing, malformed SSE → `Unexpected`, a mid-stream `error` event, and cancellation mid-stream. `Json { ignoreUnknownKeys = true }`.
-- **Gated integration test** — hits the real endpoint with a dev key read from the environment or `local.properties`, and is skipped when the key is absent so the default suite stays hermetic and CI-safe. Its captured SSE seeds the fixtures above; this is how the streaming risk is retired before any UI exists.
+- **`FakeScriptedClaudeEngine`** (commonTest): emits scripted event lists so later feature specs test against it, never the network.
+- **`DefaultClaudeEngine`**: hermetic, via Ktor `MockEngine` feeding fixtures recorded from a real API response (not invented): happy path, `Refusal` stop, each error status → the correct `ApiError`, `retry-after` parsing, malformed SSE → `Unexpected`, a mid-stream `error` event, and cancellation mid-stream. `Json { ignoreUnknownKeys = true }`.
+- **Gated integration test**: hits the real endpoint with a dev key read from the environment or `local.properties`, and is skipped when the key is absent so the default suite stays hermetic and CI-safe. Its captured SSE seeds the fixtures above; this is how the streaming risk is retired before any UI exists.
 
 Real end-to-end verification (real key, on-device) happens at the M1 sideload checkpoint via journey XMLs (`001`'s E2E lane), owned by 005 onward.
 

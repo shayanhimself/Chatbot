@@ -1,4 +1,4 @@
-# 000 — Product Brief
+# 000: Product Brief
 
 Status: draft (refine via superpowers brainstorming skill before writing feature specs)
 
@@ -22,12 +22,8 @@ An Android chatbot app. The user chats with Claude about anything, using their o
 
 ## Constraints
 
-- Claude key: user-owned, encrypted at rest (Tink + Keystore → DataStore), never logged. Network required for inference — the app has no offline engine.
-- Exact alarms: `SCHEDULE_EXACT_ALARM` special permission (not pre-granted on Android 14+; request via `ACTION_REQUEST_SCHEDULE_EXACT_ALARM`, user can revoke). **Never `USE_EXACT_ALARM`** — Play policy reserves it for alarm/calendar-core apps. When denied: WorkManager inexact fallback.
+- Claude key: user-owned, encrypted at rest (Tink + Keystore → DataStore), never logged. Network required for inference; the app has no offline engine.
+- Exact alarms: `SCHEDULE_EXACT_ALARM` special permission (not pre-granted on Android 14+; request via `ACTION_REQUEST_SCHEDULE_EXACT_ALARM`, user can revoke). **Never `USE_EXACT_ALARM`**: Play policy reserves it for alarm/calendar-core apps. When denied: WorkManager inexact fallback.
 - Notifications: `POST_NOTIFICATIONS` runtime permission (API 33+).
-- Reminder notification content is composed at fire time by an expedited WorkManager job calling Claude; on failure/offline it shows the stored reminder text — a reminder is never silently lost.
+- Reminder notification content is composed at fire time by an expedited WorkManager job calling Claude; on failure/offline it shows the stored reminder text, so a reminder is never silently lost.
 - targetSdk 36 (Play requirement from 2026-08-31).
-
-## Specs
-
-- 001-tech-stack.md — canonical tech stack

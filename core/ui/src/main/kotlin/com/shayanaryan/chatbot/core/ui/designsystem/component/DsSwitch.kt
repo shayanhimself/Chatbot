@@ -12,7 +12,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import androidx.compose.material3.Switch as M3Switch
 
 /**
- * Design-system toggle switch — a thin wrapper over the M3 [M3Switch] with our theme colors.
+ * Design-system toggle switch: a thin wrapper over the M3 [M3Switch] with our theme colors.
  *
  * @param checked whether the switch is on.
  * @param onCheckedChange invoked with the new state on toggle.

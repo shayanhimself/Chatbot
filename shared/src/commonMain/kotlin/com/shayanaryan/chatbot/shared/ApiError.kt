@@ -1,7 +1,7 @@
 package com.shayanaryan.chatbot.shared
 
 /**
- * Every way a call to the API can fail, as data. Deliberately carries no text a user reads —
+ * Every way a call to the API can fail, as data. Deliberately carries no text a user reads:
  * feature ViewModels map each case to a string resource.
  *
  * Lives outside both the wire package and the storage package because neither owns it: the engine

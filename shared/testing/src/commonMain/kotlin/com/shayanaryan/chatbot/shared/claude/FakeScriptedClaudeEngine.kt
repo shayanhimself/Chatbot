@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.flow
  * [ClaudeEngine] contract, never the network.
  *
  * @property events emitted in order on every collection.
- * @property requests every request this engine was asked to stream, in collection order — a
+ * @property requests every request this engine was asked to stream, in collection order. A
  *   request is recorded when a collector arrives, not when [stream] is called.
  */
 class FakeScriptedClaudeEngine(

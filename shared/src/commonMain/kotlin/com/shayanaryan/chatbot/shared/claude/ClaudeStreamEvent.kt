@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * One event in a streamed assistant turn. A stream emits zero or more [Delta]s and then exactly
- * one terminal event — [Completed] on success, [Failed] on any API or domain error.
+ * one terminal event: [Completed] on success, [Failed] on any API or domain error.
  */
 sealed interface ClaudeStreamEvent {
     data class Delta(
@@ -23,7 +23,7 @@ sealed interface ClaudeStreamEvent {
 }
 
 /**
- * Why an assistant turn stopped. Decoded straight off the wire — `@SerialName` per case — with an
+ * Why an assistant turn stopped. Decoded straight off the wire (`@SerialName` per case) with an
  * unknown or absent server value coerced to [Unknown] (Json `coerceInputValues`), so a new stop
  * reason never fails the stream.
  */

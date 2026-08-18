@@ -14,7 +14,7 @@ import javax.inject.Singleton
 object CoroutinesModule {
     /**
      * A [SupervisorJob] so one failed piece of background work never cancels the rest, and never
-     * cancelled itself — the process ending is what ends it.
+     * cancelled itself: the process ending is what ends it.
      */
     @Provides
     @Singleton

@@ -8,7 +8,7 @@ package com.shayanaryan.chatbot.shared.claude.sse
  * event is a block of `field: value` lines terminated by a blank line; the Messages API uses it to
  * stream a reply token by token.
  *
- * A frame is one such block — the unit the stream is chopped into. This is its parsed form: the
+ * A frame is one such block, the unit the stream is chopped into. This is its parsed form: the
  * `event`/`data` fields lifted out, everything else (comments, blank-line terminator) discarded.
  *
  * @property event the `event:` field, absent when the server omitted it.

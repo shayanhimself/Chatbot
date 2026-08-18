@@ -124,7 +124,7 @@ internal val PREVIEW_CHATS =
         ChatListItemUiState(
             1L,
             "Weekend trip to Portland",
-            "Booked — I'll remind you to check in Friday.",
+            "Booked. I'll remind you to check in Friday.",
             RelativeTime(R.string.chat_time_hours, 2),
         ),
         ChatListItemUiState(
@@ -136,13 +136,13 @@ internal val PREVIEW_CHATS =
         ChatListItemUiState(
             3L,
             "Standup notes",
-            "Got it — remembered you're on the payments team.",
+            "Got it. Remembered you're on the payments team.",
             RelativeTime(R.string.chat_time_days, 3),
         ),
         ChatListItemUiState(
             4L,
             "Coroutine leak in onCleared when the ViewModelScope isn't cancelled",
-            "Cancel the viewModelScope — it's automatic, actually.",
+            "No need to cancel the viewModelScope, it's automatic.",
             RelativeTime(R.string.chat_time_days, 5),
         ),
         ChatListItemUiState(

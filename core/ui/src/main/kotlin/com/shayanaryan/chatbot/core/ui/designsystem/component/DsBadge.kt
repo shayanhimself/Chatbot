@@ -23,7 +23,7 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 enum class BadgeTone { Primary, Error, Success, Neutral }
 
 /**
- * Small attention marker — a count/label pill, or a bare dot when [text] is null.
+ * Small attention marker: a count/label pill, or a bare dot when [text] is null.
  *
  * @param tone color role; defaults to `Error` because an unqualified badge is an attention marker,
  *   not a brand accent.

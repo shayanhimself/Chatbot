@@ -45,7 +45,7 @@ class ChatRepositoryTest {
     private val turnScopes = mutableListOf<CoroutineScope>()
 
     /**
-     * A scope for turns, separate from the one the test body runs in — a turn must outlive its
+     * A scope for turns, separate from the one the test body runs in: a turn must outlive its
      * collector. Its own [Job] keeps `runTest` from waiting on it, so cancelling after the body
      * returns is both safe and enough.
      */

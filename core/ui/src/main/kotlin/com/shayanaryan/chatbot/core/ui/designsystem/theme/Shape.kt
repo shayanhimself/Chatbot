@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Tier 1 — primitives. The raw corner-radius ramp, mirrored 1:1 from the upstream DS tokens
+ * Tier 1: primitives. The raw corner-radius ramp, mirrored 1:1 from the upstream DS tokens
  * (numeric scale, N = px/4 = dp). Every shape below is built from it.
  * This ramp is public, so a component that can't be composed using M3 shapes or ComponentShapes
  * (e.g. the 20dp logo tiles), can build its own `RoundedCornerShape` from the matching primitive.
@@ -23,7 +23,7 @@ object RadiusPrimitives {
 }
 
 /**
- * Tier 2 — the M3 [Shapes] ramp installed into `MaterialTheme`.
+ * Tier 2: the M3 [Shapes] ramp installed into `MaterialTheme`.
  * It pins the five public M3 slots to our DS radii, so every built-in M3 component that reads
  * its default corner from the theme (`Card`, `TextField`, `AlertDialog`, …) draws our values
  * rather than the library defaults. Read via `MaterialTheme.shapes.*`.

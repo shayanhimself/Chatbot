@@ -7,7 +7,7 @@ import io.ktor.utils.io.readLine
 /**
  * Reads the channel line by line, invoking [onFrame] for each complete server-sent event.
  *
- * The channel is consumed as it arrives — never buffered whole — so deltas surface the moment
+ * The channel is consumed as it arrives (never buffered whole) so deltas surface the moment
  * the server writes them. A blank line ends the current frame; comment lines (starting `:`) are
  * ignored, as are frames that carry no data. Returns when the channel closes.
  *
@@ -29,7 +29,7 @@ internal suspend fun ByteReadChannel.forEachSseFrame(onFrame: suspend (SseFrame)
 
 /**
  * Accumulates the `event:`/`data:` field lines of one frame. [take] returns the built frame and
- * resets for the next one, or null when no data accumulated — an event carrying no data is never
+ * resets for the next one, or null when no data accumulated: an event carrying no data is never
  * dispatched.
  */
 private class SseFrameBuilder {

@@ -4,7 +4,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Shadow elevation levels — reserved for FAB, menus, dialogs, heads-up notification. Cards stay flat.
+ * Shadow elevation levels, reserved for FAB, menus, dialogs, heads-up notification. Cards stay flat.
  */
 object Elevation {
     val level1: Dp = 1.dp

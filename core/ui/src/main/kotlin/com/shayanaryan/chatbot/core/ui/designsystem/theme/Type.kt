@@ -130,7 +130,7 @@ internal val ChatbotTypography =
             ),
     )
 
-/** The one style outside the M3 scale — API keys, model ids, code. */
+/** The one style outside the M3 scale: API keys, model ids, code. */
 val MonoTextStyle =
     TextStyle(
         fontFamily = FontFamily.Monospace,

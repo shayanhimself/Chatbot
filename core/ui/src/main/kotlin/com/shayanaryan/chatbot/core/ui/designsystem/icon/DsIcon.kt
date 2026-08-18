@@ -45,7 +45,7 @@ private const val AXIS_OPTICAL_SIZE = "opsz"
 /**
  * Renders a Material Symbols Rounded glyph as a themed icon.
  *
- * The [glyph] is a ligature name from [Glyphs] — a wrong value fails silently (nothing draws), so
+ * The [glyph] is a ligature name from [Glyphs]: a wrong value fails silently (nothing draws), so
  * never pass a bare string. The ligature text is stripped from the accessibility tree: pass a
  * [contentDescription] for a meaningful label, or `null` for a purely decorative icon that TalkBack
  * skips. The four variable-font axes are set per call.
@@ -53,7 +53,7 @@ private const val AXIS_OPTICAL_SIZE = "opsz"
  * @param glyph Material Symbols ligature name, always a [Glyphs] constant.
  * @param contentDescription label read by TalkBack, or `null` when the icon is decorative.
  * @param size icon size; also drives the `opsz` optical-size axis.
- * @param filled `FILL` axis — `false` outline (default), `true` solid.
+ * @param filled `FILL` axis. `false` outline (default), `true` solid.
  * @param weight `wght` axis, stroke thickness (default 400).
  * @param grade `GRAD` axis, fine weight nudge independent of [weight] (default 0).
  * @param tint glyph color; defaults to the ambient content color.

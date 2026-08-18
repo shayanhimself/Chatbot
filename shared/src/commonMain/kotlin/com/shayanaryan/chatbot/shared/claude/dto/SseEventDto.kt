@@ -88,7 +88,7 @@ internal data class ApiErrorDto(
 )
 
 /**
- * The Anthropic SSE `error.type` vocabulary. Decoded off the wire — `@SerialName` per case — with
+ * The Anthropic SSE `error.type` vocabulary. Decoded off the wire (`@SerialName` per case) with
  * any unknown or absent value coerced to [Unknown] (Json `coerceInputValues`), so a new server
  * error type never fails the stream. Collapsed onto a [ApiError] by the engine.
  */

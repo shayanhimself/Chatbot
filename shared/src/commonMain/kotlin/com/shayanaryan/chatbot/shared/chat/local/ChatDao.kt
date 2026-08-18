@@ -67,7 +67,7 @@ internal abstract class ChatDao {
      * Creates a chat and its first message together, so an abandoned empty chat can never
      * appear in the list.
      *
-     * @param message its `chatId` is ignored — the chat is inserted first and its
+     * @param message its `chatId` is ignored: the chat is inserted first and its
      *   generated id is substituted.
      * @return the new chat's id.
      */

@@ -92,7 +92,7 @@ private fun ChatListItemPreview() {
         Surface {
             ChatListItem(
                 title = "Weekend trip to Portland",
-                snippet = "Booked — I'll remind you to check in Friday.",
+                snippet = "Booked. I'll remind you to check in Friday.",
                 relativeTime = RelativeTime(R.string.chat_time_hours, 2),
                 selected = false,
                 onClick = {},

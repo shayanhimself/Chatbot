@@ -149,7 +149,7 @@ class ChatTurnTest {
             repository.send(first, FOLLOW_UP_MESSAGE)
             engine.awaitStream()
             // Moves the clock between the user message and the reply, so the assertion below
-            // can only pass if the reply did the bumping. The reply has to carry text — a turn
+            // can only pass if the reply did the bumping. The reply has to carry text: a turn
             // that produces none stores no row and so bumps nothing.
             clock.advanceBy(60.seconds)
             engine.send(ClaudeStreamEvent.Delta(RESUMED_REPLY))
@@ -397,7 +397,7 @@ class ChatTurnTest {
         }
 
     /**
-     * A scope for turns, separate from the one the test body runs in — a turn must outlive its
+     * A scope for turns, separate from the one the test body runs in: a turn must outlive its
      * collector. Its own [Job] keeps `runTest` from waiting on it, so cancelling after the body
      * returns is both safe and enough.
      */

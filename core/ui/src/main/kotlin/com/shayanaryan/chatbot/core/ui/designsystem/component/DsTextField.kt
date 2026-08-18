@@ -28,7 +28,7 @@ enum class TextFieldVariant { Outlined, Filled }
 /**
  * Design-system text field wrapping the M3 outlined / filled variants.
  *
- * The floating label and the 2dp accent focus border come from the M3 defaults — not re-implemented
+ * The floating label and the 2dp accent focus border come from the M3 defaults, not re-implemented
  * here. Set [mono] for API keys, model ids, or code, which renders the value in [MonoTextStyle].
  * All copy ([label], [placeholder], [supportingText]) is caller-supplied; the field holds no literal.
  *

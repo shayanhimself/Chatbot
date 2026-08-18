@@ -12,7 +12,7 @@ import kotlin.coroutines.CoroutineContext
  * @param builder supplied per platform, since only the file path differs.
  * @param driver a parameter rather than a hardcoded call so tests can swap it; the bundled driver
  *   is compiled from source, so behaviour is identical across OS versions.
- * @param queryContext must contain a dispatcher — Room rejects a context without one.
+ * @param queryContext must contain a dispatcher. Room rejects a context without one.
  */
 fun createChatbotDatabase(
     builder: RoomDatabase.Builder<ChatbotDatabase>,

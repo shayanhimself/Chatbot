@@ -13,7 +13,7 @@ interface ClaudeEngine {
     /**
      * Streams one assistant turn.
      *
-     * Returns a cold [Flow] — a new HTTP call starts per collection. Main-safe. The flow emits
+     * Returns a cold [Flow]: a new HTTP call starts per collection. Main-safe. The flow emits
      * exactly one terminal [ClaudeStreamEvent.Completed] or [ClaudeStreamEvent.Failed] and then
      * completes; it never throws for API or domain errors. Only structured cancellation
      * propagates, cancelling the in-flight HTTP call.

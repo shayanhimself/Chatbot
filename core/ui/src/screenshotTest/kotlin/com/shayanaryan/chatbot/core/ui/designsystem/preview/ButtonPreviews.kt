@@ -30,7 +30,7 @@ private fun ButtonGallery() {
             }
             DsButton(text = "Continue", onClick = {}, trailingGlyph = Glyphs.ARROW_FORWARD)
             DsButton(text = "Disabled", onClick = {}, enabled = false)
-            // Loading sits beside disabled on purpose — the golden is what proves they look different.
+            // Loading sits beside disabled on purpose: the golden is what proves they look different.
             DsButton(text = "Loading", onClick = {}, loading = true)
             Row {
                 DsIconButton(

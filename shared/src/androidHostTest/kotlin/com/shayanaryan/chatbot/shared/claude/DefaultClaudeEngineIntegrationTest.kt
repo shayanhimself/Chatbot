@@ -27,7 +27,7 @@ private const val REJECTED_KEY = "sk-ant-definitely-not-valid"
 private const val USER_MESSAGE = "hi"
 
 /**
- * Hits the real Messages API. Skipped — silently, so CI stays green — unless a developer key is
+ * Hits the real Messages API. Skipped (silently, so CI stays green) unless a developer key is
  * available in `ANTHROPIC_API_KEY` or as `anthropic.api.key` in `local.properties`.
  *
  * Its captured stream is what seeds the fixtures in `SseFixtures`; see

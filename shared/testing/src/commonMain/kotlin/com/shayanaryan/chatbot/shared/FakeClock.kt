@@ -9,7 +9,7 @@ import kotlin.time.Instant
  *
  * @property instant what [now] reports, readable and settable directly for a test that wants to
  *   place the clock somewhere specific rather than step it with [advanceBy].
- * @property autoAdvanceBy how far [now] moves the clock after each reading. Zero — the default —
+ * @property autoAdvanceBy how far [now] moves the clock after each reading. Zero, the default,
  *   leaves the clock entirely under [instant] and [advanceBy], which is what an exact assertion
  *   wants. A non-zero step makes successive writes distinguishable without a test having to say
  *   so, which is what anything asserting on ordering needs.

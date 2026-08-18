@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.flow
  * [send] events and [close] when the turn is over. A second collection is served the same way
  * once the first is closed.
  *
- * @property requests every request this engine was asked to stream, in collection order — a
+ * @property requests every request this engine was asked to stream, in collection order. A
  *   request is recorded when a collector arrives, not when [stream] is called.
  */
 class FakeManualClaudeEngine : ClaudeEngine {

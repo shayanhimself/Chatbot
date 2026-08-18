@@ -56,7 +56,7 @@ internal class DefaultChatRepository(
 
     /**
      * Guards the writes. A single compare-and-set is already atomic, but the guard spans two
-     * operations — test for a live turn, then start one — and without the lock two concurrent
+     * operations (test for a live turn, then start one) and without the lock two concurrent
      * sends both see none and both launch.
      */
     private val mutex = Mutex()
@@ -127,7 +127,7 @@ internal class DefaultChatRepository(
             if (last.role != Role.Assistant || last.status == MessageStatus.Complete) {
                 return@withLock
             }
-            // Dropping the trailing row needs no other undo — the history query never saw it.
+            // Dropping the trailing row needs no other undo: the history query never saw it.
             messageDao.deleteById(last.id)
             launchTurn(chatId)
         }
@@ -209,7 +209,7 @@ internal class DefaultChatRepository(
 
     /**
      * Streams one assistant reply and persists it. Deltas accumulate into [state] so a collector
-     * renders the text as it arrives, and the finished reply is written as a single row — never a
+     * renders the text as it arrives, and the finished reply is written as a single row, never a
      * write per token. The row is stored before the turn reports [TurnState.Idle], so the live
      * bubble is never dropped before the persisted message exists to replace it.
      *
@@ -259,7 +259,7 @@ internal class DefaultChatRepository(
                 }
         } catch (cancellation: CancellationException) {
             // The turn owns every write, cancellation included, so exactly one assistant row is
-            // ever produced per turn — and it is stored before the caller resumes.
+            // ever produced per turn, and it is stored before the caller resumes.
             withContext(NonCancellable) {
                 persistReply(chatId, reply.toString(), MessageStatus.Cancelled)
                 state.value = TurnState.Idle
@@ -304,7 +304,7 @@ internal class DefaultChatRepository(
     }
 
     /**
-     * Drops this turn's entry, and only this one — a later turn may already have replaced it, and
+     * Drops this turn's entry, and only this one: a later turn may already have replaced it, and
      * dropping that one would leave it running with nothing tracking it.
      *
      */

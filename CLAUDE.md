@@ -10,7 +10,9 @@ Product: `specs/000-product-brief.md`. Canonical stack: `specs/001-tech-stack.md
 
 ## Tooling
 
-We use **`android` CLI** for project creation, SDK/emulator management, running and inspecting the app, doc lookup, and journey tests. Prefer it over ad-hoc gradle/adb. It's the default for API/version/migration questions too. Treat it as fresher than model training.
+We use **`android` CLI** for project creation, SDK/emulator management, running and inspecting the app and doc lookup. Prefer it over ad-hoc gradle/adb. It's the default for API/version/migration questions too. Treat it as fresher than model training.
+
+Run the test suite with **`./scripts/test.sh`**.
 
 ## Code style
 

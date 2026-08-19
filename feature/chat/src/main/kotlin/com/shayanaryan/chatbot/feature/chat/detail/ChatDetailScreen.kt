@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -146,50 +145,52 @@ private fun MessageList(
     }
 }
 
-@Preview(showBackground = true, heightDp = CHAT_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
-private fun ChatNewPreview() {
-    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.newChat) }
+private fun ChatDetailNewPreview() {
+    ChatbotTheme(darkTheme = true) { ChatDetailScreenStubbed(ChatDetailPreviewData.newChat) }
 }
 
-@Preview(showBackground = true, heightDp = CHAT_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
-private fun ChatIdlePreview() {
-    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.openChat) }
+private fun ChatDetailIdlePreview() {
+    ChatbotTheme(darkTheme = true) { ChatDetailScreenStubbed(ChatDetailPreviewData.openChat) }
 }
 
-@Preview(showBackground = true, heightDp = CHAT_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
-private fun ChatThinkingPreview() {
-    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.thinking) }
+private fun ChatDetailThinkingPreview() {
+    ChatbotTheme(darkTheme = true) { ChatDetailScreenStubbed(ChatDetailPreviewData.thinking) }
 }
 
-@Preview(showBackground = true, heightDp = CHAT_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
-private fun ChatStreamingPreview() {
-    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.streaming) }
+private fun ChatDetailStreamingPreview() {
+    ChatbotTheme(darkTheme = true) { ChatDetailScreenStubbed(ChatDetailPreviewData.streaming) }
 }
 
-@Preview(showBackground = true, heightDp = CHAT_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
-private fun ChatRateLimitedPreview() {
-    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.rateLimited) }
+private fun ChatDetailRateLimitedPreview() {
+    ChatbotTheme(darkTheme = true) { ChatDetailScreenStubbed(ChatDetailPreviewData.rateLimited) }
 }
 
-@Preview(showBackground = true, heightDp = CHAT_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
-private fun ChatNetworkFailurePreview() {
-    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.network) }
+private fun ChatDetailNetworkFailurePreview() {
+    ChatbotTheme(darkTheme = true) { ChatDetailScreenStubbed(ChatDetailPreviewData.network) }
 }
 
-@Preview(showBackground = true, heightDp = CHAT_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
-private fun ChatDeleteDialogPreview() {
-    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.deleting) }
+private fun ChatDetailDeleteDialogPreview() {
+    ChatbotTheme(darkTheme = true) { ChatDetailScreenStubbed(ChatDetailPreviewData.deleting) }
 }
 
-@Preview(showBackground = true, heightDp = CHAT_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
-private fun ChatTwoPanePreview() {
-    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.openChat, onBack = null) }
+private fun ChatDetailTwoPanePreview() {
+    ChatbotTheme(darkTheme = true) {
+        ChatDetailScreenStubbed(ChatDetailPreviewData.openChat, onBack = null)
+    }
 }

@@ -8,20 +8,20 @@ import com.shayanaryan.chatbot.core.testing.preview.FormFactorPreviews
 import com.shayanaryan.chatbot.core.testing.preview.ThemePreviews
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.feature.chat.detail.ChatDetailPreviewData
-import com.shayanaryan.chatbot.feature.chat.detail.PreviewChat
+import com.shayanaryan.chatbot.feature.chat.detail.ChatDetailScreenStubbed
 
 @PreviewTest
 @ThemePreviews
 @Composable
-private fun ChatNewPreview() {
-    ChatbotTheme { PreviewChat(ChatDetailPreviewData.newChat) }
+private fun ChatDetailNewPreview() {
+    ChatbotTheme { ChatDetailScreenStubbed(ChatDetailPreviewData.newChat) }
 }
 
 @PreviewTest
 @ThemePreviews
 @Composable
-private fun ChatStreamingPreview() {
-    ChatbotTheme { PreviewChat(ChatDetailPreviewData.streaming) }
+private fun ChatDetailStreamingPreview() {
+    ChatbotTheme { ChatDetailScreenStubbed(ChatDetailPreviewData.streaming) }
 }
 
 // The picker's menu is driven by the chip's own state, which a preview cannot open, so the
@@ -30,36 +30,36 @@ private fun ChatStreamingPreview() {
 @PreviewTest
 @ThemePreviews
 @Composable
-private fun ChatPickerPreview() {
-    ChatbotTheme { PreviewChat(ChatDetailPreviewData.openChat) }
+private fun ChatDetailPickerPreview() {
+    ChatbotTheme { ChatDetailScreenStubbed(ChatDetailPreviewData.openChat) }
 }
 
 @PreviewTest
 @ThemePreviews
 @Composable
-private fun ChatThinkingPreview() {
-    ChatbotTheme { PreviewChat(ChatDetailPreviewData.thinking) }
+private fun ChatDetailThinkingPreview() {
+    ChatbotTheme { ChatDetailScreenStubbed(ChatDetailPreviewData.thinking) }
 }
 
 @PreviewTest
 @ThemePreviews
 @Composable
-private fun ChatRateLimitedPreview() {
-    ChatbotTheme { PreviewChat(ChatDetailPreviewData.rateLimited) }
+private fun ChatDetailRateLimitedPreview() {
+    ChatbotTheme { ChatDetailScreenStubbed(ChatDetailPreviewData.rateLimited) }
 }
 
 @PreviewTest
 @ThemePreviews
 @Composable
-private fun ChatNetworkPreview() {
-    ChatbotTheme { PreviewChat(ChatDetailPreviewData.network) }
+private fun ChatDetailNetworkPreview() {
+    ChatbotTheme { ChatDetailScreenStubbed(ChatDetailPreviewData.network) }
 }
 
 @PreviewTest
 @ThemePreviews
 @Composable
-private fun ChatDeletePreview() {
-    ChatbotTheme { PreviewChat(ChatDetailPreviewData.deleting) }
+private fun ChatDetailDeletePreview() {
+    ChatbotTheme { ChatDetailScreenStubbed(ChatDetailPreviewData.deleting) }
 }
 
 // The same screen rendered as the detail pane, where the whole visual difference is the
@@ -68,19 +68,21 @@ private fun ChatDeletePreview() {
 @Preview
 @Composable
 private fun ChatDetailPanePreview() {
-    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.openChat, onBack = null) }
+    ChatbotTheme(darkTheme = true) {
+        ChatDetailScreenStubbed(ChatDetailPreviewData.openChat, onBack = null)
+    }
 }
 
 @PreviewTest
 @FormFactorPreviews
 @Composable
-private fun ChatFormFactorPreview() {
-    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.openChat) }
+private fun ChatDetailFormFactorPreview() {
+    ChatbotTheme(darkTheme = true) { ChatDetailScreenStubbed(ChatDetailPreviewData.openChat) }
 }
 
 @PreviewTest
 @FontScalePreviews
 @Composable
-private fun ChatFontScalePreview() {
-    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.openChat) }
+private fun ChatDetailFontScalePreview() {
+    ChatbotTheme(darkTheme = true) { ChatDetailScreenStubbed(ChatDetailPreviewData.openChat) }
 }

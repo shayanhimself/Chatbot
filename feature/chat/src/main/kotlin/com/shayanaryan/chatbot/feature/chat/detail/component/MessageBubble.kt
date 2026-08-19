@@ -135,7 +135,7 @@ private fun StreamingCaret(modifier: Modifier = Modifier) {
     )
 }
 
-@Preview(showBackground = true, widthDp = CHAT_PREVIEW_WIDTH_DP)
+@Preview(widthDp = CHAT_PREVIEW_WIDTH_DP)
 @Composable
 private fun MessageBubbleUserPreview() {
     ChatbotTheme(darkTheme = true) {
@@ -149,7 +149,7 @@ private fun MessageBubbleUserPreview() {
     }
 }
 
-@Preview(showBackground = true, widthDp = CHAT_PREVIEW_WIDTH_DP)
+@Preview(widthDp = CHAT_PREVIEW_WIDTH_DP)
 @Composable
 private fun MessageBubbleAssistantPreview() {
     ChatbotTheme(darkTheme = true) {
@@ -163,7 +163,7 @@ private fun MessageBubbleAssistantPreview() {
     }
 }
 
-@Preview(showBackground = true, widthDp = CHAT_PREVIEW_WIDTH_DP)
+@Preview(widthDp = CHAT_PREVIEW_WIDTH_DP)
 @Composable
 private fun MessageBubbleStreamingPreview() {
     ChatbotTheme(darkTheme = true) {

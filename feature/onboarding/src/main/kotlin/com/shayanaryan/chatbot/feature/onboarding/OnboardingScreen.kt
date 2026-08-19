@@ -170,7 +170,7 @@ private fun submitLabel(
         else -> R.string.onboarding_submit_empty
     }
 
-@Preview(showBackground = true, heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
 private fun OnboardingEmptyPreview() {
     ChatbotTheme(darkTheme = true) {
@@ -180,7 +180,7 @@ private fun OnboardingEmptyPreview() {
     }
 }
 
-@Preview(showBackground = true, heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
 private fun OnboardingObscuredPreview() {
     ChatbotTheme(darkTheme = true) {
@@ -191,7 +191,7 @@ private fun OnboardingObscuredPreview() {
     }
 }
 
-@Preview(showBackground = true, heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
 private fun OnboardingRevealedPreview() {
     ChatbotTheme(darkTheme = true) {
@@ -203,7 +203,7 @@ private fun OnboardingRevealedPreview() {
     }
 }
 
-@Preview(showBackground = true, heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
 private fun OnboardingValidatingPreview() {
     ChatbotTheme(darkTheme = true) {
@@ -214,7 +214,7 @@ private fun OnboardingValidatingPreview() {
     }
 }
 
-@Preview(showBackground = true, heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
 private fun OnboardingRejectedPreview() {
     ChatbotTheme(darkTheme = true) {
@@ -225,7 +225,7 @@ private fun OnboardingRejectedPreview() {
     }
 }
 
-@Preview(showBackground = true, heightDp = ONBOARDING_PREVIEW_HEIGHT_DP)
+@Preview
 @Composable
 private fun OnboardingOfflinePreview() {
     ChatbotTheme(darkTheme = true) {

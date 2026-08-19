@@ -16,9 +16,6 @@ import kotlin.time.Instant
  */
 internal const val CHAT_PREVIEW_WIDTH_DP = 360
 
-/** A phone's height, which is what the whole-screen previews and goldens are drawn at. */
-internal const val CHAT_PREVIEW_HEIGHT_DP = 780
-
 /**
  * The states as one fixture the colocated previews and the screenshot goldens both read.
  */
@@ -94,7 +91,7 @@ internal object ChatDetailPreviewData {
  * @param onBack null renders the detail pane, which is the same screen without its back arrow.
  */
 @Composable
-internal fun PreviewChat(
+internal fun ChatDetailScreenStubbed(
     uiState: ChatDetailUiState,
     onBack: (() -> Unit)? = {},
 ) {

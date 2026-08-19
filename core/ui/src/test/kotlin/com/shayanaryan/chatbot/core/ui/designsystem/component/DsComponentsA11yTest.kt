@@ -28,9 +28,8 @@ private const val ICON_LABEL = "Offline"
 
 private val touchTargetTolerance = 0.5.dp
 
-
 @RunWith(AndroidJUnit4::class)
-class DsComponentsAccessibilityTest {
+class DsComponentsA11yTest {
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -134,7 +133,6 @@ class DsComponentsAccessibilityTest {
         composeRule.onNodeWithText(Glyphs.CLOUD_OFF).assertDoesNotExist()
     }
 }
-
 
 /**
  * Asserts the node's touch target is at least the design system's minimum on both axes.

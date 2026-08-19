@@ -23,6 +23,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
@@ -75,7 +78,17 @@ fun MessageBubble(
                             } else {
                                 ComponentShapes.bubbleAssistant
                             },
-                    ).padding(horizontal = Spacing.s4, vertical = Spacing.s3),
+                    ).padding(horizontal = Spacing.s4, vertical = Spacing.s3)
+                    .semantics(mergeDescendants = true) {
+                        // Merged so the announced node carries the reply text: a live region with
+                        // no text of its own gives a screen reader nothing to speak, and the turn
+                        // reads as one focus stop rather than text and caret separately.
+                        //
+                        // Tokens arrive with no user action behind them, so nothing else would
+                        // prompt a screen reader to speak the reply. Polite waits for the current
+                        // utterance rather than interrupting on every delta.
+                        if (streaming) liveRegion = LiveRegionMode.Polite
+                    },
             verticalAlignment = Alignment.Bottom,
         ) {
             Text(

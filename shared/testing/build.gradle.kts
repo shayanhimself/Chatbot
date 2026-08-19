@@ -19,6 +19,12 @@ kotlin {
             api(projects.shared)
             implementation(libs.kotlinx.coroutines.core)
         }
+        androidMain.dependencies {
+            // api, not implementation: TestApiKeyStore is a JUnit rule holding a DataStore, so a
+            // consumer that declares one sees both types in its own signature.
+            api(libs.junit)
+            api(libs.androidx.test.core)
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)

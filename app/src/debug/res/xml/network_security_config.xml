@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+        debug-overrides applies only when the APK is debuggable, and this file is in src/debug so
+        it is not merged into a release build at all. Two independent reasons the release APK
+        cannot trust this authority.
+
+        Keeping the system anchors alongside matters: debug-overrides replaces the default anchor
+        set rather than adding to it, so omitting them would break every other TLS connection a
+        debug build makes.
+    -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system"/>
+            <!--
+                Lets a debug build accept the leaf the device tests serve for api.anthropic.com.
+                The certificate only: the key that signs those leaves ships in the test APK.
+            -->
+            <certificates src="@raw/test_ca"/>
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The platform default, spelled out. The manifest names this resource for every build type, and
+    the only definition that carries a trust anchor lives in the debug source set.
+-->
+<network-security-config/>

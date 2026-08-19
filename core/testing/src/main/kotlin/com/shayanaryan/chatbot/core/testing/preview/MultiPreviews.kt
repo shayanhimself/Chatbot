@@ -12,3 +12,13 @@ import androidx.compose.ui.tooling.preview.Preview
 @Preview(name = "tablet", device = Devices.TABLET, showBackground = true)
 @Preview(name = "desktop", device = Devices.DESKTOP, showBackground = true)
 annotation class FormFactorPreviews
+
+/**
+ * The text sizes the app is expected to survive. Every text style is sp-based, so a layout that
+ * fits at the default scale can still clip at the largest accessibility setting, and a golden per
+ * scale is what catches it.
+ */
+@Preview(name = "font-1x", fontScale = 1.0f, showBackground = true)
+@Preview(name = "font-1-5x", fontScale = 1.5f, showBackground = true)
+@Preview(name = "font-2x", fontScale = 2.0f, showBackground = true)
+annotation class FontScalePreviews

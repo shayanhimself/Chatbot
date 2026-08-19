@@ -3,6 +3,7 @@ package com.shayanaryan.chatbot.feature.chat.detail.preview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
+import com.shayanaryan.chatbot.core.testing.preview.FontScalePreviews
 import com.shayanaryan.chatbot.core.testing.preview.FormFactorPreviews
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.feature.chat.detail.CHAT_DETAIL_PANE_HEIGHT_DP
@@ -132,5 +133,12 @@ private fun ChatDetailPaneLightPreview() {
 @FormFactorPreviews
 @Composable
 private fun ChatFormFactorPreview() {
+    ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.openChat) }
+}
+
+@PreviewTest
+@FontScalePreviews
+@Composable
+private fun ChatFontScalePreview() {
     ChatbotTheme(darkTheme = true) { PreviewChat(ChatDetailPreviewData.openChat) }
 }

@@ -3,6 +3,7 @@ package com.shayanaryan.chatbot.feature.onboarding.preview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
+import com.shayanaryan.chatbot.core.testing.preview.FontScalePreviews
 import com.shayanaryan.chatbot.core.testing.preview.FormFactorPreviews
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.feature.onboarding.ONBOARDING_PREVIEW_HEIGHT_DP
@@ -159,6 +160,18 @@ private fun OnboardingOfflineLightPreview() {
 @FormFactorPreviews
 @Composable
 private fun OnboardingFormFactorPreview() {
+    ChatbotTheme(darkTheme = true) {
+        PreviewOnboarding(
+            uiState = OnboardingUiState.Idle,
+            key = PREVIEW_API_KEY,
+        )
+    }
+}
+
+@PreviewTest
+@FontScalePreviews
+@Composable
+private fun OnboardingFontScalePreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
             uiState = OnboardingUiState.Idle,

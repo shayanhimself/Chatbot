@@ -3,10 +3,10 @@ package com.shayanaryan.chatbot.flow
 import android.content.Context
 import android.content.Intent
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shayanaryan.chatbot.MainActivity
@@ -122,7 +122,7 @@ class NavigationFlowTest {
 
             launcher.launch()
             composeRule.awaitText(FIRST_MESSAGE)
-            composeRule.onNodeWithText(FIRST_MESSAGE).performClick()
+            composeRule.clickWhenStill(hasText(FIRST_MESSAGE))
 
             awaitOpenChat()
             composeRule.onNodeWithText(REPLY_TEXT).assertIsDisplayed()
@@ -135,7 +135,7 @@ class NavigationFlowTest {
 
             val scenario = launcher.launch()
             composeRule.awaitText(FIRST_MESSAGE)
-            composeRule.onNodeWithText(FIRST_MESSAGE).performClick()
+            composeRule.clickWhenStill(hasText(FIRST_MESSAGE))
             awaitOpenChat()
 
             scenario.recreate()
@@ -153,9 +153,7 @@ class NavigationFlowTest {
             awaitOpenChat()
             composeRule.onNodeWithText(REPLY_TEXT).assertIsDisplayed()
 
-            composeRule
-                .onNodeWithContentDescription(string(ChatR.string.chat_back))
-                .performClick()
+            composeRule.clickWhenStill(hasContentDescription(string(ChatR.string.chat_back)))
 
             val chatList = string(ChatR.string.chat_list_title)
             composeRule.awaitText(chatList)

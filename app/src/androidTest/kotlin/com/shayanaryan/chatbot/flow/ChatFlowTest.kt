@@ -1,15 +1,14 @@
 package com.shayanaryan.chatbot.flow
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.shayanaryan.chatbot.MainActivity
 import com.shayanaryan.chatbot.core.testing.string
 import com.shayanaryan.chatbot.di.ApiKeyModule
 import com.shayanaryan.chatbot.shared.apikey.ApiKeyRepository
@@ -94,11 +93,11 @@ class ChatFlowTest {
         anthropic.enqueueReply(REPLY_TEXT)
         launcher.launch()
         composeRule.awaitText(string(ChatR.string.chat_list_new_chat))
-        composeRule.onNodeWithText(string(ChatR.string.chat_list_new_chat)).performClick()
+        composeRule.clickWhenStill(hasText(string(ChatR.string.chat_list_new_chat)))
         composeRule
             .onNodeWithText(string(ChatR.string.chat_composer_placeholder))
             .performTextInput(SENT_MESSAGE)
-        composeRule.onNodeWithContentDescription(string(ChatR.string.chat_send)).performClick()
+        composeRule.clickWhenStill(hasContentDescription(string(ChatR.string.chat_send)))
         composeRule.awaitText(REPLY_TEXT)
     }
 
@@ -126,11 +125,11 @@ class ChatFlowTest {
         runTest {
             sendFirstMessage()
 
-            composeRule.onNodeWithContentDescription(string(ChatR.string.chat_back)).performClick()
+            composeRule.clickWhenStill(hasContentDescription(string(ChatR.string.chat_back)))
             composeRule.awaitText(string(ChatR.string.chat_list_title))
             composeRule.onNodeWithText(SENT_MESSAGE).assertIsDisplayed()
 
-            composeRule.onNodeWithText(SENT_MESSAGE).performClick()
+            composeRule.clickWhenStill(hasText(SENT_MESSAGE))
             composeRule.awaitText(REPLY_TEXT)
             composeRule.onNodeWithText(REPLY_TEXT).assertIsDisplayed()
 
@@ -146,9 +145,9 @@ class ChatFlowTest {
         runTest {
             sendFirstMessage()
 
-            composeRule.onNodeWithContentDescription(string(ChatR.string.chat_more)).performClick()
-            composeRule.onNodeWithText(string(ChatR.string.chat_delete)).performClick()
-            composeRule.onNodeWithText(string(ChatR.string.chat_delete_confirm)).performClick()
+            composeRule.clickWhenStill(hasContentDescription(string(ChatR.string.chat_more)))
+            composeRule.clickWhenStill(hasText(string(ChatR.string.chat_delete)))
+            composeRule.clickWhenStill(hasText(string(ChatR.string.chat_delete_confirm)))
 
             composeRule.awaitText(string(ChatR.string.chat_list_title))
             composeRule.onNodeWithText(string(ChatR.string.chat_list_title)).assertIsDisplayed()

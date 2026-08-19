@@ -2,12 +2,11 @@ package com.shayanaryan.chatbot.flow
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.shayanaryan.chatbot.MainActivity
 import com.shayanaryan.chatbot.core.testing.string
 import com.shayanaryan.chatbot.di.ApiKeyModule
 import com.shayanaryan.chatbot.shared.apikey.ApiKeyRepository
@@ -80,7 +79,7 @@ class OnboardingFlowTest {
             launcher.launch()
 
             composeRule.onNode(hasSetTextAction()).performTextInput(VALID_KEY)
-            composeRule.onNodeWithText(string(OnboardingR.string.onboarding_submit)).performClick()
+            composeRule.clickWhenStill(hasText(string(OnboardingR.string.onboarding_submit)))
 
             // Storing a key lands on a new chat, with the list underneath it.
             val greeting = string(ChatR.string.chat_new_chat_greeting)

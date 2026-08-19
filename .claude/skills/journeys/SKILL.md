@@ -46,8 +46,8 @@ action.** No journey clears data itself.
 
 ```bash
 ./scripts/journeys.py                              # every journey
-./scripts/journeys.py onboard-offline              # bare name
-./scripts/journeys.py switch-model app-launch      # several
+./scripts/journeys.py switch-model                 # bare name
+./scripts/journeys.py onboard-with-key two-pane-layout   # several
 ```
 
 Each form factor gets an AVD matching what its journeys declared, so a run
@@ -57,7 +57,7 @@ Results land in `build/journey-results/`: `<name>.json` is the result schema,
 `<name>.envelope.json` is the evaluator's raw output, and `<name>-artifacts/`
 holds its screenshots. Exit is non-zero if any journey fails.
 
-## Running one by hand
+## Running one by handx
 
 Worth it to debug a journey the script reports failing, since the reasoning
 stays in front of you. Establish the state first.

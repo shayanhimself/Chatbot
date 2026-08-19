@@ -61,7 +61,6 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     testImplementation(projects.shared.testing)
-    testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -70,8 +69,6 @@ dependencies {
     androidTestImplementation(projects.shared.testing)
     androidTestImplementation(projects.core.testing)
     androidTestImplementation(libs.hilt.android.testing)
-    kspAndroidTest(libs.hilt.compiler)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.test.runner)
@@ -82,5 +79,4 @@ dependencies {
     androidTestImplementation(enforcedPlatform(libs.okhttp.bom))
     androidTestImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.okhttp.tls)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

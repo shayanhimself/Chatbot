@@ -123,9 +123,9 @@ fun DsChip(
 
 /**
  * Trailing dismiss affordance for an input chip. A bare clickable [DsIcon] rather than an M3
- * `IconButton`: the button's 48dp minimum interactive size does not fit the 32dp chip and would
- * inflate the trailing slot. The click target is therefore the glyph itself; the content
- * description keeps the affordance accessible.
+ * `IconButton`: the button's own minimum interactive size does not fit the chip and would inflate
+ * the trailing slot. Compose expands a clickable node's touch bounds to the platform minimum, so
+ * the tappable area still meets the design system's minimum while the glyph stays 18dp.
  */
 @Composable
 private fun DismissButton(

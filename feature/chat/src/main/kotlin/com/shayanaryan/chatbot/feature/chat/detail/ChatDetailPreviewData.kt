@@ -19,11 +19,6 @@ internal const val CHAT_PREVIEW_WIDTH_DP = 360
 /** A phone's height, which is what the whole-screen previews and goldens are drawn at. */
 internal const val CHAT_PREVIEW_HEIGHT_DP = 780
 
-/** The detail pane of a two-pane window, the one width the chat is drawn at beside the list. */
-internal const val CHAT_DETAIL_PANE_WIDTH_DP = 664
-
-internal const val CHAT_DETAIL_PANE_HEIGHT_DP = 700
-
 /**
  * The states as one fixture the colocated previews and the screenshot goldens both read.
  */

@@ -76,6 +76,8 @@ Library versions should not be mentioned here.
 
 ## Testing
 
+Which layer a given test belongs in, and what each layer deliberately does not cover, is `docs/testing.md`.
+
 | Decision | Choice | Rationale |
 |---|---|---|
 | Unit tests | JUnit4 | Android default; JUnit5 still third-party-plugin territory |

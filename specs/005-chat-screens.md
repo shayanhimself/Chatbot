@@ -189,7 +189,7 @@ The overflow button opens a dropdown whose only item in this spec is "Delete cha
 
 The composer's trailing button sends when there is non-blank text and no live turn, and becomes a stop button that calls `cancel` while streaming. The model picker chip opens a menu of the three models, checkmarking the current one, and is disabled during a turn for the same reason the composer is. Model names come from `ClaudeModel.displayName`; the per-model blurbs in mockup 3e are deferred to M4.
 
-The message list follows the tail while tokens arrive and stops following once the user scrolls up.
+The message list follows the tail while tokens arrive, stops following once the user scrolls up, and follows again from the next message the user sends.
 
 **Offline has no special treatment.** Losing connectivity is `ApiError.Network` and renders as the ordinary inline error item with Retry (3h), the same as any other failure.
 

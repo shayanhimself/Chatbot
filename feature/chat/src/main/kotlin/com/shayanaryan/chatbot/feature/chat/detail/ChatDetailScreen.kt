@@ -6,13 +6,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.tooling.preview.Preview
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
@@ -22,7 +22,9 @@ import com.shayanaryan.chatbot.feature.chat.detail.component.DeleteChatDialog
 import com.shayanaryan.chatbot.feature.chat.detail.component.ErrorItem
 import com.shayanaryan.chatbot.feature.chat.detail.component.MessageBubble
 import com.shayanaryan.chatbot.feature.chat.detail.component.NewChatEmptyState
+import com.shayanaryan.chatbot.feature.chat.detail.component.TailFollower
 import com.shayanaryan.chatbot.feature.chat.detail.component.ThinkingIndicator
+import com.shayanaryan.chatbot.feature.chat.detail.component.rememberTailFollower
 import com.shayanaryan.chatbot.shared.Role
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
 import com.shayanaryan.chatbot.shared.textContent
@@ -49,6 +51,7 @@ fun ChatDetailScreen(
     modifier: Modifier = Modifier,
     composerState: TextFieldState = rememberTextFieldState(),
 ) {
+    val tailFollower = rememberTailFollower()
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -65,7 +68,10 @@ fun ChatDetailScreen(
                 isStreaming = uiState.isStreaming,
                 composerState = composerState,
                 onModelSelected = onModelSelected,
-                onSend = onSend,
+                onSend = { text ->
+                    tailFollower.follow()
+                    onSend(text)
+                },
                 onCancel = onCancel,
             )
         },
@@ -76,6 +82,7 @@ fun ChatDetailScreen(
             MessageList(
                 chatItems = uiState.items,
                 tailIndex = checkNotNull(uiState.tailIndex),
+                tailFollower = tailFollower,
                 onRetry = onRetry,
                 modifier = Modifier.padding(padding),
             )
@@ -93,20 +100,17 @@ fun ChatDetailScreen(
 private fun MessageList(
     chatItems: List<ChatDetailItem>,
     tailIndex: Int,
+    tailFollower: TailFollower,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val listState = rememberLazyListState()
-    // Follow the tail when the scroll is sitting at the end,
-    // and following stops the moment user scrolls up.
-    LaunchedEffect(chatItems) {
-        if (!listState.canScrollForward) {
-            listState.scrollToItem(tailIndex)
-        }
-    }
+    LaunchedEffect(chatItems) { tailFollower.scrollIfFollowing(tailIndex) }
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        state = listState,
+        modifier =
+            modifier
+                .fillMaxSize()
+                .nestedScroll(tailFollower.nestedScrollConnection),
+        state = tailFollower.listState,
         contentPadding =
             PaddingValues(
                 start = Spacing.s4,

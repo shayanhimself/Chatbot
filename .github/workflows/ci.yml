@@ -17,6 +17,8 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Only a job that names an environment can read the secrets kept in it.
+    environment: ci
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +32,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Test suite and format gate
+        # The tests that hit the real API read this Claude API key, and skip when there is none.
+        # Saved in the secrets of the Github project
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: ./scripts/test.sh
 
       - name: Coverage report

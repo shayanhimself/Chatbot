@@ -5,22 +5,18 @@ import com.shayanaryan.chatbot.shared.Role
 import com.shayanaryan.chatbot.shared.apikey.FakeApiKeyRepository
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
-import java.io.File
-import java.util.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
-private const val API_KEY_ENVIRONMENT_VARIABLE = "ANTHROPIC_API_KEY"
-private const val LOCAL_PROPERTIES_PATH = "../local.properties"
-private const val API_KEY_PROPERTY = "anthropic.api.key"
-private const val SKIP_MESSAGE = "SKIPPED: no dev key in ANTHROPIC_API_KEY or local.properties."
-
 // The reply is pinned so the assertion can be exact rather than a guess at what the model says.
 private const val EXACT_REPLY_PROMPT = "Reply with exactly: Hello"
 private const val EXPECTED_REPLY = "Hello"
+
+// Past runTest's own default, which the client's socket timeout can outlast on a stalled call.
+private const val API_TIMEOUT_MINUTES = 2
 
 private const val MAX_TOKENS = 64
 private const val REJECTED_KEY = "sk-ant-definitely-not-valid"
@@ -34,20 +30,10 @@ private const val USER_MESSAGE = "hi"
  * `scripts/record-sse-fixture.sh`.
  */
 class DefaultClaudeEngineIntegrationTest {
-    private fun devKey(): String? {
-        System.getenv(API_KEY_ENVIRONMENT_VARIABLE)?.takeIf { it.isNotBlank() }?.let { return it }
-        val properties = File(LOCAL_PROPERTIES_PATH).takeIf { it.exists() } ?: return null
-        return properties
-            .inputStream()
-            .use { Properties().apply { load(it) } }
-            .getProperty(API_KEY_PROPERTY)
-            ?.takeIf { it.isNotBlank() }
-    }
-
     @Test
     fun `streams a real turn end to end`() =
-        runTest(timeout = 2.minutes) {
-            val key = devKey()
+        runTest(timeout = API_TIMEOUT_MINUTES.minutes) {
+            val key = devApiKey()
             if (key == null) {
                 println(SKIP_MESSAGE)
                 return@runTest
@@ -86,8 +72,8 @@ class DefaultClaudeEngineIntegrationTest {
 
     @Test
     fun `a bad key maps to authentication`() =
-        runTest(timeout = 2.minutes) {
-            if (devKey() == null) {
+        runTest(timeout = API_TIMEOUT_MINUTES.minutes) {
+            if (devApiKey() == null) {
                 println(SKIP_MESSAGE)
                 return@runTest
             }

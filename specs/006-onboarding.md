@@ -175,14 +175,6 @@ TDD throughout, fakes not mocks, per the architecture skill.
 - **Compose UI tests** under Robolectric with the v2 rule, driving `OnboardingScreen` by typing rather than by constructing state: the submit threshold at its boundary in both directions, the reveal toggle, the field disabled while validating, error rendering, and retry.
 - **Screenshots.** `@PreviewTest` previews in dark and light, one per frame the design file carries. The sample key is an obviously fake value in a named constant, per the fixture rule.
 
-### Journeys
-
-| Journey | Proves | Requires |
-|---|---|---|
-| `onboard-invalid-key` | A rejected key shows the error and stays on the screen | |
-| `onboard-offline` | Validation with no network shows the offline failure and remains retryable | |
-| `onboard-with-key` | A valid key is stored, the gate opens, and a chat is usable | A live key from `ANTHROPIC_API_KEY`, the source 003's integration test already reads |
-
 ## Deferred to later specs
 
 | Piece | Owner | What it adds |

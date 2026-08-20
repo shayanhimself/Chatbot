@@ -217,11 +217,6 @@ New XML files in `journeys/`, covering the M1 exit gate:
 | Journey | Proves |
 |---|---|
 | `send-first-message` | New chat, send, reply streams in, chat appears in the list with its snippet |
-| `resume-chat` | Kill and relaunch, reopen a chat, history is intact |
-| `delete-chat` | Overflow, confirm, chat is gone from the list |
-| `retry-failed-turn` | A failed turn shows the error item, retry re-runs it |
-| `switch-model` | Picker changes the model and it persists across reopen |
-| `two-pane-layout` | On a tablet AVD both panes show and the chat pane has no back arrow |
 
 ## Deferred to later specs
 

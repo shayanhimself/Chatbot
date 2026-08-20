@@ -46,8 +46,8 @@ action.** No journey clears data itself.
 
 ```bash
 ./scripts/journeys.py                              # every journey
-./scripts/journeys.py switch-model                 # bare name
-./scripts/journeys.py onboard-with-key two-pane-layout   # several
+./scripts/journeys.py send-first-message           # bare name
+./scripts/journeys.py onboard-with-key send-first-messag   # several
 ```
 
 Each form factor gets an AVD matching what its journeys declared, so a run

@@ -105,8 +105,8 @@ alone does not qualify: the engine against the live API is a JVM test.
 
 **Why here:** this layer replaces nothing. Everywhere else the app draws its UI from data we wrote,
 and a flow test swaps its `Application` for a test one.
-This layer removes both substitutions at once, and is the most expensive and least repeatable for it,
-so it stays small and a failure is read as signal rather than re-run.
+Running the real build against the real server is what makes this the most expensive and least
+repeatable layer, so it stays small and a failure is read as signal rather than re-run.
 
 ## Where a test goes
 

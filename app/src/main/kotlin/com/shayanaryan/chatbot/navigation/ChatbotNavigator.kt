@@ -23,8 +23,15 @@ internal class ChatbotNavigator(
     /** Opens a new chat, replacing the open chat rather than stacking. */
     fun openNewChat() = openChat(ChatDetailKey())
 
-    /** Pops the top entry, and does nothing on a stack with none. */
+    /**
+     * Pops the top entry, and does nothing when that entry is the only one left.
+     *
+     * `NavDisplay` requires a stack with something in it, so popping the last entry crashes the
+     * next composition. A back press at the root belongs to the system, which is why the display
+     * never routes one here.
+     */
     fun back() {
+        if (backStack.size <= 1) return
         backStack.removeLastOrNull()
     }
 

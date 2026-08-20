@@ -111,6 +111,27 @@ class ChatbotNavigatorTest {
     }
 
     @Test
+    fun `back leaves the last entry in place`() {
+        val stack = backStack(ChatListKey)
+        val navigator = navigator(stack, hasApiKeyAtStart = true)
+
+        navigator.back()
+
+        assertEquals(listOf(ChatListKey), stack.toList())
+    }
+
+    @Test
+    fun `a second back before the screen leaves keeps the stack usable`() {
+        val stack = backStack(ChatListKey, ChatDetailKey(CHAT_ID))
+        val navigator = navigator(stack, hasApiKeyAtStart = true)
+
+        navigator.back()
+        navigator.back()
+
+        assertEquals(listOf(ChatListKey), stack.toList())
+    }
+
+    @Test
     fun `a deep link flattens a stack that already has a chat`() {
         val stack = backStack(ChatListKey, ChatDetailKey(OTHER_CHAT_ID))
         val navigator = navigator(stack, hasApiKeyAtStart = true)

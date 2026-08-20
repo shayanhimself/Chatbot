@@ -50,6 +50,9 @@ class DependencyGraphTest {
         assertNotNull(apiKeyValidator)
     }
 
+    // This uses the device's real Keystore, since proving the Hilt graph is the point of this class.
+    // A failure on a local emulator that already ran the app usually means leftover device state,
+    // not a broken test: uninstall the app and rerun.
     @Test
     fun `the key store reports no key on a clean install`() =
         runTest {

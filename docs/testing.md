@@ -9,6 +9,18 @@ Cheapness is not only wall-clock time. A JVM test that fails names one class; a 
 names the whole app and needs a human to read the screenshot. Pushing a check down makes the failure
 more legible as well as faster.
 
+## Doubles
+
+Real object first, hand-written fake second, mocking library never. There is no mocking dependency in
+the build and no case for adding one: a mock returns the value the test wrote and asserts the call
+rather than the result, so it stays green after the real collaborator stops behaving that way.
+A fake asserts what the call produced, so a refactor that preserves the behaviour preserves the
+test.
+
+Fakes live in `:shared:testing` and `:core:testing`, in `commonMain`, which is what makes them
+visible to other modules' tests. `MockEngine` and `MockWebServer` are not exceptions: they stand in
+for the server, not for a class we own.
+
 ## The layers
 
 ### 1. Unit
@@ -59,7 +71,7 @@ JVM speed.
 
 **Where:** `app/src/androidTest/kotlin/.../flow`. On a device.
 
-**Tools:** Hilt instrumented testing, Compose testing and `MockWebServer`answering as
+**Tools:** Hilt instrumented testing, Compose testing and `MockWebServer` answering as
 `api.anthropic.com` through the device's global proxy, trusted by a debug-only certificate anchor.
 Run by `scripts/instrumented.sh`.
 

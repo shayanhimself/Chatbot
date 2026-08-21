@@ -43,13 +43,6 @@ The purpose of this project is to try out the latest Android tech stack.
 ## Architecture
 
 Google's official guidance, feature-modularized.
-
-```
-:app  →  :feature  →  :core
-              ↓
-           :shared            (KMP: data + domain)
-```
-
 - **Layers:** UI → optional domain → data, dependencies point one way only.
 - **Local-first:** Room DB is the single source of truth.
 - **Unidirectional data flow:** MVVM. State travels one way, and events travel the other.

@@ -4,8 +4,8 @@ An overview of how the app is put together: what the modules are, what each one 
 data and events move between them. Conventions and their rationale live in the `architecture`
 project skill; specs in `specs/` describe individual features.
 
-The app is offline-first and has no backend: chats and the user's API key live on the device, and
-the only remote call is that key going straight to the Anthropic API.
+The app is local-first and has no backend: chats and the user's API key live on the device. The
+only remote calls go straight to the Anthropic API, authenticated by API key.
 
 ## Modules
 
@@ -43,6 +43,7 @@ graph TD
     reminders --> shared
 
     sharedTest -.-> shared
+    app -.-> sharedTest
     chat -.-> sharedTest
     chat -.-> coreTest
     onboarding -.-> sharedTest
@@ -111,7 +112,7 @@ graph TD
   the leaf composables rather than toward the data layer.
 - **Repositories are the sole entry to the data layer.** No ViewModel touches a DAO, DataStore, or
   the Ktor client.
-- **Offline-first: Room is the single source of truth (SSOT)** for everything persisted, and with no server to sync against
+- **Local-first: Room is the single source of truth (SSOT)** for everything persisted, and with no server to sync against
   there is no remote source and no conflict resolution. The one exception is the reply currently
   streaming, which lives in memory as `TurnState` and is written once when the stream ends, never
   per token.
@@ -126,6 +127,7 @@ sequenceDiagram
     participant Screen as ChatDetailScreen
     participant VM as ChatDetailViewModel
     participant Repo as ChatRepository
+    participant Turn as Turn on externalScope
     participant Room
     participant Engine as ClaudeEngine
     participant API as Anthropic API
@@ -136,18 +138,20 @@ sequenceDiagram
     Repo->>Room: insert user message
     Room-->>Repo: messages flow emits
     Repo-->>VM: messages
-    Repo->>Engine: stream(request)
+    Repo->>Turn: launch
+    Repo-->>VM: returns chatId
+    Turn->>Engine: stream(request)
     Engine->>API: POST /v1/messages, SSE
     loop each delta
         API-->>Engine: text delta
-        Engine-->>Repo: ClaudeStreamEvent.Delta
-        Repo-->>VM: TurnState.Streaming(text so far)
+        Engine-->>Turn: ClaudeStreamEvent.Delta
+        Turn-->>VM: TurnState.Streaming(text so far)
         VM-->>Screen: UiState
     end
     API-->>Engine: message_stop
-    Engine-->>Repo: ClaudeStreamEvent.Completed
-    Repo->>Room: insert assistant message
-    Repo-->>VM: TurnState.Idle, messages flow emits
+    Engine-->>Turn: ClaudeStreamEvent.Completed
+    Turn->>Room: insert assistant message
+    Turn-->>VM: TurnState.Idle, messages flow emits
 ```
 
 The turn runs on the repository's own scope, so it survives the screen going away and finishes

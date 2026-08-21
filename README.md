@@ -7,7 +7,7 @@ A native Android chatbot powered by Claude, using your own Anthropic API key.
 
 You pick the Claude model per chat.
 
-As an offline-first app, everything stays on your device.
+As a local-first app, everything stays on your device.
 
 Beyond answering, the assistant acts on your behalf within a chat:
 
@@ -51,7 +51,7 @@ Google's official guidance, feature-modularized.
 ```
 
 - **Layers:** UI → optional domain → data, dependencies point one way only.
-- **Offline-first:** Room DB is the single source of truth.
+- **Local-first:** Room DB is the single source of truth.
 - **Unidirectional data flow:** MVVM. State travels one way, and events travel the other.
 
 Module map, layer diagrams and data flow: [docs/architecture.md](docs/architecture.md).

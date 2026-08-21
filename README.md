@@ -51,8 +51,8 @@ Google's official guidance, feature-modularized.
 ```
 
 - **Layers:** UI → optional domain → data, dependencies point one way only.
-- **SSOT:** Offline-first app, so Room owns all persisted state.
-- **UDF:** immutable state down, events up. MVVM.
+- **Offline-first:** Room DB is the single source of truth.
+- **Unidirectional data flow:** MVVM. State travels one way, and events travel the other.
 
 Module map, layer diagrams and data flow: [docs/architecture.md](docs/architecture.md).
 

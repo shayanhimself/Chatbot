@@ -54,6 +54,8 @@ Google's official guidance, feature-modularized.
 - **SSOT:** Offline-first app, so Room owns all persisted state.
 - **UDF:** immutable state down, events up. MVVM.
 
+Module map, layer diagrams and data flow: [docs/architecture.md](docs/architecture.md).
+
 ## Testing
 
 **TDD is mandatory:** red → green → refactor, every step. No mocking libraries; fakes and real objects only.

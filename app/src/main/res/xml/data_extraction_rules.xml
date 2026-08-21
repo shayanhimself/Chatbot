@@ -3,6 +3,8 @@
     <!-- The key is encrypted against a Keystore master key that never leaves this device, so a
          copy restored anywhere else is undecryptable. Onboarding asks for it again instead.
          Device transfer needs the same exclusion: a new phone has a different Keystore. -->
+    <!-- These rules outlive `allowBackup="false"` on purpose. Device transfer is a separate
+         path from cloud backup, and the exclusion has to survive anyone turning backup on. -->
     <cloud-backup>
         <exclude domain="file" path="datastore/api_key.preferences_pb" />
     </cloud-backup>

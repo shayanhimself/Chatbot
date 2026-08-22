@@ -20,6 +20,7 @@ metadata:
   - KMP
   - Room
   - Database
+  - architecture doc
 ---
 
 Conventions here are binding. They implement Google's architecture guidance.
@@ -149,6 +150,8 @@ Order matters: data layer first, UI last. TDD at every step.
    light, recorded/checked with `updateDebugScreenshotTest` /
    `validateDebugScreenshotTest` (infra set up in `:core:ui`).
 9. **Journeys**: run the spec's journey XMLs via the `android` CLI.
+10. **Architecture doc**: sync `docs/architecture.md` if the shape changed. Keep it an overview,
+   detail belongs in the feature spec or in this skill.
 
 ## References
 

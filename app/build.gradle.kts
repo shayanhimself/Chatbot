@@ -36,6 +36,14 @@ android {
     }
 }
 
+// The Accessibility Test Framework the checks run on pulls a 2020 Material Components release,
+// whose appcompat chain wants a newer fragment than the one the app itself resolves. The device
+// test classpath must agree with the app's, and no check the app's screens hit reads a Material
+// Components view.
+configurations.androidTestImplementation {
+    exclude(group = "com.google.android.material", module = "material")
+}
+
 dependencies {
     implementation(projects.shared)
     implementation(projects.core.ui)
@@ -71,6 +79,9 @@ dependencies {
     androidTestImplementation(projects.core.testing)
     androidTestImplementation(libs.hilt.android.testing)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // Carries the Accessibility Test Framework and the rule extension that runs its checks over
+    // the node tree a screen reader is handed.
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4.accessibility)
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)

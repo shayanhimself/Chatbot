@@ -116,9 +116,20 @@ class LocalAnthropic : ExternalResource() {
         )
     }
 
-    /** Delivers the reply slowly enough that the UI renders a partial answer first. */
+    /**
+     * Answers the next request with [text] arriving a piece at a time, slowly.
+     *
+     * The reply is split into [chunkLength] deltas, so the app accumulates a reply across many
+     * events rather than receiving it whole, and the body is throttled so the pieces are spread
+     * over time. Both halves are needed: throttling one delta only slows the bytes of a line the
+     * parser cannot emit until it is complete.
+     *
+     * @param chunkLength characters per delta.
+     * @param bytesPerPeriod how much of the body is released per [periodMillis].
+     */
     fun enqueueSlowReply(
         text: String,
+        chunkLength: Int,
         bytesPerPeriod: Long,
         periodMillis: Long,
     ) {
@@ -127,7 +138,7 @@ class LocalAnthropic : ExternalResource() {
                 .Builder()
                 .code(OK)
                 .setHeader(CONTENT_TYPE_HEADER, SSE_CONTENT_TYPE)
-                .body(sseReply(text))
+                .body(sseReply(text, chunkLength))
                 .throttleBody(bytesPerPeriod, periodMillis, TimeUnit.MILLISECONDS)
                 .build(),
         )
@@ -203,27 +214,46 @@ private class TunnellingDispatcher : Dispatcher() {
 }
 
 /**
- * A minimal event stream carrying [text] as one reply.
+ * An event stream carrying [text] as one reply, in deltas of [chunkLength] characters.
  *
  * The frames are the shapes `scripts/record-sse-fixture.sh` captured from the live API. The
  * capture itself belongs to another module's test source set and cannot be imported here, so the
  * shapes are reproduced rather than shared.
+ *
+ * @param chunkLength characters per delta. The whole reply in one delta is the degenerate case,
+ *   and not what the API sends.
  */
-private fun sseReply(text: String): String =
-    """
-    event: message_start
-    data: {"type":"message_start","message":{"id":"$REPLY_MESSAGE_ID","type":"message","role":"assistant","model":"$REPLY_MODEL","content":[],"stop_reason":null,"usage":{"input_tokens":1,"output_tokens":1}}}
-
-    event: content_block_delta
-    data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"${text.jsonEscaped()}"}}
-
-    event: message_delta
-    data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":1}}
-
-    event: message_stop
-    data: {"type":"message_stop"}
-
-    """.trimIndent()
+private fun sseReply(
+    text: String,
+    chunkLength: Int = Int.MAX_VALUE,
+): String =
+    buildString {
+        appendLine("event: message_start")
+        appendLine(
+            "data: {\"type\":\"message_start\",\"message\":{\"id\":\"$REPLY_MESSAGE_ID\"," +
+                "\"type\":\"message\",\"role\":\"assistant\",\"model\":\"$REPLY_MODEL\"," +
+                "\"content\":[],\"stop_reason\":null," +
+                "\"usage\":{\"input_tokens\":1,\"output_tokens\":1}}}",
+        )
+        appendLine()
+        text.chunked(chunkLength).forEach { chunk ->
+            appendLine("event: content_block_delta")
+            appendLine(
+                "data: {\"type\":\"content_block_delta\",\"index\":0," +
+                    "\"delta\":{\"type\":\"text_delta\",\"text\":\"${chunk.jsonEscaped()}\"}}",
+            )
+            appendLine()
+        }
+        appendLine("event: message_delta")
+        appendLine(
+            "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"}," +
+                "\"usage\":{\"output_tokens\":1}}",
+        )
+        appendLine()
+        appendLine("event: message_stop")
+        appendLine("data: {\"type\":\"message_stop\"}")
+        appendLine()
+    }
 
 private fun String.jsonEscaped(): String =
     replace("\\", "\\\\")

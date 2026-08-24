@@ -120,7 +120,7 @@ private fun MessageList(
             ),
         verticalArrangement = Arrangement.spacedBy(Spacing.s3),
     ) {
-        items(chatItems) { item ->
+        items(chatItems, key = { it.key }) { item ->
             when (item) {
                 is ChatDetailItem.Persisted -> {
                     MessageBubble(

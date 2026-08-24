@@ -38,21 +38,39 @@ data class ChatDetailUiState(
  * list so the `LazyColumn` reads one source and no composable reconciles two.
  */
 sealed interface ChatDetailItem {
+    /**
+     * What the message list identifies this item by.
+     */
+    val key: String
+
     /** A message Room has stored, whatever status it ended with. */
     data class Persisted(
         val message: Message,
-    ) : ChatDetailItem
+    ) : ChatDetailItem {
+        override val key: String = "$PERSISTED_KEY_PREFIX${message.id}"
+    }
 
     /** A turn that has started but produced no token yet. */
-    data object Thinking : ChatDetailItem
+    data object Thinking : ChatDetailItem {
+        override val key: String = THINKING_KEY
+    }
 
     /** @property text the reply so far, cumulative rather than the latest delta. */
     data class Streaming(
         val text: String,
-    ) : ChatDetailItem
+    ) : ChatDetailItem {
+        override val key: String = STREAMING_KEY
+    }
 
     /** The last turn failed. Renders after the failed message rather than instead of it. */
     data class Error(
         val error: ApiError,
-    ) : ChatDetailItem
+    ) : ChatDetailItem {
+        override val key: String = ERROR_KEY
+    }
 }
+
+private const val PERSISTED_KEY_PREFIX = "persisted-"
+private const val THINKING_KEY = "thinking"
+private const val STREAMING_KEY = "streaming"
+private const val ERROR_KEY = "error"

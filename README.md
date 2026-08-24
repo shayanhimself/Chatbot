@@ -23,7 +23,6 @@ No backend server and no project-owned key: chats, reminders, memories and the k
 | <img src="docs/images/reminders.png" width="240"> |      <img src="docs/images/memory.png" width="240">       |   <img src="docs/images/settings.png" width="240">   |
 
 ## Tech stack
-The purpose of this project is to try out the latest Android tech stack.
 
 | Area          | Choice                                    |
 |---------------|-------------------------------------------|

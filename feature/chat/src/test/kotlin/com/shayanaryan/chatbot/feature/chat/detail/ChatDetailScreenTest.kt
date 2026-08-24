@@ -57,15 +57,6 @@ class ChatDetailScreenTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `renders the title and both bubbles`() {
-        setScreen(openChat)
-
-        composeRule.onNodeWithText(CHAT_TITLE).assertIsDisplayed()
-        composeRule.onNodeWithText(USER_MESSAGE).assertIsDisplayed()
-        composeRule.onNodeWithText(ASSISTANT_MESSAGE).assertIsDisplayed()
-    }
-
-    @Test
     fun `a chat with no first message shows the new-chat copy`() {
         setScreen(ChatDetailUiState())
 

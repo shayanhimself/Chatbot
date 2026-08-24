@@ -37,6 +37,6 @@ Run the test suite with **`./scripts/test.sh`**.
 
 - Don't repeat yourself.
 - No history / run events. State what the system *does*, not what happened once or what was decided when.
-- Don't over-explain. Say it once, at the shortest length that's still clear.
+- Don't over-explain. Say it once, short and plain.
 - One example only where the rule is genuinely ambiguous without it. Usually zero.
 - Never use em dashes. Rewrite the sentence, or use a comma, colon, parentheses, or full stop.

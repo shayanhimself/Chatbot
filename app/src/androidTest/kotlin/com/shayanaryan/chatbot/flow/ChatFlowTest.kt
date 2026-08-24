@@ -15,6 +15,7 @@ import com.shayanaryan.chatbot.shared.apikey.ApiKeyRepository
 import com.shayanaryan.chatbot.shared.apikey.TestApiKeyStore
 import com.shayanaryan.chatbot.shared.chat.Chat
 import com.shayanaryan.chatbot.shared.chat.ChatRepository
+import com.shayanaryan.chatbot.shared.textContent
 import com.shayanaryan.chatbot.wire.LocalAnthropic
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -37,6 +38,20 @@ private const val SENT_MESSAGE = "help me plan a weekend in portland"
 private const val REPLY_TEXT = "Powell's Books first."
 private const val MESSAGES_PATH = "/v1/messages"
 private const val EXPECTED_MESSAGE_COUNT = 2
+
+private const val LONG_REPLY_SENT_MESSAGE = "what should I pack for the coast"
+private const val LONG_REPLY_TEXT =
+    "Layers, mostly. Mornings on the coast are cold enough for a fleece, afternoons are warm " +
+        "enough for a t-shirt, and it rains without warning in between, so a shell you can " +
+        "stuff in a daypack earns its space more than a heavy coat does. Bring shoes you do " +
+        "not mind soaking, because the sand at the tide line is wet for most of the day, and " +
+        "a second pair to change into for the drive home."
+
+private const val LONG_REPLY_CHUNK_LENGTH = 8
+private const val LONG_REPLY_BYTES_PER_PERIOD = 128L
+private const val LONG_REPLY_PERIOD_MILLIS = 400L
+private const val LONG_REPLY_TIMEOUT_MILLIS = 90_000L
+private const val LONG_REPLY_FIRST_CHUNK = "Layers, "
 
 /**
  * Whether a message typed into the composer travels the whole stack and comes back as rendered,
@@ -138,6 +153,37 @@ class ChatFlowTest {
                 EXPECTED_MESSAGE_COUNT,
                 chatRepository.getMessagesFlow(chat.id).first().size,
             )
+        }
+
+    @Test
+    fun `a long reply renders as it streams and lands as one stored message`() =
+        runTest {
+            anthropic.enqueueSlowReply(
+                text = LONG_REPLY_TEXT,
+                chunkLength = LONG_REPLY_CHUNK_LENGTH,
+                bytesPerPeriod = LONG_REPLY_BYTES_PER_PERIOD,
+                periodMillis = LONG_REPLY_PERIOD_MILLIS,
+            )
+            launcher.launch()
+            composeRule.awaitText(string(ChatR.string.chat_list_new_chat))
+            composeRule.clickWhenStill(hasText(string(ChatR.string.chat_list_new_chat)))
+            composeRule
+                .onNodeWithText(string(ChatR.string.chat_composer_placeholder))
+                .performTextInput(LONG_REPLY_SENT_MESSAGE)
+            composeRule.clickWhenStill(hasContentDescription(string(ChatR.string.chat_send)))
+
+            composeRule.awaitPartialText(LONG_REPLY_FIRST_CHUNK, LONG_REPLY_TEXT)
+            composeRule.awaitText(LONG_REPLY_TEXT, LONG_REPLY_TIMEOUT_MILLIS)
+            composeRule.awaitContentDescription(
+                string(ChatR.string.chat_send),
+                LONG_REPLY_TIMEOUT_MILLIS,
+            )
+
+            // One row for the whole reply, however many deltas carried it.
+            val chat = chatRepository.getChatsFlow().first().single()
+            val messages = chatRepository.getMessagesFlow(chat.id).first()
+            assertEquals(EXPECTED_MESSAGE_COUNT, messages.size)
+            assertEquals(LONG_REPLY_TEXT, messages.last().content.textContent())
         }
 
     @Test

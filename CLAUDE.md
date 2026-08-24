@@ -23,6 +23,7 @@ Run the test suite with **`./scripts/test.sh`**.
 - **`const val` names use `SCREAMING_SNAKE_CASE`**. Non-const `val`s follow normal `camelCase`.
 - **No magic numbers.** A literal whose value carries meaning gets a named `const val`, so the name explains it instead of a comment. Exempt: `0` and `1`, counts and sizes a test asserts on (`assertEquals(2, items.size)`), and numbers that are already the domain's own vocabulary (an HTTP status, a `@Preview` height).
 - **No trailing (end-of-line) comments.** Put the comment on its own line *above* the code it describes. The one exception is where a language forces inline syntax.
+- **A comment says what the code does, or why it does it that way.** Not what it does not do, and not an answer to a question the code never raises.
 - **KDoc where it earns its place.** When a function or class (or any of its arguments) isn't self-explanatory from its name and signature, add a KDoc block: one line on what it does, plus `@param`/`@return` for the non-obvious parts. **Interfaces and contracts always get KDoc**.
 - **KDoc opens with what the thing is or does.** One sentence, before any reasoning. A block that starts on the logic inside the body leaves the reader to infer the purpose from an explanation of it. Why it works that way comes after that sentence, or moves into the body above the branch it explains.
 - **A comment sits with what it explains.** A class KDoc says what the class is, and stops there. Reasoning about one property, function, or branch goes above that property, function, or branch, never accumulated into the block on top of the class. Constructor `@param` lines are the exception, since the language gives them nowhere else to live.
@@ -36,6 +37,6 @@ Run the test suite with **`./scripts/test.sh`**.
 
 - Don't repeat yourself.
 - No history / run events. State what the system *does*, not what happened once or what was decided when.
-- Don't over-explain. Say it once, at the shortest length that's still clear.
+- Don't over-explain. Say it once, short and plain.
 - One example only where the rule is genuinely ambiguous without it. Usually zero.
 - Never use em dashes. Rewrite the sentence, or use a comma, colon, parentheses, or full stop.

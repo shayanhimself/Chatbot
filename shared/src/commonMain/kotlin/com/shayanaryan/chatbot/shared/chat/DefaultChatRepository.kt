@@ -122,14 +122,13 @@ internal class DefaultChatRepository(
     override suspend fun retry(chatId: Long) {
         mutex.withLock {
             val last = messageDao.lastForChat(chatId) ?: return@withLock
-            // No separate liveness guard: while a turn is in flight the last row is the user
-            // message, so the role test already makes this a no-op.
-            if (last.role != Role.Assistant || last.status == MessageStatus.Complete) {
-                return@withLock
+            // Only a reply that stopped short is replayable. A turn in flight has the user
+            // message last, so it falls outside this.
+            if (last.role == Role.Assistant && last.status != MessageStatus.Complete) {
+                // Deleting the row restores the state the turn started from.
+                messageDao.deleteById(last.id)
+                launchTurn(chatId)
             }
-            // Dropping the trailing row needs no other undo: the history query never saw it.
-            messageDao.deleteById(last.id)
-            launchTurn(chatId)
         }
     }
 

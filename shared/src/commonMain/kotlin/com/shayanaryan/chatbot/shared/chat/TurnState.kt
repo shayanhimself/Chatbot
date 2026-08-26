@@ -19,8 +19,9 @@ sealed interface TurnState {
     ) : TurnState
 
     /**
-     * The last turn did not finish. Readable until the next turn on this chat replaces it;
-     * the persisted message records only that it failed, never why.
+     * The last turn did not finish. Readable until nothing is collecting the chat's turn anymore,
+     * or until the next turn on this chat replaces it; the persisted message records only
+     * that it failed, never why.
      */
     data class Failed(
         val error: ApiError,

@@ -23,6 +23,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -31,7 +32,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
+
+/**
+ * How long a failed turn waits for a first collector before its entry is dropped unread. Long
+ * enough to cover a screen being recreated, short enough that a failure nobody opens is not held
+ * for the process's lifetime.
+ */
+private val unreadTurnTimeout = 30.seconds
 
 /**
  * One reply in flight: the state a collector reads, and the coroutine filling it.
@@ -75,7 +85,11 @@ internal class DefaultChatRepository(
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getTurnFlow(chatId: Long): Flow<TurnState> =
         turns
-            .flatMapLatest { it[chatId]?.state ?: flowOf(TurnState.Idle) }
+            // Narrowed to this chat before the switch, so a turn starting on another chat does not
+            // tear this collector's subscription down and put it back.
+            .map { it[chatId] }
+            .distinctUntilChanged()
+            .flatMapLatest { it?.state ?: flowOf(TurnState.Idle) }
             .distinctUntilChanged()
 
     override suspend fun send(
@@ -267,18 +281,22 @@ internal class DefaultChatRepository(
             throw cancellation
         }
         val error = failure
-        // Outside the try-catch, so cancellation here would otherwise escape and leave the turn with no
-        // row and a state stuck on Streaming. The stream is already over by this point.
+        // Reached however the stream ended short of cancellation, which the catch above took.
+        // The reply is complete, so storing it is not something a cancel arriving now may
+        // interrupt: it would throw out of persistReply, and with no catch left around these
+        // lines the turn would end with no row, a state stuck on Streaming, and an entry
+        // nothing clears.
         withContext(NonCancellable) {
             if (error == null) {
                 persistReply(chatId, reply.toString(), MessageStatus.Complete)
                 state.value = TurnState.Idle
                 clearTurn(chatId, state)
             } else {
-                // The entry stays so the error is still readable when a collector arrives late;
-                // the next turn on this chat replaces it.
+                // The entry outlives the turn so the error is still readable when a collector
+                // arrives late, and is dropped once nothing is reading it.
                 persistReply(chatId, reply.toString(), MessageStatus.Failed)
                 state.value = TurnState.Failed(error)
+                clearTurnWhenUnread(chatId, state)
             }
         }
     }
@@ -303,9 +321,32 @@ internal class DefaultChatRepository(
     }
 
     /**
+     * Drops a failed turn's entry once nothing is reading it anymore.
+     *
+     * @param state the failed turn's state flow: both the subscriptions to watch and the handle
+     *   [clearTurn] recognises the entry by.
+     */
+    private fun clearTurnWhenUnread(
+        chatId: Long,
+        state: MutableStateFlow<TurnState>,
+    ) {
+        // Runs on [externalScope], not the turn's own job, which ends as this returns.
+        externalScope.launch {
+            // Wait for a collector to arrive. Dropping the entry the moment the turn fails would
+            // beat a screen that is still opening.
+            withTimeoutOrNull(unreadTurnTimeout) {
+                state.subscriptionCount.first { it > 0 }
+            }
+            // Then wait for it to leave. If none ever arrived the count is still zero, so this
+            // returns at once.
+            state.subscriptionCount.first { it == 0 }
+            clearTurn(chatId, state)
+        }
+    }
+
+    /**
      * Drops this turn's entry, and only this one: a later turn may already have replaced it, and
      * dropping that one would leave it running with nothing tracking it.
-     *
      */
     private suspend fun clearTurn(
         chatId: Long,

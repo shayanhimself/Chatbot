@@ -43,8 +43,8 @@ private const val STREAMED_TEXT = "Powell"
 private const val FIRST_MESSAGE = "what should I pack for the coast"
 private const val FILLER_MESSAGE =
     "Layers, mostly. Mornings on the coast are cold enough for a fleece, afternoons are warm " +
-            "enough for a t-shirt, and it rains without warning in between, so a shell you can " +
-            "stuff in a daypack earns its space more than a heavy coat does."
+        "enough for a t-shirt, and it rains without warning in between, so a shell you can " +
+        "stuff in a daypack earns its space more than a heavy coat does."
 private const val LAST_MESSAGE = "That is the whole list."
 private const val LATE_REPLY = "One more thing: bring a rain shell."
 
@@ -266,19 +266,19 @@ class ChatDetailScreenTest {
         openChat.copy(
             items =
                 (
-                        // First message
-                        listOf(Role.User to FIRST_MESSAGE) +
-                                // A few replies from Assistant
-                                List(FILLER_COUNT) { Role.Assistant to FILLER_MESSAGE } +
-                                // Last message
-                                (Role.Assistant to LAST_MESSAGE)
-                        ).mapIndexed { index, (role, text) ->
-                        persisted(
-                            id = index.toLong(),
-                            role = role,
-                            text = text,
-                        )
-                    },
+                    // First message
+                    listOf(Role.User to FIRST_MESSAGE) +
+                        // A few replies from Assistant
+                        List(FILLER_COUNT) { Role.Assistant to FILLER_MESSAGE } +
+                        // Last message
+                        (Role.Assistant to LAST_MESSAGE)
+                ).mapIndexed { index, (role, text) ->
+                    persisted(
+                        id = index.toLong(),
+                        role = role,
+                        text = text,
+                    )
+                },
         )
 
     private fun setScreen(state: MutableState<ChatDetailUiState>) {

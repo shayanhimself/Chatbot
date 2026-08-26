@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.shayanaryan.chatbot.core.testing.quantityString
 import com.shayanaryan.chatbot.core.testing.string
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.feature.chat.R
@@ -13,10 +14,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import com.shayanaryan.chatbot.core.ui.R as CoreUiR
 
 private const val RETRY_AFTER_SECONDS = 30
+private const val ONE_SECOND = 1
 
 @RunWith(AndroidJUnit4::class)
 class ErrorItemTest {
@@ -59,6 +62,33 @@ class ErrorItemTest {
         }
 
         assertTrue(text.contains(RETRY_AFTER_SECONDS.toString()))
+    }
+
+    @Test
+    fun `a one second wait reads as one second, not as one seconds`() {
+        var text = ""
+        composeRule.setContent {
+            ChatbotTheme {
+                text = ApiError.RateLimited(ONE_SECOND).text()
+            }
+        }
+
+        assertEquals(
+            quantityString(
+                id = R.plurals.chat_error_rate_limited_after,
+                quantity = ONE_SECOND,
+                ONE_SECOND,
+            ),
+            text,
+        )
+        assertNotEquals(
+            quantityString(
+                id = R.plurals.chat_error_rate_limited_after,
+                quantity = RETRY_AFTER_SECONDS,
+                ONE_SECOND,
+            ),
+            text,
+        )
     }
 
     @Test

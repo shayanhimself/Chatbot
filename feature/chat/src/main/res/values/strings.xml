@@ -34,11 +34,15 @@
     <!-- Turn failures. One per ChatError case; the repository never carries prose. -->
     <string name="chat_error_authentication">Your API key was rejected. Check the key this build is using and try again.</string>
     <string name="chat_error_rate_limited">The API returned 429 (rate limited). Time for bathroom break?</string>
-    <string name="chat_error_rate_limited_after">The API returned 429 (rate limited). Come back in %1$d seconds.</string>
     <string name="chat_error_overloaded">Claude is overloaded right now. Time for bathroom break?</string>
     <string name="chat_error_invalid_request">The API rejected the request as invalid. My bad.</string>
     <string name="chat_error_server">The API hit a server error. Whoopsy.</string>
     <string name="chat_error_network">Couldn\'t reach the API. Check your connection and try again.</string>
     <string name="chat_error_timeout">The request timed out before a reply arrived. Try again.</string>
     <string name="chat_error_unexpected">Something went wrong on the way to Claude. Whoopsy.</string>
+    <!-- The retry hint counts seconds, so it inflects. -->
+    <plurals name="chat_error_rate_limited_after">
+        <item quantity="one">The API returned 429 (rate limited). Come back in %1$d second.</item>
+        <item quantity="other">The API returned 429 (rate limited). Come back in %1$d seconds.</item>
+    </plurals>
 </resources>

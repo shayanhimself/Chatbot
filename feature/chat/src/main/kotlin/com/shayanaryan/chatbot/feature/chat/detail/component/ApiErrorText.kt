@@ -1,6 +1,7 @@
 package com.shayanaryan.chatbot.feature.chat.detail.component
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.shayanaryan.chatbot.feature.chat.R
 import com.shayanaryan.chatbot.shared.ApiError
@@ -21,7 +22,11 @@ fun ApiError.text(): String =
             if (seconds == null) {
                 stringResource(R.string.chat_error_rate_limited)
             } else {
-                stringResource(R.string.chat_error_rate_limited_after, seconds)
+                pluralStringResource(
+                    id = R.plurals.chat_error_rate_limited_after,
+                    count = seconds,
+                    seconds,
+                )
             }
         }
 

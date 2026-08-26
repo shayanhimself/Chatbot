@@ -24,9 +24,13 @@
     <string name="onboarding_error_network">Couldn\'t reach Anthropic. You\'re offline; try again once you\'re back.</string>
     <string name="onboarding_error_timeout">The check timed out before Anthropic answered. Try again.</string>
     <string name="onboarding_error_rate_limited">Anthropic returned 429 (rate limited). Try again in a moment.</string>
-    <string name="onboarding_error_rate_limited_after">Anthropic returned 429 (rate limited). Try again in %1$d seconds.</string>
     <string name="onboarding_error_overloaded">Anthropic is overloaded right now. Try again in a moment.</string>
     <string name="onboarding_error_invalid_request">Anthropic rejected the check as invalid. My bad.</string>
     <string name="onboarding_error_server">Anthropic hit a server error. Try again in a moment.</string>
     <string name="onboarding_error_unexpected">Something went wrong on the way to Anthropic. Try again.</string>
+    <!-- The retry hint counts seconds, so it inflects. -->
+    <plurals name="onboarding_error_rate_limited_after">
+        <item quantity="one">Anthropic returned 429 (rate limited). Try again in %1$d second.</item>
+        <item quantity="other">Anthropic returned 429 (rate limited). Try again in %1$d seconds.</item>
+    </plurals>
 </resources>

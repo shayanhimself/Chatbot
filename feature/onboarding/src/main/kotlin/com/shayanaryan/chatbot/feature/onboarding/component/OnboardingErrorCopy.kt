@@ -1,6 +1,7 @@
 package com.shayanaryan.chatbot.feature.onboarding.component
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.shayanaryan.chatbot.core.ui.designsystem.icon.Glyphs
 import com.shayanaryan.chatbot.feature.onboarding.R
@@ -23,8 +24,12 @@ internal fun ApiError.supportingText(): String =
         }
 
         is ApiError.RateLimited -> {
-            retryAfterSeconds?.let {
-                stringResource(R.string.onboarding_error_rate_limited_after, it)
+            retryAfterSeconds?.let { seconds ->
+                pluralStringResource(
+                    id = R.plurals.onboarding_error_rate_limited_after,
+                    count = seconds,
+                    seconds,
+                )
             } ?: stringResource(R.string.onboarding_error_rate_limited)
         }
 

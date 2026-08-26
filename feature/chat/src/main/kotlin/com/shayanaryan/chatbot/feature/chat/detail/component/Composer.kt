@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -23,6 +25,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import com.shayanaryan.chatbot.core.ui.designsystem.component.DsIconButton
 import com.shayanaryan.chatbot.core.ui.designsystem.component.IconButtonVariant
@@ -31,6 +37,9 @@ import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.Spacing
 import com.shayanaryan.chatbot.feature.chat.R
 import com.shayanaryan.chatbot.feature.chat.detail.CHAT_PREVIEW_WIDTH_DP
+
+/** The height a pasted paragraph may grow the field to before it scrolls within itself. */
+private const val COMPOSER_MAX_LINES = 6
 
 /**
  * The message input and its trailing action.
@@ -50,6 +59,10 @@ fun Composer(
     modifier: Modifier = Modifier,
 ) {
     val canSend by remember(state) { derivedStateOf { state.text.isNotBlank() } }
+    val send: () -> Unit = {
+        onSend(state.text.toString())
+        state.clearText()
+    }
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
@@ -73,6 +86,9 @@ fun Composer(
                     MaterialTheme.typography.bodyLarge.copy(
                         color = MaterialTheme.colorScheme.onSurface,
                     ),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                onKeyboardAction = { if (canSend && !isStreaming) send() },
+                lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = COMPOSER_MAX_LINES),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 decorator = { inner ->
                     if (state.text.isEmpty()) {
@@ -98,10 +114,7 @@ fun Composer(
             DsIconButton(
                 glyph = Glyphs.ARROW_UPWARD,
                 contentDescription = stringResource(R.string.chat_send),
-                onClick = {
-                    onSend(state.text.toString())
-                    state.clearText()
-                },
+                onClick = send,
                 modifier = Modifier.size(Spacing.touchTargetMin),
                 variant = IconButtonVariant.Filled,
                 enabled = canSend,

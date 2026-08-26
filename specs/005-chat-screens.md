@@ -135,15 +135,17 @@ Items are built by one rule:
 ```
 items = messages.filter { it.text.isNotBlank() }.map(::Persisted) + trailing
 
-trailing = when (turn) {
-  Idle              -> nothing
-  Streaming("")     -> Thinking      ┐ only when the last persisted
-  Streaming(text)   -> Streaming     ┘ message is a user message
-  Failed(error)     -> Error
+trailing = when {
+  messages.lastOrNull()?.error != null -> Error
+  turn is Streaming("")                -> Thinking      ┐ only when the last persisted
+  turn is Streaming(text)              -> Streaming     ┘ message is a user message
+  else                                 -> nothing
 }
 ```
 
-The guard on the live items exists because 004 guarantees the assistant row is inserted **before** the turn returns to `Idle`, which means there is a window where Room has already emitted the finished message while the turn still reads `Streaming`. Rendering both would double the bubble for a frame. Keying off the trailing role instead of a timestamp makes it deterministic: once an assistant message is the last persisted item, any live text is stale by definition. `Failed` is exempt because 004 writes a `Failed` assistant row and keeps the turn entry until the next `send`, `retry`, or `delete`, so the error must render after that row rather than instead of it.
+The error comes from the trailing reply rather than from the turn, so a chat reopened after the process died still offers its retry. Only a trailing failure is live: an earlier one was already answered by the reply that follows it.
+
+The guard on the live items exists because 004 guarantees the assistant row is inserted **before** the turn returns to `Idle`, which means there is a window where Room has already emitted the finished message while the turn still reads `Streaming`. Rendering both would double the bubble for a frame. Keying off the trailing role instead of a timestamp makes it deterministic: once an assistant message is the last persisted item, any live text is stale by definition. The error is exempt: 004 stores a `Failed` assistant row too, so the error renders after that row rather than instead of it.
 
 Blank messages are filtered out for the same reason 004 drops them on the way into a request: a turn that produced no text still stores its row, and an empty bubble is noise. Cancelled items keep their partial text and render as ordinary assistant messages, which is what the user already saw.
 
@@ -205,7 +207,7 @@ Release builds get no `ApiKeyProvider` binding and therefore do not assemble unt
 
 TDD throughout, fakes not mocks, per the architecture skill.
 
-- **ViewModels** against `:shared:testing`'s `FakeChatRepository`, asserting on `StateFlow.value`. The item-folding rule carries the most risk and gets the most cases: thinking before the first token, streaming text, the stale-live-item window after a completed turn, the error item surviving alongside its `Failed` assistant row, blank messages filtered, and cancelled partial text rendered.
+- **ViewModels** against `:shared:testing`'s `FakeChatRepository`, asserting on `StateFlow.value`. The item-folding rule carries the most risk and gets the most cases: thinking before the first token, streaming text, the stale-live-item window after a completed turn, the error item surviving alongside its `Failed` assistant row and across a restart, blank messages filtered, and cancelled partial text rendered.
 - **Repository additions** in `:shared`'s `androidHostTest`, where a real database is available: the snippet subquery picking the last `Complete` message, excluding a non-`Complete` one, and `getChatFlow` emitting null after delete.
 - **Compose UI tests** under Robolectric with the v2 rule, driving the stateless screens: composer enablement, send and stop, the overflow menu and delete dialog, the model picker, and retry.
 - **Screenshots.** Every public composable ships `@PreviewTest` previews in both dark and light, one per frame the two design files carry, minus the frames listed above as not built.

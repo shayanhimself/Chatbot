@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.shayanaryan.chatbot.shared.ApiError
 import com.shayanaryan.chatbot.shared.ContentBlock
 import com.shayanaryan.chatbot.shared.Role
 import com.shayanaryan.chatbot.shared.chat.MessageStatus
@@ -30,5 +31,6 @@ internal data class MessageEntity(
     val role: Role,
     val content: List<ContentBlock>,
     val status: MessageStatus,
+    val error: ApiError? = null,
     val createdAt: Long,
 )

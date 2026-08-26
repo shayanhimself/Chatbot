@@ -1,10 +1,12 @@
 package com.shayanaryan.chatbot.shared.database
 
 import androidx.room.TypeConverter
+import com.shayanaryan.chatbot.shared.ApiError
 import com.shayanaryan.chatbot.shared.ContentBlock
 import com.shayanaryan.chatbot.shared.Role
 import com.shayanaryan.chatbot.shared.chat.MessageStatus
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
+import kotlinx.serialization.SerializationException
 
 /**
  * Column codecs. Enums are stored as their constant name, which is what lets a query compare
@@ -46,4 +48,17 @@ internal class ChatbotConverters {
 
     @TypeConverter
     fun toContent(value: String): List<ContentBlock> = storageJson.decodeFromString(value)
+
+    @TypeConverter
+    fun fromError(error: ApiError?): String? = error?.let { storageJson.encodeToString(it) }
+
+    @TypeConverter
+    fun toError(value: String?): ApiError? =
+        value?.let {
+            try {
+                storageJson.decodeFromString<ApiError>(it)
+            } catch (_: SerializationException) {
+                ApiError.Unexpected
+            }
+        }
 }

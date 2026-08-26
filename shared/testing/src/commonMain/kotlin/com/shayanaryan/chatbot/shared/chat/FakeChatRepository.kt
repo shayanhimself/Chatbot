@@ -111,14 +111,14 @@ class FakeChatRepository(
         turns.update { it - chatId }
     }
 
-    /** Ends the turn in failure: the partial reply is stored and [error] stays readable. */
+    /** Ends the turn in failure: the partial reply is stored, carrying the [error] that ended it. */
     fun failTurn(
         chatId: Long,
         error: ApiError,
     ) {
         val streaming = turns.value[chatId] as? TurnState.Streaming ?: return
-        appendMessage(chatId, Role.Assistant, streaming.text, MessageStatus.Failed)
-        turns.update { it + (chatId to TurnState.Failed(error)) }
+        appendMessage(chatId, Role.Assistant, streaming.text, MessageStatus.Failed, error)
+        turns.update { it - chatId }
     }
 
     private fun createChat(
@@ -146,6 +146,7 @@ class FakeChatRepository(
         role: Role,
         text: String,
         status: MessageStatus,
+        error: ApiError? = null,
     ) {
         val now = clock.now()
         val message =
@@ -155,6 +156,7 @@ class FakeChatRepository(
                 role = role,
                 content = listOf(ContentBlock.Text(text)),
                 status = status,
+                error = error,
                 createdAt = now,
             )
         messages.update { all ->

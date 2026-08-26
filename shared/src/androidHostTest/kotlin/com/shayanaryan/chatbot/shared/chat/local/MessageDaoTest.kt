@@ -1,5 +1,6 @@
 package com.shayanaryan.chatbot.shared.chat.local
 
+import com.shayanaryan.chatbot.shared.ApiError
 import com.shayanaryan.chatbot.shared.ContentBlock
 import com.shayanaryan.chatbot.shared.Role
 import com.shayanaryan.chatbot.shared.chat.MessageStatus
@@ -11,6 +12,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 private const val CHAT_TITLE = "chat"
 private const val FIRST_MESSAGE = "first"
@@ -25,6 +27,8 @@ private const val CANCELLED_REPLY = "stub"
 
 private const val OWN_MESSAGE = "mine"
 private const val OTHER_CHAT_MESSAGE = "theirs"
+
+private const val RETRY_AFTER_SECONDS = 30
 
 @RunWith(RobolectricTestRunner::class)
 class MessageDaoTest {
@@ -44,6 +48,7 @@ class MessageDaoTest {
         text: String,
         status: MessageStatus,
         createdAt: Long,
+        error: ApiError? = null,
     ): Long =
         chatDao().insertMessage(
             MessageEntity(
@@ -51,6 +56,7 @@ class MessageDaoTest {
                 role = role,
                 content = listOf(ContentBlock.Text(text)),
                 status = status,
+                error = error,
                 createdAt = createdAt,
             ),
         )
@@ -144,6 +150,26 @@ class MessageDaoTest {
 
             assertEquals(lastId, last?.id)
             assertEquals(MessageStatus.Failed, last?.status)
+        }
+
+    @Test
+    fun `a failed row keeps the error that ended the turn`() =
+        runDatabaseTest { database ->
+            val chatId = database.newChat()
+            database.append(chatId, Role.User, QUESTION, MessageStatus.Complete, 1L)
+            database.append(
+                chatId = chatId,
+                role = Role.Assistant,
+                text = FAILED_REPLY,
+                status = MessageStatus.Failed,
+                createdAt = 2L,
+                error = ApiError.RateLimited(RETRY_AFTER_SECONDS),
+            )
+
+            val messages = database.messageDao().observeForChat(chatId).first()
+
+            assertNull(messages.first().error)
+            assertEquals(ApiError.RateLimited(RETRY_AFTER_SECONDS), messages.last().error)
         }
 
     @Test

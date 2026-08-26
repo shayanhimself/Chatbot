@@ -2,13 +2,13 @@
 
 Room persistence for chats and messages, plus the `ChatRepository` that owns a chat turn end to end: append the user message, stream the reply through `ClaudeEngine` (003), persist the result. Lives in `:shared` commonMain (data layer); the Android file path is the only platform-specific piece.
 
-Room is the single source of truth for chat history. The one exception is the in-flight assistant message, which stays in memory as `TurnState` until the stream ends, never a write per token.
+Room is the single source of truth for chat history, the error that ended a turn included. The one exception is the in-flight assistant message, which stays in memory as `TurnState` until the stream ends, never a write per token.
 
 Scope is chats and messages. Memories (009) and reminders (010) add their own tables to the same database. UI and ViewModel are 005; the deferrals are listed at the bottom.
 
 ## Schema
 
-Version 1, two tables. Entities, DAOs, and converters are `internal` to `:shared`, so nothing above the data layer can reach a DAO.
+Version 2, two tables. Entities, DAOs, and converters are `internal` to `:shared`, so nothing above the data layer can reach a DAO.
 
 ```
 @Entity(tableName = "chats")
@@ -36,6 +36,7 @@ internal data class MessageEntity(
   val role: Role,
   val content: List<ContentBlock>,
   val status: MessageStatus,
+  val error: ApiError? = null,
   val createdAt: Long,
 )
 
@@ -50,11 +51,11 @@ Deleting a chat cascades to its messages. The index on `chatId` serves both that
 
 The codec is the storage layer's own `Json`, not 003's `claudeJson`. Sharing one instance would put the on-disk format at the mercy of settings that exist for HTTP reasons, and a stored value that no longer decodes would be coerced to a default rather than failing loudly. Nothing on the wire path serializes `ContentBlock` directly, so the two formats are free to diverge.
 
-Three converters: `ClaudeModel`, the `Role`/`MessageStatus` enums, and the content list. Timestamps are epoch millis in the database and `kotlin.time.Instant` in domain models; a `kotlin.time.Clock` is injected so tests assert exact values.
+Four converters: `ClaudeModel`, the `Role`/`MessageStatus` enums, the content list, and the error. Timestamps are epoch millis in the database and `kotlin.time.Instant` in domain models; a `kotlin.time.Clock` is injected so tests assert exact values.
 
 An unknown stored `ClaudeModel` name decodes to `ClaudeModel.Default` rather than throwing, so a model retired from the picker does not make every chat row naming it unreadable. `Role` and `MessageStatus` throw instead: those sets are closed and written only by this app, so an unrecognised value is corruption.
 
-**Failed rows store no error detail.** Which `ApiError` occurred lives in `TurnState` until the next turn on that chat replaces it. A reopened chat shows only that the turn did not finish.
+**A failed row stores the error that ended it**, in a nullable JSON column of its own, which requires `@Serializable` on `ApiError` with a `@SerialName` per case so a renamed case leaves stored rows readable. `status` stays the queryable flag and `error` the reason: the history query matches on `status`, and nothing queries a JSON column. An error whose case no longer exists decodes to `ApiError.Unexpected` rather than throwing, for the reason the model converter falls back: the reply is worth more than the reason it stopped. Rows written before the column have no error, so a chat that failed before the upgrade offers no retry.
 
 Two queries carry the feature: the chat list, and the history sent to Claude:
 
@@ -72,12 +73,11 @@ The repository exposes these; entities never leave the data layer.
 
 ```
 data class Chat(id, title, model, createdAt, updatedAt)
-data class Message(id, chatId, role, content, status, createdAt)
+data class Message(id, chatId, role, content, status, error, createdAt)
 
 sealed interface TurnState {
   data object Idle : TurnState
   data class Streaming(val text: String) : TurnState
-  data class Failed(val error: ApiError) : TurnState
 }
 ```
 
@@ -131,7 +131,7 @@ send(null, "plan a trip")
        engine.stream(ClaudeMessageRequest(history, chat.model, system = null))
          Delta     → TurnState.Streaming(cumulative)
          Completed → insert assistant row (Complete); bump updatedAt; TurnState.Idle
-         Failed    → insert assistant row (Failed, partial text); TurnState.Failed(error)
+         Failed    → insert assistant row (Failed, partial text, error); TurnState.Idle
      }
 ```
 
@@ -155,7 +155,7 @@ getTurnFlow(id) = turns
 
 Writes take a `Mutex`. `StateFlow.update` makes one compare-and-set atomic, but the guard spans two operations (test for a live turn, then insert one) and without the lock two concurrent sends both see none and both launch.
 
-**The map holds the latest turn per chat, live or terminal.** A turn is live while its job is active, so the one-turn guard tests the job and the state rather than the entry's presence: a turn that dies unexpectedly can never block a later send, and neither can one that has gone `Idle` but not yet been cleared. The entry is cleared when the turn ends `Idle`, that is, once the `Complete` row is in, and a `Failed` entry is kept so `TurnState.Failed(error)` stays readable until the next `send` or `retry` replaces it, or `delete` drops it. Clearing on failure instead would lose the error before any collector saw it: the fallback to `Idle` conflates, so `Failed` need never be delivered at all. `cancel` cancels the job and joins it; the turn coroutine writes the `Cancelled` row on its way out, in a `NonCancellable` block, then sets `Idle` and drops the entry. One writer per turn means no window in which a turn finishes normally between a liveness check and a second insert, and joining keeps the rule that a row exists before the live bubble disappears.
+**The map holds the latest turn per chat.** A turn is live while its job is active, so the one-turn guard tests the job and the state rather than the entry's presence: a turn that dies unexpectedly can never block a later send, and neither can one that has gone `Idle` but not yet been cleared. Every turn ends the same way, whether it completed or failed: the row goes in, the state goes `Idle`, the entry is dropped. Nothing has to outlive the turn, because the row carries the reason. `cancel` cancels the job and joins it; the turn coroutine writes the `Cancelled` row on its way out, in a `NonCancellable` block, then sets `Idle` and drops the entry. One writer per turn means no window in which a turn finishes normally between a liveness check and a second insert, and joining keeps the rule that a row exists before the live bubble disappears.
 
 ## Module and DI
 
@@ -227,7 +227,9 @@ The module's public surface is the repository interface, the domain models, `Cha
 
 ## Migrations
 
-`exportSchema` is on and `shared/schemas/…/1.json` is committed as the baseline every future migration diffs against. Every version bump ships an `@AutoMigration` and a `MigrationTestHelper` test, added by the spec that changes the schema. Adding a table (009's memories, 010's reminders) is auto-migratable in one line. Destructive fallback is never enabled.
+`exportSchema` is on and every version's `shared/schemas/….json` is committed, both as the baseline the next migration diffs against and as the fixture its test builds the old database from. Every version bump ships an `@AutoMigration` and a migration test, added by the spec that changes the schema. Adding a nullable column (version 2's `error`) or a table (009's memories, 010's reminders) is auto-migratable in one line. Destructive fallback is never enabled.
+
+Room's own `MigrationTestHelper` reads those files from an APK's assets; a host test has no APK to package them into, and putting them there would ship the schema history in the app. `createDatabaseAtVersion` builds the old database from the committed JSON instead: its `createSql` statements, its `setupQueries` for the identity hash Room validates the migrated schema against, and `PRAGMA user_version` so the open migrates.
 
 ## Testing
 
@@ -240,7 +242,7 @@ TDD, real objects over fakes, no mocking library.
 Swapping the driver is why `createChatbotDatabase` takes it as a parameter.
 
 - **DAO**: cascade delete; `id` and `updatedAt DESC` ordering; the history query returning only `Complete` rows; every converter round-tripping a multi-block content list. The history query's `status = 'Complete'` literal is coupled to an enum constant name with nothing in the compiler to check it, so one test inserts a non-`Complete` row and asserts it is excluded.
-- **Repository**: real in-memory database plus a fake engine, so only the network is faked. Creation from a null id with a truncated title; append to an existing chat; `Completed` persisting a `Complete` row and bumping `updatedAt`, with the row queryable before `Idle` is emitted; `Failed` persisting partial text; the next send excluding that row from history; `cancel` and `retry`; a second concurrent `send` rejected; `getTurnFlow` attaching mid-stream.
+- **Repository**: real in-memory database plus a fake engine, so only the network is faked. Creation from a null id with a truncated title; append to an existing chat; `Completed` persisting a `Complete` row and bumping `updatedAt`, with the row queryable before `Idle` is emitted; `Failed` persisting partial text and the error that ended it; the next send excluding that row from history; `cancel` and `retry`; a second concurrent `send` rejected; `getTurnFlow` attaching mid-stream.
 - **Engine doubles**: 003's `FakeScriptedClaudeEngine` emits a scripted list eagerly, which cannot express an assertion taken mid-stream. `FakeManualClaudeEngine` alongside it opens a stream the test feeds event by event and closes when done; the three tests that attach mid-flight, assert mid-stream, or cancel a collector need it.
 - **Turn lifetime**: collect `getTurnFlow`, cancel the collecting scope mid-stream, assert the assistant row still lands. This requires a `TestScope` for collection separate from `externalScope`, and it is the assertion the whole turn design exists to satisfy.
 - **`FakeChatRepository`** in commonTest, in-memory, reproducing the same lifetime semantics, the standard dependency for 005's ViewModel tests.
@@ -260,6 +262,5 @@ No journey XMLs: 004 has no UI. Persist, resume, and delete are proven end to en
 | `ContentBlock.ToolUse` / `ToolResult` persistence | 008 | New `@Serializable` subtypes in the existing JSON column; no schema change. The agentic loop drives multiple engine turns per user message |
 | Memory injection into `system` | 009 | The request-assembly seam already exists; `system` is null here |
 | Memories and reminders tables | 009, 010 | Added to `ChatbotDatabase` with an `@AutoMigration` and their own repository factories |
-| Stored error detail on failed rows | future | `TurnState.Failed` carries the `ApiError` in memory only; a reopened chat shows no reason |
 | Sharing test fakes across modules | 005 | `commonTest` classes are invisible to other Gradle projects and Kotlin has no KMP test fixtures, so a feature module cannot yet consume `FakeChatRepository`. 005 owns the mechanism, since it is the first module that needs one |
 | iOS database builder | future | An `iosMain` path via `NSFileManager`, plus per-target `ksp` lines. The schema, DAOs, and repository are unchanged |

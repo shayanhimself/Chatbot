@@ -24,6 +24,7 @@ internal fun MessageEntity.toDomain(): Message =
         role = role,
         content = content,
         status = status,
+        error = error,
         createdAt = Instant.fromEpochMilliseconds(createdAt),
     )
 

@@ -1,5 +1,6 @@
 package com.shayanaryan.chatbot.shared.database
 
+import androidx.room.AutoMigration
 import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
@@ -16,8 +17,9 @@ import com.shayanaryan.chatbot.shared.chat.local.MessageEntity
  */
 @Database(
     entities = [ChatEntity::class, MessageEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 @TypeConverters(ChatbotConverters::class)
 @ConstructedBy(ChatbotDatabaseConstructor::class)

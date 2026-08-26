@@ -26,6 +26,21 @@ internal fun TestScope.testDatabase(): ChatbotDatabase =
     )
 
 /**
+ * A database backed by a file at [path], for a test that needs one Room can open twice: an
+ * in-memory database is gone the moment its connection closes.
+ */
+internal fun TestScope.fileDatabase(path: String): ChatbotDatabase =
+    createChatbotDatabase(
+        builder =
+            Room.databaseBuilder<ChatbotDatabase>(
+                context = ApplicationProvider.getApplicationContext(),
+                name = path,
+            ),
+        driver = AndroidSQLiteDriver(),
+        queryContext = StandardTestDispatcher(testScheduler),
+    )
+
+/**
  * Runs [body] against a database of its own.
  *
  * The database is deliberately not closed: each test builds a fresh in-memory one that is

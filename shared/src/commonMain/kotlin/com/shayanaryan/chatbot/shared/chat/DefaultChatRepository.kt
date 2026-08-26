@@ -23,7 +23,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -32,16 +31,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Clock
-import kotlin.time.Duration.Companion.seconds
-
-/**
- * How long a failed turn waits for a first collector before its entry is dropped unread. Long
- * enough to cover a screen being recreated, short enough that a failure nobody opens is not held
- * for the process's lifetime.
- */
-private val unreadTurnTimeout = 30.seconds
 
 /**
  * One reply in flight: the state a collector reads, and the coroutine filling it.
@@ -59,8 +49,9 @@ internal class DefaultChatRepository(
     private val clock: Clock,
 ) : ChatRepository {
     /**
-     * The latest turn per chat, live or terminal. An immutable map behind a state flow, so
-     * reads need no lock and a collector sees turns that start after it does.
+     * The latest turn per chat, still listed for the moment between it ending and its entry being
+     * dropped. An immutable map behind a state flow, so reads need no lock and a collector sees
+     * turns that start after it does.
      */
     private val turns = MutableStateFlow<Map<Long, Turn>>(emptyMap())
 
@@ -280,31 +271,29 @@ internal class DefaultChatRepository(
             }
             throw cancellation
         }
-        // Copied into a val so the else branch below can read it as non-null.
+        // Copied into a val so the row below can read it as non-null.
         val error = failure
         // The stream has ended and this is the turn's only remaining work, so a cancel arriving
         // now must not stop it.
         // Outside the try-catch so its catch covers the cancellation and nothing else, otherwise it
         // would store a cancelled row on top of the one here.
         withContext(NonCancellable) {
-            if (error == null) {
-                persistReply(chatId, reply.toString(), MessageStatus.Complete)
-                state.value = TurnState.Idle
-                clearTurn(chatId, state)
-            } else {
-                // The entry outlives the turn so the error is still readable when a collector
-                // arrives late, and is dropped once nothing is reading it.
-                persistReply(chatId, reply.toString(), MessageStatus.Failed)
-                state.value = TurnState.Failed(error)
-                clearTurnWhenUnread(chatId, state)
-            }
+            val status = if (error == null) MessageStatus.Complete else MessageStatus.Failed
+            persistReply(chatId, reply.toString(), status, error)
+            state.value = TurnState.Idle
+            clearTurn(chatId, state)
         }
     }
 
+    /**
+     * @param error the failure that ended the turn, null for one that finished or was cancelled.
+     *   Stored on the row, so the reason survives the process that produced it.
+     */
     private suspend fun persistReply(
         chatId: Long,
         text: String,
         status: MessageStatus,
+        error: ApiError? = null,
     ) {
         val now = clock.now().toEpochMilliseconds()
         chatDao.appendMessage(
@@ -314,34 +303,11 @@ internal class DefaultChatRepository(
                     role = Role.Assistant,
                     content = listOf(ContentBlock.Text(text)),
                     status = status,
+                    error = error,
                     createdAt = now,
                 ),
             updatedAt = now,
         )
-    }
-
-    /**
-     * Drops a failed turn's entry once nothing is reading it anymore.
-     *
-     * @param state the failed turn's state flow: both the subscriptions to watch and the handle
-     *   [clearTurn] recognises the entry by.
-     */
-    private fun clearTurnWhenUnread(
-        chatId: Long,
-        state: MutableStateFlow<TurnState>,
-    ) {
-        // Runs on [externalScope], not the turn's own job, which ends as this returns.
-        externalScope.launch {
-            // Wait for a collector to arrive. Dropping the entry the moment the turn fails would
-            // beat a screen that is still opening.
-            withTimeoutOrNull(unreadTurnTimeout) {
-                state.subscriptionCount.first { it > 0 }
-            }
-            // Then wait for it to leave. If none ever arrived the count is still zero, so this
-            // returns at once.
-            state.subscriptionCount.first { it == 0 }
-            clearTurn(chatId, state)
-        }
     }
 
     /**

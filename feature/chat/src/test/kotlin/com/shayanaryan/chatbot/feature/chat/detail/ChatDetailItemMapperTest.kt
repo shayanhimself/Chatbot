@@ -30,12 +30,14 @@ class ChatDetailItemMapperTest {
         role: Role,
         text: String,
         status: MessageStatus = MessageStatus.Complete,
+        error: ApiError? = null,
     ) = Message(
         id = nextId++,
         chatId = 1L,
         role = role,
         content = listOf(ContentBlock.Text(text)),
         status = status,
+        error = error,
         createdAt = Instant.fromEpochMilliseconds(nextId),
     )
 
@@ -45,6 +47,11 @@ class ChatDetailItemMapperTest {
         text: String,
         status: MessageStatus = MessageStatus.Complete,
     ) = message(Role.Assistant, text, status)
+
+    private fun failed(
+        text: String,
+        error: ApiError,
+    ) = message(Role.Assistant, text, MessageStatus.Failed, error)
 
     @Test
     fun `an idle chat is only its persisted messages`() {
@@ -90,16 +97,15 @@ class ChatDetailItemMapperTest {
     }
 
     /**
-     * A failed turn writes a Failed assistant row and keeps the turn entry until the next send,
-     * retry or delete, so the error renders *after* that row rather than instead of it.
+     * The error renders *after* the partial reply rather than instead of it.
      */
     @Test
-    fun `a failed turn keeps its persisted item and adds the error`() {
+    fun `a failed reply keeps its persisted item and adds the error`() {
         val items =
             listOf(
                 user(USER_MESSAGE),
-                assistant(FAILED_TEXT, MessageStatus.Failed),
-            ).toChatDetailItems(TurnState.Failed(ApiError.Network))
+                failed(FAILED_TEXT, ApiError.Network),
+            ).toChatDetailItems(TurnState.Idle)
 
         assertEquals(3, items.size)
         assertIs<ChatDetailItem.Persisted>(items[1])
@@ -107,15 +113,49 @@ class ChatDetailItemMapperTest {
     }
 
     @Test
-    fun `a failed turn that produced no text still shows the error`() {
+    fun `a failed reply that produced no text still shows the error`() {
         val items =
             listOf(
                 user(USER_MESSAGE),
-                assistant(NO_TEXT, MessageStatus.Failed),
-            ).toChatDetailItems(TurnState.Failed(ApiError.Overloaded))
+                failed(NO_TEXT, ApiError.Overloaded),
+            ).toChatDetailItems(TurnState.Idle)
 
         assertEquals(2, items.size)
         assertEquals(ChatDetailItem.Error(ApiError.Overloaded), items.last())
+    }
+
+    /**
+     * The turn is gone after a restart, so the error has to come from the stored reply for the
+     * retry it sits above to be reachable at all.
+     */
+    @Test
+    fun `a chat reopened on a failed reply still shows the error`() {
+        val restored =
+            listOf(
+                user(USER_MESSAGE),
+                failed(NO_TEXT, ApiError.Network),
+            )
+
+        val items = restored.toChatDetailItems(TurnState.Idle)
+
+        assertEquals(ChatDetailItem.Error(ApiError.Network), items.last())
+    }
+
+    /**
+     * Only the trailing reply's failure is live. An earlier one was already answered by the retry
+     * that followed it.
+     */
+    @Test
+    fun `an earlier failure inside the history adds no error`() {
+        val items =
+            listOf(
+                user(USER_MESSAGE),
+                failed(FAILED_TEXT, ApiError.Network),
+                assistant(ASSISTANT_MESSAGE),
+            ).toChatDetailItems(TurnState.Idle)
+
+        assertEquals(3, items.size)
+        assertTrue(items.all { it is ChatDetailItem.Persisted })
     }
 
     @Test

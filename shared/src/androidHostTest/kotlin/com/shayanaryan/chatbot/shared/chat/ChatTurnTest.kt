@@ -14,7 +14,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -54,9 +53,6 @@ private const val FULL_SECOND_REPLY = "already here"
 private const val CANCELLED_FIRST_DELTA = "par"
 private const val CANCELLED_SECOND_DELTA = "tial"
 private const val CANCELLED_REPLY = "partial"
-
-// The user message and the reply that failed: the count that says the turn finished writing.
-private const val FAILED_TURN_MESSAGES = 2
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -256,7 +252,7 @@ class ChatTurnTest {
         }
 
     @Test
-    fun `a failed stream persists the partial reply and keeps the error readable`() =
+    fun `a failed stream persists the partial reply and the error that ended it`() =
         runDatabaseTest { database ->
             val engine = FakeManualClaudeEngine()
             val turnScope = turnScope()
@@ -268,21 +264,16 @@ class ChatTurnTest {
             engine.send(ClaudeStreamEvent.Delta(PARTIAL_REPLY))
             engine.send(ClaudeStreamEvent.Failed(ApiError.Overloaded))
             engine.close()
+            advanceUntilIdle()
 
-            // Waited for rather than advanced to: a failed turn nobody collects is dropped once
-            // its retention elapses, and advancing the scheduler would elapse it.
-            val last =
-                repository.getMessagesFlow(id).first { it.size == FAILED_TURN_MESSAGES }.last()
+            val last = repository.getMessagesFlow(id).first().last()
             assertEquals(PARTIAL_REPLY, last.text())
             assertEquals(MessageStatus.Failed, last.status)
-            assertEquals(
-                TurnState.Failed(ApiError.Overloaded),
-                repository.getTurnFlow(id).first(),
-            )
+            assertEquals(ApiError.Overloaded, last.error)
         }
 
     @Test
-    fun `a failed turn is dropped once nothing is collecting it`() =
+    fun `a failed turn goes idle, since its stored reply carries the error`() =
         runDatabaseTest { database ->
             val engine = FakeManualClaudeEngine()
             val turnScope = turnScope()
@@ -292,13 +283,6 @@ class ChatTurnTest {
             engine.awaitStream()
             engine.send(ClaudeStreamEvent.Failed(ApiError.Overloaded))
             engine.close()
-            repository.getMessagesFlow(id).first { it.size == FAILED_TURN_MESSAGES }
-            val collector = backgroundScope.launch { repository.getTurnFlow(id).collect { } }
-            advanceUntilIdle()
-
-            // Joined rather than only cancelled: the entry goes when the collector's
-            // unsubscribe runs, which advancing the scheduler does not on its own wait for.
-            collector.cancelAndJoin()
             advanceUntilIdle()
 
             assertEquals(TurnState.Idle, repository.getTurnFlow(id).first())

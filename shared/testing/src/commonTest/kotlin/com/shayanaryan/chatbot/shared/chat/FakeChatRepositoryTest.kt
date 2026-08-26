@@ -107,7 +107,7 @@ class FakeChatRepositoryTest {
         }
 
     @Test
-    fun `failing a turn persists the partial reply and keeps the error readable`() =
+    fun `failing a turn persists the partial reply and the error that ended it`() =
         runTest {
             val id = repository.send(null, USER_MESSAGE)
             repository.emitDelta(id, PARTIAL_REPLY)
@@ -117,7 +117,8 @@ class FakeChatRepositoryTest {
             val last = repository.getMessagesFlow(id).first().last()
             assertEquals(PARTIAL_REPLY, last.text())
             assertEquals(MessageStatus.Failed, last.status)
-            assertEquals(TurnState.Failed(ApiError.Overloaded), repository.getTurnFlow(id).first())
+            assertEquals(ApiError.Overloaded, last.error)
+            assertEquals(TurnState.Idle, repository.getTurnFlow(id).first())
         }
 
     @Test

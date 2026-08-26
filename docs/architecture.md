@@ -155,8 +155,7 @@ sequenceDiagram
 ```
 
 The turn runs on the repository's own scope, so it survives the screen going away and finishes
-into the database either way. A failure takes the same path as `TurnState.Failed` carrying a typed
-`ApiError`, which the feature maps to copy it owns.
+into the database either way.
 
 ## Navigation and the API key gate
 

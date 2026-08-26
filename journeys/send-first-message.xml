@@ -5,7 +5,7 @@
    </description>
    <actions>
      <action>Open the "buddy" app</action>
-     <action>Verify the chat list shows the empty state "Hmmm, a bit quite here"</action>
+     <action>Verify the chat list shows the empty state "Hmmm, a bit quiet here"</action>
      <action>Tap the "new chat" button</action>
      <action>Type "Reply with exactly: Hello" into the message field</action>
      <action>Tap the send button</action>

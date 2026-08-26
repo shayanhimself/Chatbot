@@ -11,6 +11,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -122,8 +123,17 @@ class ChatDetailViewModel
             if (text.isBlank() || uiState.value.isStreaming) return
             val id = chatId.value
             viewModelScope.launch {
-                val created = repository.send(id, text, localState.value.pendingModel)
-                if (id == null) rememberChat(created)
+                try {
+                    val created = repository.send(id, text, localState.value.pendingModel)
+                    if (id == null) rememberChat(created)
+                } catch (cancellation: CancellationException) {
+                    // Cancellation is how the scope shuts down, and it arrives as an
+                    // IllegalStateException, which the catch below would otherwise swallow.
+                    throw cancellation
+                } catch (_: RuntimeException) {
+                    // `send` rejects a chat that no longer exists and a chat already running a
+                    // turn
+                }
             }
         }
 

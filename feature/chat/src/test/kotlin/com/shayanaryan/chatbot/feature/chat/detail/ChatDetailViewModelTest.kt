@@ -273,4 +273,22 @@ class ChatDetailViewModelTest {
             assertNull(viewModel.uiState.value.chatId)
             assertNull(viewModel.uiState.value.title)
         }
+
+    @Test
+    fun `a send into a chat that no longer exists is rejected without crashing`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            collecting(viewModel)
+            viewModel.onSend(USER_MESSAGE)
+            advanceUntilIdle()
+            repository.completeTurn(1L)
+            advanceUntilIdle()
+
+            // Deleted from elsewhere, so the send is captured before the screen learns of it.
+            repository.delete(1L)
+            viewModel.onSend(USER_MESSAGE)
+            advanceUntilIdle()
+
+            assertNull(viewModel.uiState.value.chatId)
+        }
 }

@@ -273,10 +273,8 @@ internal class DefaultChatRepository(
         }
         // Copied into a val so the row below can read it as non-null.
         val error = failure
-        // The stream has ended and this is the turn's only remaining work, so a cancel arriving
-        // now must not stop it.
-        // Outside the try-catch so its catch covers the cancellation and nothing else, otherwise it
-        // would store a cancelled row on top of the one here.
+        // Outside the try-catch, so cancellation here would otherwise escape and leave the turn with no
+        // row and a state stuck on Streaming. The stream is already over by this point.
         withContext(NonCancellable) {
             val status = if (error == null) MessageStatus.Complete else MessageStatus.Failed
             persistReply(chatId, reply.toString(), status, error)

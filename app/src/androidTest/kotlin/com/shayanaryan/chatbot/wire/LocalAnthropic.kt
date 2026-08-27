@@ -22,7 +22,11 @@ private const val SSE_CONTENT_TYPE = "text/event-stream"
 private const val CONTENT_TYPE_HEADER = "Content-Type"
 private const val RETRY_AFTER_HEADER = "retry-after"
 private const val CONNECT_METHOD = "CONNECT"
+private const val API_PATH_PREFIX = "/v1/"
 private const val OK = 200
+private const val NOT_FOUND = 404
+private const val SERVER_ERROR = 500
+private const val REPLY_WAIT_SECONDS = 2L
 private const val REQUEST_TIMEOUT_SECONDS = 10L
 
 private const val REPLY_MESSAGE_ID = "msg_01LocalAnthropic"
@@ -148,8 +152,9 @@ class LocalAnthropic : ExternalResource() {
      * The next request the app sent, for asserting path, headers and body.
      *
      * The server records the `CONNECT` that opens the tunnel alongside the requests sent inside
-     * it, and how many of those there are depends on how the client pooled its connections. They
-     * are dropped here so a caller sees only what the app meant to send.
+     * it, and how many of those there are depends on how the client pooled its connections. It
+     * also records whatever else on the device the global proxy sent here. Both are dropped so a
+     * caller sees only what the app meant to send.
      */
     fun lastRequest(): RecordedRequest {
         while (true) {
@@ -158,12 +163,12 @@ class LocalAnthropic : ExternalResource() {
                     ?: error(
                         "no request reached the server within $REQUEST_TIMEOUT_SECONDS seconds",
                     )
-            if (request.method != CONNECT_METHOD) return request
+            if (request.target.startsWith(API_PATH_PREFIX)) return request
         }
     }
 }
 
-/** Answers `CONNECT` itself and serves the enqueued replies to everything else. */
+/** Answers `CONNECT` itself and serves the enqueued replies to the requests the app sends. */
 private class TunnellingDispatcher : Dispatcher() {
     private val replies = LinkedBlockingQueue<MockResponse>()
 
@@ -196,20 +201,47 @@ private class TunnellingDispatcher : Dispatcher() {
      * requests. Answering it here keeps the queue holding replies only.
      */
     override fun dispatch(request: RecordedRequest): MockResponse =
-        when (request.method) {
-            CONNECT_METHOD -> {
+        when {
+            // The device's global proxy points every process on it here, not only the app under
+            // test, so a request from anywhere else can arrive mid-test. Serving it from the queue
+            // would hand it the reply the test enqueued for the app, leaving the app's own request
+            // with none.
+            !isForApi(request) -> {
+                FOREIGN_RESPONSE
+            }
+
+            request.method == CONNECT_METHOD -> {
                 expectingConnect = false
                 TUNNEL_RESPONSE
             }
 
             else -> {
                 expectingConnect = true
-                replies.take()
+                // Waiting rather than taking, so a request that outruns the reply enqueued for it
+                // still finds it, and a request with no reply at all ends as a failed call instead
+                // of holding a connection open past the server's own shutdown grace.
+                replies.poll(REPLY_WAIT_SECONDS, TimeUnit.SECONDS) ?: NO_REPLY_RESPONSE
             }
+        }
+
+    /**
+     * Whether [request] is one the app under test sent to the Anthropic API.
+     *
+     * A `CONNECT` names the host it wants a tunnel to, and a request inside the tunnel carries the
+     * API path alone. Anything else on the device reaches the proxy in absolute form, naming the
+     * host it meant to reach.
+     */
+    private fun isForApi(request: RecordedRequest): Boolean =
+        when (request.method) {
+            CONNECT_METHOD -> request.target.substringBefore(':') == ANTHROPIC_HOST
+            else -> request.target.startsWith(API_PATH_PREFIX)
         }
 
     private companion object {
         val TUNNEL_RESPONSE: MockResponse = MockResponse.Builder().inTunnel().build()
+        val FOREIGN_RESPONSE: MockResponse = MockResponse.Builder().code(NOT_FOUND).build()
+        val NO_REPLY_RESPONSE: MockResponse =
+            MockResponse.Builder().code(SERVER_ERROR).build()
     }
 }
 

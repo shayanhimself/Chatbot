@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -92,13 +91,8 @@ class ChatDetailViewModel
             // A new chat subscribes to nothing, so no flow is opened on a chat that
             // does not exist.
             if (id == null) return flowOf(ChatDetailState())
-            val chats =
-                repository.getChatFlow(id).onEach { chat ->
-                    // The chat was deleted under the screen, so fall back to a new chat.
-                    if (chat == null) forgetChat()
-                }
             return combine(
-                chats,
+                repository.getChatFlow(id),
                 repository.getMessagesFlow(id),
                 repository.getTurnFlow(id),
             ) { chat, messages, turn ->
@@ -167,10 +161,5 @@ class ChatDetailViewModel
         private fun rememberChat(id: Long) {
             savedStateHandle[KEY_CHAT_ID] = id
             chatId.value = id
-        }
-
-        private fun forgetChat() {
-            savedStateHandle[KEY_CHAT_ID] = null
-            chatId.value = null
         }
     }

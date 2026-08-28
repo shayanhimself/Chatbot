@@ -55,13 +55,6 @@ private fun ChatDetailNetworkPreview() {
     ChatbotTheme { ChatDetailScreenStubbed(ChatDetailPreviewData.network) }
 }
 
-@PreviewTest
-@ThemePreviews
-@Composable
-private fun ChatDetailDeletePreview() {
-    ChatbotTheme { ChatDetailScreenStubbed(ChatDetailPreviewData.deleting) }
-}
-
 // The same screen rendered as the detail pane, where the whole visual difference is the
 // missing back arrow.
 @PreviewTest

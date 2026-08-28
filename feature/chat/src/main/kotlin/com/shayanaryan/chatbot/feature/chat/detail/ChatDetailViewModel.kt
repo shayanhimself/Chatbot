@@ -21,10 +21,10 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val KEY_CHAT_ID = "chatId"
+private const val KEY_PENDING_MODEL = "pendingModel"
 
 /** The state read from the repository, for one chat or for none. */
 private data class ChatDetailState(
@@ -33,13 +33,6 @@ private data class ChatDetailState(
     val model: ClaudeModel? = null,
     val items: List<ChatDetailItem> = emptyList(),
     val isStreaming: Boolean = false,
-)
-
-/** The state the ViewModel writes itself. */
-private data class LocalState(
-    val pendingModel: ClaudeModel = ClaudeModel.Default,
-    val deleteDialogVisible: Boolean = false,
-    val deleted: Boolean = false,
 )
 
 /**
@@ -67,22 +60,27 @@ class ChatDetailViewModel
                 savedStateHandle.get<Long>(KEY_CHAT_ID) ?: initialChatId,
             )
 
-        private val localState = MutableStateFlow(LocalState())
+        // The model the new created chat gets, for a chat with no row of its own to hold one yet.
+        private val pendingModelName =
+            savedStateHandle.getStateFlow(KEY_PENDING_MODEL, ClaudeModel.Default.name)
+
+        private val isDeleted = MutableStateFlow(false)
 
         @OptIn(ExperimentalCoroutinesApi::class)
         val uiState: StateFlow<ChatDetailUiState> =
             combine(
                 chatId.flatMapLatest(::chatDetailState),
-                localState,
-            ) { repo, local ->
+                pendingModelName,
+                isDeleted,
+            ) { repo, pendingName, isDeleted ->
                 ChatDetailUiState(
                     chatId = repo.chatId,
                     title = repo.title,
-                    model = repo.model ?: local.pendingModel,
+                    // new chat doesn't have a stored entity and model yet
+                    model = repo.model ?: ClaudeModel.valueOf(pendingName),
                     items = repo.items,
                     isStreaming = repo.isStreaming,
-                    deleteDialogVisible = local.deleteDialogVisible,
-                    deleted = local.deleted,
+                    isDeleted = isDeleted,
                 )
             }.stateIn(
                 scope = viewModelScope,
@@ -122,7 +120,12 @@ class ChatDetailViewModel
             if (text.isBlank() || uiState.value.isStreaming) return
             val id = chatId.value
             viewModelScope.launch {
-                val created = repository.send(id, text, localState.value.pendingModel)
+                val created =
+                    repository.send(
+                        chatId = id,
+                        text = text,
+                        model = ClaudeModel.valueOf(pendingModelName.value),
+                    )
                 if (id == null) rememberChat(created)
             }
         }
@@ -138,30 +141,21 @@ class ChatDetailViewModel
         }
 
         fun onModelSelected(model: ClaudeModel) {
-            localState.update { it.copy(pendingModel = model) }
+            savedStateHandle[KEY_PENDING_MODEL] = model.name
             val id = chatId.value ?: return
             viewModelScope.launch { repository.setModel(id, model) }
         }
 
-        fun onDeleteRequested() {
-            localState.update { it.copy(deleteDialogVisible = true) }
-        }
-
-        fun onDeleteDismissed() {
-            localState.update { it.copy(deleteDialogVisible = false) }
-        }
-
         /**
-         * `deleted` is set only once the repository has finished, which is what keeps
+         * `isDeleted` is set only once the repository has finished, which is what keeps
          * [viewModelScope] alive through the delete: the screen is popped in response to it, and a
          * pop cancels the scope.
          */
         fun onDeleteConfirmed() {
             val id = chatId.value ?: return
-            localState.update { it.copy(deleteDialogVisible = false) }
             viewModelScope.launch {
                 repository.delete(id)
-                localState.update { it.copy(deleted = true) }
+                isDeleted.value = true
             }
         }
 

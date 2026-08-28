@@ -223,23 +223,19 @@ class ChatDetailViewModelTest {
         }
 
     @Test
-    fun `the delete dialog opens and closes`() =
+    fun `a model picked before the first send survives process death`() =
         runTest(dispatcher) {
-            val viewModel = viewModel()
-            collecting(viewModel)
-            viewModel.onSend(USER_MESSAGE)
+            val handle = SavedStateHandle()
+            val first = viewModel(savedStateHandle = handle)
+            collecting(first)
+            first.onModelSelected(ClaudeModel.Opus)
             advanceUntilIdle()
 
-            // Every read of uiState needs an advance first: localState reaches it through
-            // combine(…).stateIn(viewModelScope), and viewModelScope runs on the
-            // StandardTestDispatcher, which executes nothing until it is advanced.
-            viewModel.onDeleteRequested()
+            val restored = viewModel(savedStateHandle = handle)
+            collecting(restored)
             advanceUntilIdle()
-            assertTrue(viewModel.uiState.value.deleteDialogVisible)
 
-            viewModel.onDeleteDismissed()
-            advanceUntilIdle()
-            assertEquals(false, viewModel.uiState.value.deleteDialogVisible)
+            assertEquals(ClaudeModel.Opus, restored.uiState.value.model)
         }
 
     @Test
@@ -250,11 +246,13 @@ class ChatDetailViewModelTest {
             viewModel.onSend(USER_MESSAGE)
             advanceUntilIdle()
 
-            viewModel.onDeleteRequested()
+            // Every read of uiState needs an advance first: `isDeleted` reaches it through
+            // combine(…).stateIn(viewModelScope), and viewModelScope runs on the
+            // StandardTestDispatcher, which executes nothing until it is advanced.
             viewModel.onDeleteConfirmed()
             advanceUntilIdle()
 
-            assertTrue(viewModel.uiState.value.deleted)
+            assertTrue(viewModel.uiState.value.isDeleted)
             assertEquals(emptyList<Chat>(), repository.getChatsFlow().first())
         }
 

@@ -80,8 +80,6 @@ internal object ChatDetailPreviewData {
         )
 
     val network = openChat.copy(items = openChat.items + ChatDetailItem.Error(ApiError.Network))
-
-    val deleting = openChat.copy(deleteDialogVisible = true)
 }
 
 /**
@@ -102,8 +100,6 @@ internal fun ChatDetailScreenStubbed(
         onCancel = {},
         onRetry = {},
         onModelSelected = {},
-        onDeleteRequested = {},
-        onDeleteDismissed = {},
         onDeleteConfirmed = {},
     )
 }

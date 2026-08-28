@@ -13,7 +13,7 @@ import com.shayanaryan.chatbot.shared.model.ClaudeModel
  *   new-chat copy.
  * @property model the chat's own model once it exists, and the model the first send will
  *   create it with before that.
- * @property deleted true once a confirmed delete has finished, which is the navigation trigger
+ * @property isDeleted true once a confirmed delete has finished, which is the navigation trigger
  *   `:app` reads to pop or to reset the detail pane.
  */
 data class ChatDetailUiState(
@@ -22,8 +22,7 @@ data class ChatDetailUiState(
     val model: ClaudeModel = ClaudeModel.Default,
     val items: List<ChatDetailItem> = emptyList(),
     val isStreaming: Boolean = false,
-    val deleteDialogVisible: Boolean = false,
-    val deleted: Boolean = false,
+    val isDeleted: Boolean = false,
 ) {
     /**
      * The item the message list follows while tokens arrive, null when there is nothing to render.

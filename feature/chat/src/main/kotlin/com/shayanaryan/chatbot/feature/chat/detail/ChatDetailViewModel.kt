@@ -12,27 +12,16 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private const val KEY_CHAT_ID = "chatId"
 private const val KEY_PENDING_MODEL = "pendingModel"
-
-/** The state read from the repository, for one chat or for none. */
-private data class ChatDetailState(
-    val chatId: Long? = null,
-    val title: String? = null,
-    val model: ClaudeModel? = null,
-    val items: List<ChatDetailItem> = emptyList(),
-    val isStreaming: Boolean = false,
-)
 
 /**
  * @param initialChatId the id the navigation key carried, null for a new chat.
@@ -60,55 +49,39 @@ class ChatDetailViewModel
             )
 
         // The model the new created chat gets, for a chat with no row of its own to hold one yet.
-        private val pendingModelName =
-            savedStateHandle.getStateFlow(KEY_PENDING_MODEL, ClaudeModel.Default.name)
+        private val pendingModel =
+            savedStateHandle.getStateFlow(KEY_PENDING_MODEL, ClaudeModel.Default)
 
         private val isDeleted = MutableStateFlow(false)
 
         @OptIn(ExperimentalCoroutinesApi::class)
         val uiState: StateFlow<ChatDetailUiState> =
             combine(
-                chatId.flatMapLatest(::chatDetailState),
-                pendingModelName,
+                chatId.flatMapLatest(repository::getChatSnapshotFlow),
+                pendingModel,
                 isDeleted,
-            ) { repo, pendingName, isDeleted ->
-                ChatDetailUiState(
-                    chatId = repo.chatId,
-                    title = repo.title,
-                    // new chat doesn't have a stored entity and model yet
-                    model = repo.model ?: ClaudeModel.valueOf(pendingName),
-                    items = repo.items,
-                    isStreaming = repo.isStreaming,
-                    isDeleted = isDeleted,
-                )
+            ) { snapshot, pendingModel, isDeleted ->
+                if (snapshot == null) {
+                    // No row means no stored model, so the pending pick is the one to show.
+                    ChatDetailUiState(
+                        model = pendingModel,
+                        isDeleted = isDeleted,
+                    )
+                } else {
+                    ChatDetailUiState(
+                        chatId = snapshot.chat.id,
+                        title = snapshot.chat.title,
+                        model = snapshot.chat.model,
+                        items = snapshot.messages.toChatDetailItems(snapshot.turn),
+                        isStreaming = snapshot.turn is TurnState.Streaming,
+                        isDeleted = isDeleted,
+                    )
+                }
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MILLIS),
                 initialValue = ChatDetailUiState(),
             )
-
-        private fun chatDetailState(id: Long?): Flow<ChatDetailState> {
-            // A new chat subscribes to nothing, so no flow is opened on a chat that
-            // does not exist.
-            if (id == null) return flowOf(ChatDetailState())
-            return combine(
-                repository.getChatFlow(id),
-                repository.getMessagesFlow(id),
-                repository.getTurnFlow(id),
-            ) { chat, messages, turn ->
-                if (chat == null) {
-                    ChatDetailState()
-                } else {
-                    ChatDetailState(
-                        chatId = id,
-                        title = chat.title,
-                        model = chat.model,
-                        items = messages.toChatDetailItems(turn),
-                        isStreaming = turn is TurnState.Streaming,
-                    )
-                }
-            }
-        }
 
         fun onSend(text: String) {
             if (text.isBlank() || uiState.value.isStreaming) return
@@ -118,7 +91,7 @@ class ChatDetailViewModel
                     repository.send(
                         chatId = id,
                         text = text,
-                        model = ClaudeModel.valueOf(pendingModelName.value),
+                        model = pendingModel.value,
                     )
                 if (id == null) rememberChat(created)
             }
@@ -135,7 +108,7 @@ class ChatDetailViewModel
         }
 
         fun onModelSelected(model: ClaudeModel) {
-            savedStateHandle[KEY_PENDING_MODEL] = model.name
+            savedStateHandle[KEY_PENDING_MODEL] = model
             val id = chatId.value ?: return
             viewModelScope.launch { repository.setModel(id, model) }
         }

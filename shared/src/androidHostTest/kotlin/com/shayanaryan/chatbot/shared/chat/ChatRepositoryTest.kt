@@ -10,6 +10,7 @@ import com.shayanaryan.chatbot.shared.claude.TokenUsage
 import com.shayanaryan.chatbot.shared.database.ChatbotDatabase
 import com.shayanaryan.chatbot.shared.database.runDatabaseTest
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
+import com.shayanaryan.chatbot.shared.textContent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -24,6 +25,8 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -38,6 +41,9 @@ private const val FIRST_CHAT_MESSAGE = "one"
 private const val SECOND_CHAT_MESSAGE = "two"
 private const val TARGET_MESSAGE = "target"
 private const val OTHER_MESSAGE = "other"
+
+// An id no send ever returns, which is what a snapshot of a missing chat needs.
+private const val UNKNOWN_CHAT_ID = 404L
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -74,6 +80,45 @@ class ChatRepositoryTest {
             externalScope = scope,
             clock = clock,
         )
+
+    @Test
+    fun `a snapshot carries one chat with its messages and its turn`() =
+        runDatabaseTest { database ->
+            val scope = turnScope()
+            val repository = repository(database, scope)
+
+            val id = repository.send(null, USER_MESSAGE)
+            advanceUntilIdle()
+
+            val snapshot = assertNotNull(repository.getChatSnapshotFlow(id).first())
+            assertEquals(id, snapshot.chat.id)
+            assertEquals(
+                USER_MESSAGE,
+                snapshot.messages
+                    .first()
+                    .content
+                    .textContent(),
+            )
+            assertEquals(TurnState.Idle, snapshot.turn)
+        }
+
+    @Test
+    fun `a snapshot is null for a chat that has no id yet`() =
+        runDatabaseTest { database ->
+            val scope = turnScope()
+            val repository = repository(database, scope)
+
+            assertNull(repository.getChatSnapshotFlow(null).first())
+        }
+
+    @Test
+    fun `a snapshot is null for a chat that does not exist`() =
+        runDatabaseTest { database ->
+            val scope = turnScope()
+            val repository = repository(database, scope)
+
+            assertNull(repository.getChatSnapshotFlow(UNKNOWN_CHAT_ID).first())
+        }
 
     @Test
     fun `a new chat carries the requested model and a truncated title`() =

@@ -1,6 +1,7 @@
 package com.shayanaryan.chatbot.feature.chat.detail
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shayanaryan.chatbot.shared.ApiError
 import com.shayanaryan.chatbot.shared.FakeClock
 import com.shayanaryan.chatbot.shared.chat.Chat
@@ -16,6 +17,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.runner.RunWith
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -32,7 +34,11 @@ private const val CHAT_TITLE = "plan a weekend"
 private const val PARTIAL_TEXT = "hel"
 private const val CANCELLED_TEXT = "half a th"
 
+/**
+ * Runs under Robolectric to test the SavedStateHandle through a process-death.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(AndroidJUnit4::class)
 class ChatDetailViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
@@ -48,15 +54,6 @@ class ChatDetailViewModelTest {
     @AfterTest
     fun removeMainDispatcher() {
         Dispatchers.resetMain()
-    }
-
-    private fun viewModel(
-        initialChatId: Long? = null,
-        savedStateHandle: SavedStateHandle = SavedStateHandle(),
-    ) = ChatDetailViewModel(initialChatId, savedStateHandle, repository)
-
-    private fun TestScope.collecting(viewModel: ChatDetailViewModel) {
-        backgroundScope.launch { viewModel.uiState.collect {} }
     }
 
     @Test
@@ -93,7 +90,8 @@ class ChatDetailViewModelTest {
             advanceUntilIdle()
 
             // The restored back stack still says ChatDetailKey(null); only the handle remembers.
-            val restored = viewModel(initialChatId = null, savedStateHandle = handle)
+            val restored =
+                viewModel(initialChatId = null, savedStateHandle = handle.saveAndRestore())
             collecting(restored)
             advanceUntilIdle()
 
@@ -231,7 +229,7 @@ class ChatDetailViewModelTest {
             first.onModelSelected(ClaudeModel.Opus)
             advanceUntilIdle()
 
-            val restored = viewModel(savedStateHandle = handle)
+            val restored = viewModel(savedStateHandle = handle.saveAndRestore())
             collecting(restored)
             advanceUntilIdle()
 
@@ -271,4 +269,17 @@ class ChatDetailViewModelTest {
             assertNull(viewModel.uiState.value.chatId)
             assertNull(viewModel.uiState.value.title)
         }
+
+    private fun viewModel(
+        initialChatId: Long? = null,
+        savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    ) = ChatDetailViewModel(initialChatId, savedStateHandle, repository)
+
+    /** The handle a recreated ViewModel is given: written out and read back, as the framework does. */
+    private fun SavedStateHandle.saveAndRestore(): SavedStateHandle =
+        SavedStateHandle.createHandle(savedStateProvider().saveState(), null)
+
+    private fun TestScope.collecting(viewModel: ChatDetailViewModel) {
+        backgroundScope.launch { viewModel.uiState.collect {} }
+    }
 }

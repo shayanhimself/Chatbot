@@ -19,11 +19,12 @@ internal fun PreviewOnboarding(
     revealed: Boolean = false,
 ) {
     OnboardingScreen(
-        uiState = OnboardingUiState(
-            key = key,
-            revealed = revealed,
-            status = status,
-        ),
+        uiState =
+            OnboardingUiState(
+                key = key,
+                revealed = revealed,
+                status = status,
+            ),
         onKeyChange = {},
         onToggleReveal = {},
         onSubmit = {},

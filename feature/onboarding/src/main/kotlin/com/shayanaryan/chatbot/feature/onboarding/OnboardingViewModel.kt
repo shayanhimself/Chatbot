@@ -23,29 +23,29 @@ class OnboardingViewModel
         private val state = MutableStateFlow(OnboardingUiState())
         val uiState: StateFlow<OnboardingUiState> = state.asStateFlow()
 
-    /**
-     * Validates the typed key and stores it.
-     *
-     * Does nothing below [MIN_KEY_LENGTH] or while a check is already in flight, so neither the
-     * keyboard's action key nor a double tap can spend a second round trip.
-     */
-    fun onSubmit() {
-        val submitted = state.value
-        if (!submitted.submittable) return
-        if (submitted.status == OnboardingStatus.Validating) return
-        state.update { it.copy(status = OnboardingStatus.Validating) }
-        viewModelScope.launch {
-            when (val result = validator.validate(submitted.key)) {
-                KeyValidationResult.Valid -> {
-                    repository.save(submitted.key)
-                }
+        /**
+         * Validates the typed key and stores it.
+         *
+         * Does nothing below [MIN_KEY_LENGTH] or while a check is already in flight, so neither the
+         * keyboard's action key nor a double tap can spend a second round trip.
+         */
+        fun onSubmit() {
+            val submitted = state.value
+            if (!submitted.submittable) return
+            if (submitted.status == OnboardingStatus.Validating) return
+            state.update { it.copy(status = OnboardingStatus.Validating) }
+            viewModelScope.launch {
+                when (val result = validator.validate(submitted.key)) {
+                    KeyValidationResult.Valid -> {
+                        repository.save(submitted.key)
+                    }
 
-                is KeyValidationResult.Failed -> {
-                    state.update { it.copy(status = OnboardingStatus.Failed(result.error)) }
+                    is KeyValidationResult.Failed -> {
+                        state.update { it.copy(status = OnboardingStatus.Failed(result.error)) }
+                    }
                 }
             }
         }
-    }
 
         /**
          * Takes an edited key.

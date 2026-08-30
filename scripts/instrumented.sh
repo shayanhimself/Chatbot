@@ -3,12 +3,11 @@
 # Keystore cipher in :shared. Kept out of scripts/test.sh because a device is not always attached.
 #
 #   scripts/instrumented.sh                     every device test
-#   scripts/instrumented.sh 'long reply'        the :app tests whose name matches
+#   scripts/instrumented.sh 'long reply'        the tests whose name matches
 #   scripts/instrumented.sh ChatFlowTest        likewise, by class
 #
-# A filter is a regex matched against `package.Class#method`, and narrows the run to :app: a
-# filter matching nothing fails the task it matched nothing in, and no filter worth typing is
-# meant for both modules at once.
+# A filter is a regex matched against `package.Class#method`, and the run narrows to the modules
+# whose sources it appears in: a filter matching nothing fails the task it matched nothing in.
 #
 # The app's base URL is a compile-time constant pointing at api.anthropic.com, so nothing in the
 # app is redirected. The device's global proxy is what sends those requests to the MockWebServer
@@ -27,15 +26,40 @@ if [[ ${1-} != "" && ${1-} != -* ]]; then
   shift
 fi
 
+APP_TASK=:app:connectedDebugAndroidTest
+APP_TESTS=app/src/androidTest
+SHARED_TASK=:shared:connectedAndroidDeviceTest
+SHARED_TESTS=shared/src/androidDeviceTest
+
 # Tasks and the filter share one array, which is never empty: an empty one expanded under `set -u`
 # is an unbound variable on the bash macOS ships.
-gradle_args=(:app:connectedDebugAndroidTest :shared:connectedAndroidDeviceTest)
+gradle_args=("$APP_TASK" "$SHARED_TASK")
 if [[ -n $filter ]]; then
+  # The class or method the filter names, without the package and the `#method` suffix: those are
+  # how the runner spells a test, not how the source that declares it reads.
+  needle=${filter##*.}
+  needle=${needle%%#*}
+
+  # Which module a filter runs in is decided by which sources its name appears in, since the
+  # filter reaches every task in the run and one that matches no test there fails that task.
+  tasks=()
+  if grep -rqE -- "$needle" "$APP_TESTS"; then
+    tasks+=("$APP_TASK")
+  fi
+  if grep -rqE -- "$needle" "$SHARED_TESTS"; then
+    tasks+=("$SHARED_TASK")
+  fi
+
+  if [[ ${#tasks[@]} -eq 0 ]]; then
+    echo "No test source matched '${filter}'." >&2
+    exit 1
+  fi
+
+  echo "Filtering on '${filter}': running ${tasks[*]}."
   gradle_args=(
-    :app:connectedDebugAndroidTest
+    "${tasks[@]}"
     "-Pandroid.testInstrumentationRunnerArguments.tests_regex=$filter"
   )
-  echo "Filtering on '${filter}': running :app only."
 fi
 
 run_log=$(mktemp)

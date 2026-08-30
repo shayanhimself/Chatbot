@@ -1,5 +1,8 @@
 package com.shayanaryan.chatbot.feature.onboarding
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -18,7 +21,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 // One character short of MIN_KEY_LENGTH, so the boundary is testable from both sides.
 private const val TOO_SHORT_KEY = "sk-ant-api0"
@@ -31,15 +33,18 @@ class OnboardingScreenTest {
     val composeRule = createComposeRule()
 
     private var submitted: String? = null
-    private var edits = 0
 
-    private fun setScreen(uiState: OnboardingUiState = OnboardingUiState.Idle) {
+    private var uiState by mutableStateOf(OnboardingUiState())
+
+    private fun setScreen(initial: OnboardingUiState = OnboardingUiState()) {
+        uiState = initial
         composeRule.setContent {
             ChatbotTheme(darkTheme = true) {
                 OnboardingScreen(
                     uiState = uiState,
-                    onSubmit = { submitted = it },
-                    onKeyEdited = { edits++ },
+                    onKeyChange = { uiState = uiState.copy(key = it) },
+                    onToggleReveal = { uiState = uiState.copy(revealed = !uiState.revealed) },
+                    onSubmit = { submitted = uiState.key },
                     onConsoleClick = {},
                 )
             }
@@ -99,7 +104,7 @@ class OnboardingScreenTest {
 
     @Test
     fun `the field is disabled while validating`() {
-        setScreen(OnboardingUiState.Validating)
+        setScreen(OnboardingUiState(status = OnboardingStatus.Validating))
 
         // A disabled text field carries no set-text action at all, so the absence of an editable
         // node is what disabled looks like from here. Asserting on the field's own node instead
@@ -113,8 +118,12 @@ class OnboardingScreenTest {
 
     @Test
     fun `a rejected key shows its message and offers a retry`() {
-        setScreen(OnboardingUiState.Failed(ApiError.Authentication))
-        composeRule.onNode(hasSetTextAction()).performTextInput(VALID_LENGTH_KEY)
+        setScreen(
+            OnboardingUiState(
+                key = VALID_LENGTH_KEY,
+                status = OnboardingStatus.Failed(ApiError.Authentication),
+            ),
+        )
 
         composeRule
             .onNodeWithText(string(R.string.onboarding_error_authentication))
@@ -124,8 +133,12 @@ class OnboardingScreenTest {
 
     @Test
     fun `an offline failure shows the offline message and stays retryable`() {
-        setScreen(OnboardingUiState.Failed(ApiError.Network))
-        composeRule.onNode(hasSetTextAction()).performTextInput(VALID_LENGTH_KEY)
+        setScreen(
+            OnboardingUiState(
+                key = VALID_LENGTH_KEY,
+                status = OnboardingStatus.Failed(ApiError.Network),
+            ),
+        )
 
         composeRule.onNodeWithText(string(R.string.onboarding_error_network)).assertIsDisplayed()
 
@@ -135,11 +148,11 @@ class OnboardingScreenTest {
     }
 
     @Test
-    fun `typing after a failure reports the edit`() {
-        setScreen(OnboardingUiState.Failed(ApiError.Authentication))
+    fun `typing reports every edit`() {
+        setScreen(OnboardingUiState(status = OnboardingStatus.Failed(ApiError.Authentication)))
 
         composeRule.onNode(hasSetTextAction()).performTextInput(VALID_LENGTH_KEY)
 
-        assertTrue(edits > 0)
+        assertEquals(VALID_LENGTH_KEY, uiState.key)
     }
 }

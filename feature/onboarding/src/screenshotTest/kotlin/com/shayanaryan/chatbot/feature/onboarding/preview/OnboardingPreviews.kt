@@ -6,7 +6,7 @@ import com.shayanaryan.chatbot.core.testing.preview.FontScalePreviews
 import com.shayanaryan.chatbot.core.testing.preview.FormFactorPreviews
 import com.shayanaryan.chatbot.core.testing.preview.ThemePreviews
 import com.shayanaryan.chatbot.core.ui.designsystem.theme.ChatbotTheme
-import com.shayanaryan.chatbot.feature.onboarding.OnboardingUiState
+import com.shayanaryan.chatbot.feature.onboarding.OnboardingStatus
 import com.shayanaryan.chatbot.feature.onboarding.PREVIEW_API_KEY
 import com.shayanaryan.chatbot.feature.onboarding.PreviewOnboarding
 import com.shayanaryan.chatbot.shared.ApiError
@@ -17,7 +17,7 @@ import com.shayanaryan.chatbot.shared.ApiError
 private fun OnboardingEmptyPreview() {
     ChatbotTheme {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Idle,
+            status = OnboardingStatus.Idle,
         )
     }
 }
@@ -28,7 +28,7 @@ private fun OnboardingEmptyPreview() {
 private fun OnboardingObscuredPreview() {
     ChatbotTheme {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Idle,
+            status = OnboardingStatus.Idle,
             key = PREVIEW_API_KEY,
         )
     }
@@ -40,7 +40,7 @@ private fun OnboardingObscuredPreview() {
 private fun OnboardingRevealedPreview() {
     ChatbotTheme {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Idle,
+            status = OnboardingStatus.Idle,
             key = PREVIEW_API_KEY,
             revealed = true,
         )
@@ -53,7 +53,7 @@ private fun OnboardingRevealedPreview() {
 private fun OnboardingValidatingPreview() {
     ChatbotTheme {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Validating,
+            status = OnboardingStatus.Validating,
             key = PREVIEW_API_KEY,
         )
     }
@@ -65,7 +65,7 @@ private fun OnboardingValidatingPreview() {
 private fun OnboardingRejectedPreview() {
     ChatbotTheme {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Failed(ApiError.Authentication),
+            status = OnboardingStatus.Failed(ApiError.Authentication),
             key = PREVIEW_API_KEY,
         )
     }
@@ -77,7 +77,7 @@ private fun OnboardingRejectedPreview() {
 private fun OnboardingOfflinePreview() {
     ChatbotTheme {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Failed(ApiError.Network),
+            status = OnboardingStatus.Failed(ApiError.Network),
             key = PREVIEW_API_KEY,
         )
     }
@@ -89,7 +89,7 @@ private fun OnboardingOfflinePreview() {
 private fun OnboardingFormFactorPreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Idle,
+            status = OnboardingStatus.Idle,
             key = PREVIEW_API_KEY,
         )
     }
@@ -101,7 +101,7 @@ private fun OnboardingFormFactorPreview() {
 private fun OnboardingFontScalePreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Idle,
+            status = OnboardingStatus.Idle,
             key = PREVIEW_API_KEY,
         )
     }

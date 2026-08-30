@@ -1,8 +1,6 @@
 package com.shayanaryan.chatbot.feature.onboarding
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 
 // An obviously fake value, so no reader mistakes it for a working key.
 internal const val PREVIEW_API_KEY = "sk-ant-api03-9f2b7XaQ1eRcT"
@@ -16,16 +14,19 @@ internal const val PREVIEW_API_KEY = "sk-ant-api03-9f2b7XaQ1eRcT"
  */
 @Composable
 internal fun PreviewOnboarding(
-    uiState: OnboardingUiState,
+    status: OnboardingStatus,
     key: String = "",
     revealed: Boolean = false,
 ) {
     OnboardingScreen(
-        uiState = uiState,
+        uiState = OnboardingUiState(
+            key = key,
+            revealed = revealed,
+            status = status,
+        ),
+        onKeyChange = {},
+        onToggleReveal = {},
         onSubmit = {},
-        onKeyEdited = {},
         onConsoleClick = {},
-        keyState = remember { mutableStateOf(key) },
-        revealedState = remember { mutableStateOf(revealed) },
     )
 }

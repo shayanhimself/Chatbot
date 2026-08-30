@@ -88,7 +88,7 @@ class ChatDetailViewModel
             if (text.isBlank() || uiState.value.isStreaming) return
             val id = chatId.value
             viewModelScope.launch {
-                try {
+                ignoringRejection {
                     val created =
                         repository.send(
                             chatId = id,
@@ -96,13 +96,6 @@ class ChatDetailViewModel
                             model = pendingModel.value,
                         )
                     if (id == null) rememberChat(created)
-                } catch (cancellation: CancellationException) {
-                    // Cancellation is how the scope shuts down, and it arrives as an
-                    // IllegalStateException, which the catch below would otherwise swallow.
-                    throw cancellation
-                } catch (_: RuntimeException) {
-                    // `send` rejects a chat that no longer exists and a chat already running a
-                    // turn
                 }
             }
         }
@@ -146,3 +139,19 @@ class ChatDetailViewModel
             chatId.value = id
         }
     }
+
+/**
+ * Runs [block], dropping the rejection the repository throws for a chat that no longer exists or
+ * one already running a turn.
+ *
+ * Cancellation is how the scope shuts down and arrives as an `IllegalStateException`, so it is
+ * rethrown before the rejection catch can swallow it.
+ */
+private inline fun ignoringRejection(block: () -> Unit) {
+    try {
+        block()
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (_: RuntimeException) {
+    }
+}

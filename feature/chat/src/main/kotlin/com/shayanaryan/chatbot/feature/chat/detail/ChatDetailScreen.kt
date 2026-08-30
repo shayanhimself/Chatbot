@@ -11,6 +11,10 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,12 +49,11 @@ fun ChatDetailScreen(
     onCancel: () -> Unit,
     onRetry: () -> Unit,
     onModelSelected: (ClaudeModel) -> Unit,
-    onDeleteRequested: () -> Unit,
-    onDeleteDismissed: () -> Unit,
     onDeleteConfirmed: () -> Unit,
     modifier: Modifier = Modifier,
     composerState: TextFieldState = rememberTextFieldState(),
 ) {
+    var deleteDialogVisible by rememberSaveable { mutableStateOf(false) }
     val tailFollower = rememberTailFollower()
     Scaffold(
         modifier = modifier,
@@ -59,7 +62,7 @@ fun ChatDetailScreen(
                 title = uiState.title,
                 deletable = uiState.chatId != null,
                 onBack = onBack,
-                onDeleteRequested = onDeleteRequested,
+                onDeleteRequested = { deleteDialogVisible = true },
             )
         },
         bottomBar = {
@@ -88,8 +91,14 @@ fun ChatDetailScreen(
             )
         }
     }
-    if (uiState.deleteDialogVisible) {
-        DeleteChatDialog(onConfirm = onDeleteConfirmed, onDismiss = onDeleteDismissed)
+    if (deleteDialogVisible) {
+        DeleteChatDialog(
+            onConfirm = {
+                deleteDialogVisible = false
+                onDeleteConfirmed()
+            },
+            onDismiss = { deleteDialogVisible = false },
+        )
     }
 }
 
@@ -183,12 +192,6 @@ private fun ChatDetailRateLimitedPreview() {
 @Composable
 private fun ChatDetailNetworkFailurePreview() {
     ChatbotTheme(darkTheme = true) { ChatDetailScreenStubbed(ChatDetailPreviewData.network) }
-}
-
-@Preview
-@Composable
-private fun ChatDetailDeleteDialogPreview() {
-    ChatbotTheme(darkTheme = true) { ChatDetailScreenStubbed(ChatDetailPreviewData.deleting) }
 }
 
 @Preview

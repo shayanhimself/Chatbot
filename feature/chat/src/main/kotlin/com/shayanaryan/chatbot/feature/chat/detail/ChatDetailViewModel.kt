@@ -13,35 +13,16 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val KEY_CHAT_ID = "chatId"
-
-/** The state read from the repository, for one chat or for none. */
-private data class ChatDetailState(
-    val chatId: Long? = null,
-    val title: String? = null,
-    val model: ClaudeModel? = null,
-    val items: List<ChatDetailItem> = emptyList(),
-    val isStreaming: Boolean = false,
-)
-
-/** The state the ViewModel writes itself. */
-private data class LocalState(
-    val pendingModel: ClaudeModel = ClaudeModel.Default,
-    val deleteDialogVisible: Boolean = false,
-    val deleted: Boolean = false,
-)
+private const val KEY_PENDING_MODEL = "pendingModel"
 
 /**
  * @param initialChatId the id the navigation key carried, null for a new chat.
@@ -68,63 +49,52 @@ class ChatDetailViewModel
                 savedStateHandle.get<Long>(KEY_CHAT_ID) ?: initialChatId,
             )
 
-        private val localState = MutableStateFlow(LocalState())
+        // The model the new created chat gets, for a chat with no row of its own to hold one yet.
+        private val pendingModel =
+            savedStateHandle.getStateFlow(KEY_PENDING_MODEL, ClaudeModel.Default)
+
+        private val isDeleted = MutableStateFlow(false)
 
         @OptIn(ExperimentalCoroutinesApi::class)
         val uiState: StateFlow<ChatDetailUiState> =
             combine(
-                chatId.flatMapLatest(::chatDetailState),
-                localState,
-            ) { repo, local ->
-                ChatDetailUiState(
-                    chatId = repo.chatId,
-                    title = repo.title,
-                    model = repo.model ?: local.pendingModel,
-                    items = repo.items,
-                    isStreaming = repo.isStreaming,
-                    deleteDialogVisible = local.deleteDialogVisible,
-                    deleted = local.deleted,
-                )
+                chatId.flatMapLatest(repository::getChatSnapshotFlow),
+                pendingModel,
+                isDeleted,
+            ) { snapshot, pendingModel, isDeleted ->
+                if (snapshot == null) {
+                    // No row means no stored model, so the pending pick is the one to show.
+                    ChatDetailUiState(
+                        model = pendingModel,
+                        isDeleted = isDeleted,
+                    )
+                } else {
+                    ChatDetailUiState(
+                        chatId = snapshot.chat.id,
+                        title = snapshot.chat.title,
+                        model = snapshot.chat.model,
+                        items = snapshot.messages.toChatDetailItems(snapshot.turn),
+                        isStreaming = snapshot.turn is TurnState.Streaming,
+                        isDeleted = isDeleted,
+                    )
+                }
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MILLIS),
                 initialValue = ChatDetailUiState(),
             )
 
-        private fun chatDetailState(id: Long?): Flow<ChatDetailState> {
-            // A new chat subscribes to nothing, so no flow is opened on a chat that
-            // does not exist.
-            if (id == null) return flowOf(ChatDetailState())
-            val chats =
-                repository.getChatFlow(id).onEach { chat ->
-                    // The chat was deleted under the screen, so fall back to a new chat.
-                    if (chat == null) forgetChat()
-                }
-            return combine(
-                chats,
-                repository.getMessagesFlow(id),
-                repository.getTurnFlow(id),
-            ) { chat, messages, turn ->
-                if (chat == null) {
-                    ChatDetailState()
-                } else {
-                    ChatDetailState(
-                        chatId = id,
-                        title = chat.title,
-                        model = chat.model,
-                        items = messages.toChatDetailItems(turn),
-                        isStreaming = turn is TurnState.Streaming,
-                    )
-                }
-            }
-        }
-
         fun onSend(text: String) {
             if (text.isBlank() || uiState.value.isStreaming) return
             val id = chatId.value
             viewModelScope.launch {
                 try {
-                    val created = repository.send(id, text, localState.value.pendingModel)
+                    val created =
+                        repository.send(
+                            chatId = id,
+                            text = text,
+                            model = pendingModel.value,
+                        )
                     if (id == null) rememberChat(created)
                 } catch (cancellation: CancellationException) {
                     // Cancellation is how the scope shuts down, and it arrives as an
@@ -136,6 +106,7 @@ class ChatDetailViewModel
                 }
             }
         }
+}
 
         fun onCancel() {
             val id = chatId.value ?: return
@@ -148,30 +119,21 @@ class ChatDetailViewModel
         }
 
         fun onModelSelected(model: ClaudeModel) {
-            localState.update { it.copy(pendingModel = model) }
+            savedStateHandle[KEY_PENDING_MODEL] = model
             val id = chatId.value ?: return
             viewModelScope.launch { repository.setModel(id, model) }
         }
 
-        fun onDeleteRequested() {
-            localState.update { it.copy(deleteDialogVisible = true) }
-        }
-
-        fun onDeleteDismissed() {
-            localState.update { it.copy(deleteDialogVisible = false) }
-        }
-
         /**
-         * `deleted` is set only once the repository has finished, which is what keeps
+         * `isDeleted` is set only once the repository has finished, which is what keeps
          * [viewModelScope] alive through the delete: the screen is popped in response to it, and a
          * pop cancels the scope.
          */
         fun onDeleteConfirmed() {
             val id = chatId.value ?: return
-            localState.update { it.copy(deleteDialogVisible = false) }
             viewModelScope.launch {
                 repository.delete(id)
-                localState.update { it.copy(deleted = true) }
+                isDeleted.value = true
             }
         }
 
@@ -183,10 +145,5 @@ class ChatDetailViewModel
         private fun rememberChat(id: Long) {
             savedStateHandle[KEY_CHAT_ID] = id
             chatId.value = id
-        }
-
-        private fun forgetChat() {
-            savedStateHandle[KEY_CHAT_ID] = null
-            chatId.value = null
         }
     }

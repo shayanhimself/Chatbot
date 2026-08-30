@@ -19,11 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -38,44 +33,29 @@ import com.shayanaryan.chatbot.feature.onboarding.component.BrandMark
 import com.shayanaryan.chatbot.feature.onboarding.component.KeyField
 import com.shayanaryan.chatbot.shared.ApiError
 
-/** The shortest input worth spending a network round trip on, per the design. */
-internal const val MIN_KEY_LENGTH = 12
-
 /** Caps the content column so the field does not stretch across a tablet. */
 internal val contentMaxWidth = 480.dp
 
 /**
  * First-launch key entry screen.
  *
- * @param uiState what the ViewModel decided. Everything else the screen shows, it derives from the
- *   field it holds.
- * @param onSubmit carries the typed key. Fired only at or above [MIN_KEY_LENGTH], and never while
- *   a check is already in flight.
- * @param onKeyEdited fired on every edit, so a failure stops being red as soon as the user starts
- *   correcting it.
- * @param onConsoleClick the console footer was tapped.
- * @param keyState the state of the api key. A plain [remember] rather than a saveable one:
- *   saved state is handed to the system, which keeps a copy outside this process that the app can
- *   neither scope nor clear. Hoisted so a preview or a test can supply a filled field.
- * @param revealedState whether the key is shown rather than masked, hoisted for the same reason.
+ * @param uiState everything the screen needs to render.
+ * @param onKeyChange call when the key was edited.
+ * @param onToggleReveal call when the reveal toggle was tapped.
+ * @param onSubmit call when the key was submitted, by the button or by the keyboard's action key.
+ * @param onConsoleClick call when the console footer was tapped.
  */
 @Composable
 fun OnboardingScreen(
     uiState: OnboardingUiState,
-    onSubmit: (String) -> Unit,
-    onKeyEdited: () -> Unit,
+    onKeyChange: (String) -> Unit,
+    onToggleReveal: () -> Unit,
+    onSubmit: () -> Unit,
     onConsoleClick: () -> Unit,
     modifier: Modifier = Modifier,
-    keyState: MutableState<String> = remember { mutableStateOf("") },
-    revealedState: MutableState<Boolean> = remember { mutableStateOf(false) },
 ) {
-    var key by keyState
-    var revealed by revealedState
-
-    val validating = uiState == OnboardingUiState.Validating
-    val failure = (uiState as? OnboardingUiState.Failed)?.error
-    val submittable = key.length >= MIN_KEY_LENGTH
-    val submit = { if (submittable && !validating) onSubmit(key) }
+    val validating = uiState.status == OnboardingStatus.Validating
+    val failure = (uiState.status as? OnboardingStatus.Failed)?.error
 
     Surface(modifier = modifier.fillMaxSize()) {
         Box(
@@ -118,23 +98,20 @@ fun OnboardingScreen(
                     )
                     Spacer(Modifier.height(Spacing.s8))
                     KeyField(
-                        key = key,
-                        revealed = revealed,
+                        key = uiState.key,
+                        revealed = uiState.revealed,
                         validating = validating,
                         failure = failure,
-                        onKeyChange = {
-                            key = it
-                            onKeyEdited()
-                        },
-                        onToggleReveal = { revealed = !revealed },
-                        onSubmit = submit,
+                        onKeyChange = onKeyChange,
+                        onToggleReveal = onToggleReveal,
+                        onSubmit = onSubmit,
                     )
                 }
                 DsButton(
-                    text = stringResource(submitLabel(validating, failure, submittable)),
-                    onClick = submit,
+                    text = stringResource(submitLabel(validating, failure, uiState.submittable)),
+                    onClick = onSubmit,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = submittable,
+                    enabled = uiState.submittable,
                     loading = validating,
                     trailingGlyph = if (failure != null) Glyphs.REFRESH else Glyphs.ARROW_FORWARD,
                 )
@@ -175,7 +152,7 @@ private fun submitLabel(
 private fun OnboardingEmptyPreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Idle,
+            status = OnboardingStatus.Idle,
         )
     }
 }
@@ -185,7 +162,7 @@ private fun OnboardingEmptyPreview() {
 private fun OnboardingObscuredPreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Idle,
+            status = OnboardingStatus.Idle,
             key = PREVIEW_API_KEY,
         )
     }
@@ -196,7 +173,7 @@ private fun OnboardingObscuredPreview() {
 private fun OnboardingRevealedPreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Idle,
+            status = OnboardingStatus.Idle,
             key = PREVIEW_API_KEY,
             revealed = true,
         )
@@ -208,7 +185,7 @@ private fun OnboardingRevealedPreview() {
 private fun OnboardingValidatingPreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Validating,
+            status = OnboardingStatus.Validating,
             key = PREVIEW_API_KEY,
         )
     }
@@ -219,7 +196,7 @@ private fun OnboardingValidatingPreview() {
 private fun OnboardingRejectedPreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Failed(ApiError.Authentication),
+            status = OnboardingStatus.Failed(ApiError.Authentication),
             key = PREVIEW_API_KEY,
         )
     }
@@ -230,7 +207,7 @@ private fun OnboardingRejectedPreview() {
 private fun OnboardingOfflinePreview() {
     ChatbotTheme(darkTheme = true) {
         PreviewOnboarding(
-            uiState = OnboardingUiState.Failed(ApiError.Network),
+            status = OnboardingStatus.Failed(ApiError.Network),
             key = PREVIEW_API_KEY,
         )
     }

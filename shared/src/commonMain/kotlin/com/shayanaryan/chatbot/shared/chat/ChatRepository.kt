@@ -2,6 +2,8 @@ package com.shayanaryan.chatbot.shared.chat
 
 import com.shayanaryan.chatbot.shared.model.ClaudeModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Owns chat history and the turn that produces it. The database is the source of truth for every
@@ -30,6 +32,25 @@ interface ChatRepository {
      * turn, and starts observing turns that begin after collection does.
      */
     fun getTurnFlow(chatId: Long): Flow<TurnState>
+
+    /**
+     * One chat, its messages and its turn as a single value, re-emitting whenever any of the
+     * three changes. Emits null for a chat that does not exist or has been deleted.
+     *
+     * @param chatId null for a chat that has not been created, the same "no chat yet" [send]
+     *   takes. Subscribes to nothing and emits null, so no flow is opened on a row that
+     *   cannot exist.
+     */
+    fun getChatSnapshotFlow(chatId: Long?): Flow<ChatSnapshot?> {
+        if (chatId == null) return flowOf(null)
+        return combine(
+            getChatFlow(chatId),
+            getMessagesFlow(chatId),
+            getTurnFlow(chatId),
+        ) { chat, messages, turn ->
+            chat?.let { ChatSnapshot(it, messages, turn) }
+        }
+    }
 
     /**
      * Appends [text] as a user message and starts a turn. Returns as soon as the message is

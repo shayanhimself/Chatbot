@@ -31,7 +31,7 @@ fun ChatDetailRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.chatId) { onChatIdChanged(uiState.chatId) }
-    LaunchedEffect(uiState.deleted) { if (uiState.deleted) onDeleted() }
+    LaunchedEffect(uiState.isDeleted) { if (uiState.isDeleted) onDeleted() }
 
     ChatDetailScreen(
         uiState = uiState,
@@ -40,8 +40,6 @@ fun ChatDetailRoute(
         onCancel = viewModel::onCancel,
         onRetry = viewModel::onRetry,
         onModelSelected = viewModel::onModelSelected,
-        onDeleteRequested = viewModel::onDeleteRequested,
-        onDeleteDismissed = viewModel::onDeleteDismissed,
         onDeleteConfirmed = viewModel::onDeleteConfirmed,
         modifier = modifier,
     )

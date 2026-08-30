@@ -1,6 +1,7 @@
 package com.shayanaryan.chatbot.feature.chat.detail
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.shayanaryan.chatbot.shared.ApiError
 import com.shayanaryan.chatbot.shared.FakeClock
 import com.shayanaryan.chatbot.shared.chat.Chat
@@ -16,6 +17,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.runner.RunWith
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -32,7 +34,11 @@ private const val CHAT_TITLE = "plan a weekend"
 private const val PARTIAL_TEXT = "hel"
 private const val CANCELLED_TEXT = "half a th"
 
+/**
+ * Runs under Robolectric to test the SavedStateHandle through a process-death.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(AndroidJUnit4::class)
 class ChatDetailViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
@@ -48,15 +54,6 @@ class ChatDetailViewModelTest {
     @AfterTest
     fun removeMainDispatcher() {
         Dispatchers.resetMain()
-    }
-
-    private fun viewModel(
-        initialChatId: Long? = null,
-        savedStateHandle: SavedStateHandle = SavedStateHandle(),
-    ) = ChatDetailViewModel(initialChatId, savedStateHandle, repository)
-
-    private fun TestScope.collecting(viewModel: ChatDetailViewModel) {
-        backgroundScope.launch { viewModel.uiState.collect {} }
     }
 
     @Test
@@ -93,7 +90,8 @@ class ChatDetailViewModelTest {
             advanceUntilIdle()
 
             // The restored back stack still says ChatDetailKey(null); only the handle remembers.
-            val restored = viewModel(initialChatId = null, savedStateHandle = handle)
+            val restored =
+                viewModel(initialChatId = null, savedStateHandle = handle.saveAndRestore())
             collecting(restored)
             advanceUntilIdle()
 
@@ -223,23 +221,19 @@ class ChatDetailViewModelTest {
         }
 
     @Test
-    fun `the delete dialog opens and closes`() =
+    fun `a model picked before the first send survives process death`() =
         runTest(dispatcher) {
-            val viewModel = viewModel()
-            collecting(viewModel)
-            viewModel.onSend(USER_MESSAGE)
+            val handle = SavedStateHandle()
+            val first = viewModel(savedStateHandle = handle)
+            collecting(first)
+            first.onModelSelected(ClaudeModel.Opus)
             advanceUntilIdle()
 
-            // Every read of uiState needs an advance first: localState reaches it through
-            // combine(…).stateIn(viewModelScope), and viewModelScope runs on the
-            // StandardTestDispatcher, which executes nothing until it is advanced.
-            viewModel.onDeleteRequested()
+            val restored = viewModel(savedStateHandle = handle.saveAndRestore())
+            collecting(restored)
             advanceUntilIdle()
-            assertTrue(viewModel.uiState.value.deleteDialogVisible)
 
-            viewModel.onDeleteDismissed()
-            advanceUntilIdle()
-            assertEquals(false, viewModel.uiState.value.deleteDialogVisible)
+            assertEquals(ClaudeModel.Opus, restored.uiState.value.model)
         }
 
     @Test
@@ -250,11 +244,13 @@ class ChatDetailViewModelTest {
             viewModel.onSend(USER_MESSAGE)
             advanceUntilIdle()
 
-            viewModel.onDeleteRequested()
+            // Every read of uiState needs an advance first: `isDeleted` reaches it through
+            // combine(…).stateIn(viewModelScope), and viewModelScope runs on the
+            // StandardTestDispatcher, which executes nothing until it is advanced.
             viewModel.onDeleteConfirmed()
             advanceUntilIdle()
 
-            assertTrue(viewModel.uiState.value.deleted)
+            assertTrue(viewModel.uiState.value.isDeleted)
             assertEquals(emptyList<Chat>(), repository.getChatsFlow().first())
         }
 
@@ -274,6 +270,7 @@ class ChatDetailViewModelTest {
             assertNull(viewModel.uiState.value.title)
         }
 
+
     @Test
     fun `a send into a chat that no longer exists is rejected without crashing`() =
         runTest(dispatcher) {
@@ -291,4 +288,17 @@ class ChatDetailViewModelTest {
 
             assertNull(viewModel.uiState.value.chatId)
         }
+
+    private fun viewModel(
+        initialChatId: Long? = null,
+        savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    ) = ChatDetailViewModel(initialChatId, savedStateHandle, repository)
+
+    /** The handle a recreated ViewModel is given: written out and read back, as the framework does. */
+    private fun SavedStateHandle.saveAndRestore(): SavedStateHandle =
+        SavedStateHandle.createHandle(savedStateProvider().saveState(), null)
+
+    private fun TestScope.collecting(viewModel: ChatDetailViewModel) {
+        backgroundScope.launch { viewModel.uiState.collect {} }
+    }
 }

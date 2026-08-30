@@ -85,21 +85,29 @@ private suspend fun FlowCollector<ClaudeStreamEvent>.emitStream(channel: ByteRea
                 }
             when (event) {
                 is SseEventDto.MessageStart -> {
+                    // The opening frame, and the only one carrying the input token count.
+                    // {"type":"message_start","message":{"usage":{"input_tokens":42}}}
                     inputTokens = event.message.usage.inputTokens
                 }
 
                 is SseEventDto.ContentBlockDelta -> {
+                    // One slice of one content block, arriving many times per response.
+                    // {"type":"content_block_delta","delta":{"type":"text_delta","text":"Hi"}}
                     (event.delta as? ContentDeltaDto.Text)?.let {
                         emit(ClaudeStreamEvent.Delta(it.text))
                     }
                 }
 
                 is SseEventDto.MessageDelta -> {
+                    // The last data frame, and the only one carrying stop reason and output tokens.
+                    // {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{...}}
                     stopReason = event.delta.stopReason
                     event.usage?.let { outputTokens = it.outputTokens }
                 }
 
                 is SseEventDto.MessageStop -> {
+                    // The bare terminator, which makes the totals gathered above final.
+                    // {"type":"message_stop"}
                     emit(
                         ClaudeStreamEvent.Completed(
                             stopReason,
@@ -110,6 +118,8 @@ private suspend fun FlowCollector<ClaudeStreamEvent>.emitStream(channel: ByteRea
                 }
 
                 is SseEventDto.Error -> {
+                    // A failure raised mid-stream, after the response status already said success.
+                    // {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}
                     emit(ClaudeStreamEvent.Failed(event.error.type.toApiError()))
                     throw TerminalReached()
                 }

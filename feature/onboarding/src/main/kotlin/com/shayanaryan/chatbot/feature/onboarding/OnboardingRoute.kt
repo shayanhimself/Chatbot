@@ -24,8 +24,9 @@ fun OnboardingRoute(
 
     OnboardingScreen(
         uiState = uiState,
+        onKeyChange = viewModel::onKeyChange,
+        onToggleReveal = viewModel::onToggleReveal,
         onSubmit = viewModel::onSubmit,
-        onKeyEdited = viewModel::onKeyEdited,
         onConsoleClick = { context.openConsole() },
         modifier = modifier,
     )

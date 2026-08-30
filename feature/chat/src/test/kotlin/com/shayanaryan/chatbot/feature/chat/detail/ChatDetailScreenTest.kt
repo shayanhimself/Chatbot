@@ -139,14 +139,12 @@ class ChatDetailScreenTest {
     }
 
     @Test
-    fun `the overflow menu offers delete and reports it`() {
-        var requested = false
-        setScreen(openChat, onDeleteRequested = { requested = true })
+    fun `the overflow menu offers delete and opens the dialog`() {
+        setScreen(openChat)
 
-        composeRule.onNodeWithContentDescription(string(R.string.chat_more)).performClick()
-        composeRule.onNodeWithText(string(R.string.chat_delete)).performClick()
+        openDeleteDialog()
 
-        assertTrue(requested)
+        composeRule.onNodeWithText(string(R.string.chat_delete_title)).assertIsDisplayed()
     }
 
     @Test
@@ -160,15 +158,27 @@ class ChatDetailScreenTest {
     }
 
     @Test
-    fun `confirming the delete dialog reports it`() {
+    fun `confirming the delete dialog reports it and closes the dialog`() {
         var confirmed = false
-        val deleting = openChat.copy(deleteDialogVisible = true)
-        setScreen(deleting, onDeleteConfirmed = { confirmed = true })
+        setScreen(openChat, onDeleteConfirmed = { confirmed = true })
 
-        composeRule.onNodeWithText(string(R.string.chat_delete_title)).assertIsDisplayed()
+        openDeleteDialog()
         composeRule.onNodeWithText(string(R.string.chat_delete_confirm)).performClick()
 
         assertTrue(confirmed)
+        composeRule.onNodeWithText(string(R.string.chat_delete_title)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `dismissing the delete dialog closes it without deleting`() {
+        var confirmed = false
+        setScreen(openChat, onDeleteConfirmed = { confirmed = true })
+
+        openDeleteDialog()
+        composeRule.onNodeWithText(string(R.string.chat_delete_cancel)).performClick()
+
+        assertFalse(confirmed)
+        composeRule.onNodeWithText(string(R.string.chat_delete_title)).assertDoesNotExist()
     }
 
     @Test
@@ -236,6 +246,12 @@ class ChatDetailScreenTest {
         ),
     )
 
+    /** The dialog's only route: the overflow menu the top bar hangs delete off. */
+    private fun openDeleteDialog() {
+        composeRule.onNodeWithContentDescription(string(R.string.chat_more)).performClick()
+        composeRule.onNodeWithText(string(R.string.chat_delete)).performClick()
+    }
+
     /** The message list, the screen's only lazy list. */
     private fun messageList() =
         composeRule.onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.ScrollToIndex))
@@ -291,8 +307,6 @@ class ChatDetailScreenTest {
                     onCancel = {},
                     onRetry = {},
                     onModelSelected = {},
-                    onDeleteRequested = {},
-                    onDeleteDismissed = {},
                     onDeleteConfirmed = {},
                 )
             }
@@ -306,8 +320,6 @@ class ChatDetailScreenTest {
         onCancel: () -> Unit = {},
         onRetry: () -> Unit = {},
         onModelSelected: (ClaudeModel) -> Unit = {},
-        onDeleteRequested: () -> Unit = {},
-        onDeleteDismissed: () -> Unit = {},
         onDeleteConfirmed: () -> Unit = {},
     ) {
         composeRule.setContent {
@@ -319,8 +331,6 @@ class ChatDetailScreenTest {
                     onCancel = onCancel,
                     onRetry = onRetry,
                     onModelSelected = onModelSelected,
-                    onDeleteRequested = onDeleteRequested,
-                    onDeleteDismissed = onDeleteDismissed,
                     onDeleteConfirmed = onDeleteConfirmed,
                 )
             }

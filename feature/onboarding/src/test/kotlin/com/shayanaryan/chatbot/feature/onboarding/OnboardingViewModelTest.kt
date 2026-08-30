@@ -16,10 +16,15 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 private const val API_KEY = "sk-ant-api03-not-a-real-key"
 private const val OTHER_API_KEY = "sk-ant-api03-also-not-real"
+
+// One character short of MIN_KEY_LENGTH, so the boundary is testable from both sides.
+private const val TOO_SHORT_KEY = "sk-ant-api0"
 private const val RETRY_AFTER_SECONDS = 30
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -41,9 +46,58 @@ class OnboardingViewModelTest {
     private fun viewModel() = OnboardingViewModel(validator, repository)
 
     @Test
-    fun `starts idle`() =
+    fun `starts empty and idle`() =
         runTest {
-            assertEquals(OnboardingUiState.Idle, viewModel().uiState.value)
+            assertEquals(OnboardingUiState(), viewModel().uiState.value)
+        }
+
+    @Test
+    fun `typing reports the key back`() =
+        runTest {
+            val model = viewModel()
+
+            model.onKeyChange(API_KEY)
+
+            assertEquals(API_KEY, model.uiState.value.key)
+        }
+
+    @Test
+    fun `a key reaching the minimum length becomes submittable`() =
+        runTest {
+            val model = viewModel()
+
+            model.onKeyChange(TOO_SHORT_KEY)
+            assertFalse(model.uiState.value.submittable)
+
+            model.onKeyChange(API_KEY)
+
+            assertTrue(model.uiState.value.submittable)
+        }
+
+    @Test
+    fun `the reveal toggle flips both ways`() =
+        runTest {
+            val model = viewModel()
+
+            model.onToggleReveal()
+            assertTrue(model.uiState.value.revealed)
+
+            model.onToggleReveal()
+
+            assertFalse(model.uiState.value.revealed)
+        }
+
+    @Test
+    fun `a key too short to be worth a round trip is not validated`() =
+        runTest {
+            val model = viewModel()
+            model.onKeyChange(TOO_SHORT_KEY)
+
+            model.onSubmit()
+            advanceUntilIdle()
+
+            assertEquals(emptyList(), validator.validated)
+            assertEquals(OnboardingStatus.Idle, model.uiState.value.status)
         }
 
     @Test
@@ -51,11 +105,12 @@ class OnboardingViewModelTest {
         runTest {
             validator.gate = CompletableDeferred()
             val model = viewModel()
+            model.onKeyChange(API_KEY)
 
-            model.onSubmit(API_KEY)
+            model.onSubmit()
             advanceUntilIdle()
 
-            assertEquals(OnboardingUiState.Validating, model.uiState.value)
+            assertEquals(OnboardingStatus.Validating, model.uiState.value.status)
         }
 
     @Test
@@ -63,12 +118,29 @@ class OnboardingViewModelTest {
         runTest {
             validator.result = KeyValidationResult.Failed(ApiError.Authentication)
             val model = viewModel()
+            model.onKeyChange(API_KEY)
 
-            model.onSubmit(API_KEY)
+            model.onSubmit()
             advanceUntilIdle()
 
-            assertEquals(OnboardingUiState.Failed(ApiError.Authentication), model.uiState.value)
+            assertEquals(
+                OnboardingStatus.Failed(ApiError.Authentication),
+                model.uiState.value.status,
+            )
             assertNull(repository.apiKey())
+        }
+
+    @Test
+    fun `a rejected key stays in the field so it can be corrected`() =
+        runTest {
+            validator.result = KeyValidationResult.Failed(ApiError.Authentication)
+            val model = viewModel()
+            model.onKeyChange(API_KEY)
+
+            model.onSubmit()
+            advanceUntilIdle()
+
+            assertEquals(API_KEY, model.uiState.value.key)
         }
 
     @Test
@@ -76,11 +148,12 @@ class OnboardingViewModelTest {
         runTest {
             validator.result = KeyValidationResult.Failed(ApiError.Network)
             val model = viewModel()
+            model.onKeyChange(API_KEY)
 
-            model.onSubmit(API_KEY)
+            model.onSubmit()
             advanceUntilIdle()
 
-            assertEquals(OnboardingUiState.Failed(ApiError.Network), model.uiState.value)
+            assertEquals(OnboardingStatus.Failed(ApiError.Network), model.uiState.value.status)
             assertNull(repository.apiKey())
         }
 
@@ -90,13 +163,14 @@ class OnboardingViewModelTest {
             validator.result =
                 KeyValidationResult.Failed(ApiError.RateLimited(RETRY_AFTER_SECONDS))
             val model = viewModel()
+            model.onKeyChange(API_KEY)
 
-            model.onSubmit(API_KEY)
+            model.onSubmit()
             advanceUntilIdle()
 
             assertEquals(
-                OnboardingUiState.Failed(ApiError.RateLimited(RETRY_AFTER_SECONDS)),
-                model.uiState.value,
+                OnboardingStatus.Failed(ApiError.RateLimited(RETRY_AFTER_SECONDS)),
+                model.uiState.value.status,
             )
         }
 
@@ -105,34 +179,26 @@ class OnboardingViewModelTest {
         runTest {
             validator.result = KeyValidationResult.Failed(ApiError.Authentication)
             val model = viewModel()
-            model.onSubmit(API_KEY)
+            model.onKeyChange(API_KEY)
+            model.onSubmit()
             advanceUntilIdle()
 
-            model.onKeyEdited()
+            model.onKeyChange(OTHER_API_KEY)
 
-            assertEquals(OnboardingUiState.Idle, model.uiState.value)
-        }
-
-    @Test
-    fun `editing while idle changes nothing`() =
-        runTest {
-            val model = viewModel()
-
-            model.onKeyEdited()
-
-            assertEquals(OnboardingUiState.Idle, model.uiState.value)
+            assertEquals(OnboardingStatus.Idle, model.uiState.value.status)
         }
 
     @Test
     fun `a valid key reaches the repository and the screen keeps spinning`() =
         runTest {
             val model = viewModel()
+            model.onKeyChange(API_KEY)
 
-            model.onSubmit(API_KEY)
+            model.onSubmit()
             advanceUntilIdle()
 
             assertEquals(API_KEY, repository.apiKey())
-            assertEquals(OnboardingUiState.Validating, model.uiState.value)
+            assertEquals(OnboardingStatus.Validating, model.uiState.value.status)
         }
 
     @Test
@@ -140,12 +206,27 @@ class OnboardingViewModelTest {
         runTest {
             validator.gate = CompletableDeferred()
             val model = viewModel()
+            model.onKeyChange(API_KEY)
 
-            model.onSubmit(API_KEY)
+            model.onSubmit()
             advanceUntilIdle()
-            model.onSubmit(OTHER_API_KEY)
+            model.onKeyChange(OTHER_API_KEY)
+            model.onSubmit()
             advanceUntilIdle()
 
             assertEquals(listOf(API_KEY), validator.validated)
+        }
+
+    @Test
+    fun `the state does not print the key`() =
+        runTest {
+            val model = viewModel()
+            model.onKeyChange(API_KEY)
+
+            assertFalse(
+                model.uiState.value
+                    .toString()
+                    .contains(API_KEY),
+            )
         }
 }

@@ -270,7 +270,6 @@ class ChatDetailViewModelTest {
             assertNull(viewModel.uiState.value.title)
         }
 
-
     @Test
     fun `a send into a chat that no longer exists is rejected without crashing`() =
         runTest(dispatcher) {

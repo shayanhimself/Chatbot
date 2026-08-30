@@ -106,7 +106,6 @@ class ChatDetailViewModel
                 }
             }
         }
-}
 
         fun onCancel() {
             val id = chatId.value ?: return

@@ -8,9 +8,10 @@ private const val MASK = 0x5A
  * Reversible byte flip standing in for real encryption.
  */
 class FakeKeyCipher : KeyCipher {
-    override fun encrypt(plaintext: String): ByteArray = plaintext.encodeToByteArray().mask()
+    override suspend fun encrypt(plaintext: String): ByteArray =
+        plaintext.encodeToByteArray().mask()
 
-    override fun decrypt(ciphertext: ByteArray): String = ciphertext.mask().decodeToString()
+    override suspend fun decrypt(ciphertext: ByteArray): String = ciphertext.mask().decodeToString()
 
     /**
      * XORs every byte with [MASK]. Its own inverse, so one function serves both directions.

@@ -145,7 +145,7 @@ The insert completes before `TurnState` returns to `Idle`, so the live bubble is
 
 A turn that completes without emitting any text still stores its assistant row, but blank text blocks are dropped on the way into a request and a message left with no blocks is dropped whole. The API rejects an empty text block, and a stored one would otherwise be replayed on every later turn, making the chat permanently un-sendable. Filtering on the read side rather than skipping the write keeps the row for the UI.
 
-Turns live in a `MutableStateFlow<Map<Long, Turn>>`: an immutable map behind a `StateFlow` so `getTurnFlow` reads without a lock and observes turns that start after collection begins:
+Turns live in a `MutableStateFlow<Map<Long, Turn>>`: an immutable map behind a `StateFlow`, so every write is one compare-and-set and `getTurnFlow` observes turns that start after collection begins:
 
 ```
 getTurnFlow(id) = turns
@@ -153,7 +153,7 @@ getTurnFlow(id) = turns
   .distinctUntilChanged()
 ```
 
-Writes take a `Mutex`. `StateFlow.update` makes one compare-and-set atomic, but the guard spans two operations (test for a live turn, then insert one) and without the lock two concurrent sends both see none and both launch.
+A turn drops its entry only while the entry still holds its own state, so a turn already replaced by a later one leaves that later one listed. Its job is started lazily, after the entry is in the map, so it can never reach for an entry that is not there yet.
 
 **The map holds the latest turn per chat.** A turn is live while its job is active, so the one-turn guard tests the job and the state rather than the entry's presence: a turn that dies unexpectedly can never block a later send, and neither can one that has gone `Idle` but not yet been cleared. Every turn ends the same way, whether it completed or failed: the row goes in, the state goes `Idle`, the entry is dropped. Nothing has to outlive the turn, because the row carries the reason. `cancel` cancels the job and joins it; the turn coroutine writes the `Cancelled` row on its way out, in a `NonCancellable` block, then sets `Idle` and drops the entry. One writer per turn means no window in which a turn finishes normally between a liveness check and a second insert, and joining keeps the rule that a row exists before the live bubble disappears.
 

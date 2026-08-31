@@ -28,8 +28,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 
@@ -49,18 +47,11 @@ internal class DefaultChatRepository(
     private val clock: Clock,
 ) : ChatRepository {
     /**
-     * The latest turn per chat, still listed for the moment between it ending and its entry being
-     * dropped. An immutable map behind a state flow, so reads need no lock and a collector sees
-     * turns that start after it does.
+     * The current turn on each chat.
+     *
+     * A state flow over an immutable map: every write is one compare-and-set.
      */
     private val turns = MutableStateFlow<Map<Long, Turn>>(emptyMap())
-
-    /**
-     * Guards the writes. A single compare-and-set is already atomic, but the guard spans two
-     * operations (test for a live turn, then start one) and without the lock two concurrent
-     * sends both see none and both launch.
-     */
-    private val mutex = Mutex()
 
     override fun getChatsFlow(): Flow<List<Chat>> =
         chatDao.observeAllWithSnippet().map { rows -> rows.map { it.toDomain() } }
@@ -87,60 +78,55 @@ internal class DefaultChatRepository(
         chatId: Long?,
         text: String,
         model: ClaudeModel,
-    ): Long =
-        mutex.withLock {
-            val now = clock.now().toEpochMilliseconds()
-            val id =
-                if (chatId == null) {
-                    chatDao.createWithFirstMessage(
-                        chat =
-                            ChatEntity(
-                                title = text.take(ChatRepository.MAX_TITLE_LENGTH),
-                                model = model,
-                                createdAt = now,
-                                updatedAt = now,
-                            ),
-                        message =
-                            userMessage(
-                                text = text,
-                                createdAt = now,
-                            ),
-                    )
-                } else {
-                    requireExists(chatId)
-                    requireIdle(chatId)
-                    chatDao.appendMessage(
-                        message =
-                            userMessage(
-                                text = text,
-                                createdAt = now,
-                                chatId = chatId,
-                            ),
-                        updatedAt = now,
-                    )
-                    chatId
-                }
-            launchTurn(id)
-            id
-        }
+    ): Long {
+        val now = clock.now().toEpochMilliseconds()
+        val id =
+            if (chatId == null) {
+                chatDao.createWithFirstMessage(
+                    chat =
+                        ChatEntity(
+                            title = text.take(ChatRepository.MAX_TITLE_LENGTH),
+                            model = model,
+                            createdAt = now,
+                            updatedAt = now,
+                        ),
+                    message =
+                        userMessage(
+                            text = text,
+                            createdAt = now,
+                        ),
+                )
+            } else {
+                requireExists(chatId)
+                requireIdle(chatId)
+                chatDao.appendMessage(
+                    message =
+                        userMessage(
+                            text = text,
+                            createdAt = now,
+                            chatId = chatId,
+                        ),
+                    updatedAt = now,
+                )
+                chatId
+            }
+        launchTurn(id)
+        return id
+    }
 
     override suspend fun retry(chatId: Long) {
-        mutex.withLock {
-            val last = messageDao.lastForChat(chatId) ?: return@withLock
-            // Only a reply that stopped short is replayable. A turn in flight has the user
-            // message last, so it falls outside this.
-            if (last.role == Role.Assistant && last.status != MessageStatus.Complete) {
-                // Deleting the row restores the state the turn started from.
-                messageDao.deleteById(last.id)
-                launchTurn(chatId)
-            }
+        val last = messageDao.lastForChat(chatId) ?: return
+        // Only a reply that stopped short is replayable. A turn in flight has the user
+        // message last, so it falls outside this.
+        if (last.role == Role.Assistant && last.status != MessageStatus.Complete) {
+            // Deleting the row restores the state the turn started from.
+            messageDao.deleteById(last.id)
+            launchTurn(chatId)
         }
     }
 
     override suspend fun cancel(chatId: Long) {
-        // Not under the lock: the turn's own cancellation path takes it to clear its entry, and
-        // joining while holding it would deadlock. Joining is what guarantees the cancelled
-        // message is stored before this returns.
+        // Joining is what guarantees the cancelled message is stored before this returns.
         turns.value[chatId]?.job?.cancelAndJoin()
     }
 
@@ -200,9 +186,10 @@ internal class DefaultChatRepository(
         }
     }
 
-    /** Call under [mutex]: the entry must exist before the coroutine can clear it. */
     private fun launchTurn(chatId: Long) {
         val state = MutableStateFlow<TurnState>(TurnState.Streaming(""))
+        // Lazy, so the turn starts only after the map lists it, and a turn that ends immediately
+        // cannot try to clear an entry that is not there yet.
         val job =
             externalScope.launch(start = CoroutineStart.LAZY) {
                 runTurn(chatId, state)
@@ -312,14 +299,12 @@ internal class DefaultChatRepository(
      * Drops this turn's entry, and only this one: a later turn may already have replaced it, and
      * dropping that one would leave it running with nothing tracking it.
      */
-    private suspend fun clearTurn(
+    private fun clearTurn(
         chatId: Long,
         state: MutableStateFlow<TurnState>,
     ) {
-        mutex.withLock {
-            turns.update { current ->
-                if (current[chatId]?.state === state) current - chatId else current
-            }
+        turns.update { current ->
+            if (current[chatId]?.state === state) current - chatId else current
         }
     }
 }

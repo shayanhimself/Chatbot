@@ -138,12 +138,9 @@ internal class DefaultChatRepository(
     }
 
     override suspend fun delete(chatId: Long) {
-        val turn = turns.value[chatId]
-        turn?.job?.cancelAndJoin()
+        turns.value[chatId]?.job?.cancelAndJoin()
         chatDao.delete(chatId)
-        if (turn != null) {
-            clearTurn(chatId, turn.state)
-        }
+        clearTurn(chatId)
     }
 
     /**
@@ -204,8 +201,7 @@ internal class DefaultChatRepository(
      * write per token. The row is stored before the turn reports [TurnState.Idle], so the live
      * bubble is never dropped before the persisted message exists to replace it.
      *
-     * @param state the turn's own state flow, also the handle used to clear its entry: a later
-     *   turn may already have replaced it.
+     * @param state the turn's own state flow, which a collector reads while the reply arrives.
      */
     private suspend fun runTurn(
         chatId: Long,
@@ -214,7 +210,7 @@ internal class DefaultChatRepository(
         val chat = chatDao.findById(chatId)
         if (chat == null) {
             state.value = TurnState.Idle
-            clearTurn(chatId, state)
+            clearTurn(chatId)
             return
         }
         val messages = messageDao.completeForChat(chatId).toClaudeMessages()
@@ -254,7 +250,7 @@ internal class DefaultChatRepository(
             withContext(NonCancellable) {
                 persistReply(chatId, reply.toString(), MessageStatus.Cancelled)
                 state.value = TurnState.Idle
-                clearTurn(chatId, state)
+                clearTurn(chatId)
             }
             throw cancellation
         }
@@ -266,7 +262,7 @@ internal class DefaultChatRepository(
             val status = if (error == null) MessageStatus.Complete else MessageStatus.Failed
             persistReply(chatId, reply.toString(), status, error)
             state.value = TurnState.Idle
-            clearTurn(chatId, state)
+            clearTurn(chatId)
         }
     }
 
@@ -295,16 +291,8 @@ internal class DefaultChatRepository(
         )
     }
 
-    /**
-     * Drops this turn's entry, and only this one: a later turn may already have replaced it, and
-     * dropping that one would leave it running with nothing tracking it.
-     */
-    private fun clearTurn(
-        chatId: Long,
-        state: MutableStateFlow<TurnState>,
-    ) {
-        turns.update { current ->
-            if (current[chatId]?.state === state) current - chatId else current
-        }
+    /** Stops listing the chat's turn, leaving [getTurnFlow] to report it idle. */
+    private fun clearTurn(chatId: Long) {
+        turns.update { it - chatId }
     }
 }
